@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arduino Junior Certification Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar">
+  <div class="brand" onclick="Router.go('home')">
+    <div class="chip">🔌</div>
+    <span>Arduino Junior <span style="color:var(--orange)">Academy</span></span>
+  </div>
+  <div class="stat-pills" id="stat-pills" style="display:none;">
+    <div class="pill level"><span class="ico">🏆</span><span id="pill-level">Lvl 1 · Beginner</span></div>
+    <div class="pill xp"><span class="ico">⚡</span><span id="pill-xp">0 XP</span></div>
+    <div class="pill coins"><span class="ico">🪙</span><span id="pill-coins">0</span></div>
+    <div class="pill streak"><span class="ico">🔥</span><span id="pill-streak">0 day streak</span></div>
+  </div>
+  <div class="nav-btns" id="nav-btns" style="display:none;">
+    <button data-nav="home" onclick="Router.go('home')">Home</button>
+    <button data-nav="achievements" onclick="Router.go('achievements')">Achievements</button>
+    <button data-nav="admin" onclick="Router.go('admin')">Question Bank</button>
+    <button data-nav="students" id="nav-students-btn" onclick="Router.go('students')" style="display:none;">Students</button>
+  </div>
+  <div class="flex items-center gap-8" id="user-badge" style="display:none;">
+    <span class="pill" id="pill-user">👤</span>
+    <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Log out</button>
+  </div>
+</div>
+
+<div class="app-shell">
+
+  <!-- ============ LOGIN SCREEN ============ -->
+  <section id="screen-login" class="screen active">
+    <div class="login-wrap">
+      <div class="card login-card">
+        <div class="chip" style="width:56px;height:56px;font-size:1.8rem;margin:0 auto 14px;">🔌</div>
+        <h2 style="text-align:center;">Arduino Junior Academy</h2>
+        <p class="muted small" style="text-align:center;margin-bottom:20px;">Who's learning today?</p>
+        <div class="login-names" id="login-names"></div>
+        <input id="login-pin" type="password" inputmode="numeric" placeholder="Enter PIN" class="login-pin-input" style="display:none;" onkeydown="if(event.key==='Enter') Auth.submitLogin()">
+        <div id="login-error" class="small" style="color:#ff5252;min-height:18px;margin-top:10px;text-align:center;"></div>
+        <button class="btn btn-primary" id="login-btn" style="display:none;width:100%;margin-top:10px;justify-content:center;" onclick="Auth.submitLogin()">Log In</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOME SCREEN ============ -->
+  <section id="screen-home" class="screen">
+
+    <div class="hero">
+      <div class="hero-particles" id="particles"></div>
+      <div class="hero-inner">
+        <div class="hero-text">
+          <h1>Master Arduino, <span class="accent">one spark at a time.</span></h1>
+          <p>Learn electronics, sensors, motors and robotics through bite-sized animated challenges. Earn XP, collect components, and become an Arduino Master.</p>
+          <div class="hero-cta">
+            <button class="btn btn-primary" onclick="App.startPractice()">▶ Continue Learning</button>
+            <button class="btn btn-teal" onclick="App.startExam()">📝 Practice Exam</button>
+          </div>
+        </div>
+        <div class="board-wrap">
+          <div class="board">
+            <div class="chip-ic"></div>
+            <div class="led l1"></div><div class="led l2"></div><div class="led l3"></div>
+            <div class="pinrow" id="pinrow"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex justify-between items-center gap-12" style="flex-wrap:wrap;">
+        <div style="flex:1; min-width:220px;">
+          <div class="flex justify-between items-center" style="margin-bottom:8px;">
+            <strong id="level-title">Level 1 · Beginner</strong>
+            <span class="small muted" id="level-progress-txt">0 / 200 XP</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="level-progress-fill" style="width:0%"></div></div>
+        </div>
+        <div class="flex gap-12">
+          <div class="center"><div style="font-size:1.3rem;font-weight:800;" id="stat-stars">0</div><div class="small muted">⭐ Stars</div></div>
+          <div class="center"><div style="font-size:1.3rem;font-weight:800;" id="stat-correct">0</div><div class="small muted">✅ Correct</div></div>
+          <div class="center"><div style="font-size:1.3rem;font-weight:800;" id="stat-accuracy">0%</div><div class="small muted">🎯 Accuracy</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>🎯 Daily Challenge</h2></div>
+    <div class="card card-hover flex justify-between items-center" style="flex-wrap:wrap; gap:14px;">
+      <div>
+        <strong id="daily-title">5 Random Questions — Today's Spark</strong>
+        <p class="muted small mt-10">Answer 5 mixed questions correctly to earn a bonus 50 XP and a Mystery Box.</p>
+      </div>
+      <button class="btn btn-primary" onclick="App.startDaily()">Start Challenge ⚡</button>
+    </div>
+
+    <div class="section-title"><h2>🗂️ Choose a Mode</h2></div>
+    <div class="grid-3">
+      <div class="card mode-card card-hover">
+        <div class="glow" style="background:var(--teal);"></div>
+        <div class="emoji">📘</div>
+        <h3>Practice Mode</h3>
+        <p>Unlimited questions, hints on, retry as many times as you like. Best for learning.</p>
+        <button class="btn btn-teal btn-sm" onclick="App.startPractice()">Practice</button>
+      </div>
+      <div class="card mode-card card-hover">
+        <div class="glow" style="background:var(--orange);"></div>
+        <div class="emoji">⏱️</div>
+        <h3>Exam Mode</h3>
+        <p>40 random timed questions. No hints, no retries, instant results & certificate.</p>
+        <button class="btn btn-primary btn-sm" onclick="App.startExam()">Start Exam</button>
+      </div>
+      <div class="card mode-card card-hover">
+        <div class="glow" style="background:var(--green);"></div>
+        <div class="emoji">🗺️</div>
+        <h3>Topic Explorer</h3>
+        <p>Pick a syllabus topic and drill it until you've mastered it.</p>
+        <button class="btn btn-green btn-sm" onclick="Router.go('topics')">Browse Topics</button>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>🏅 Recent Achievements</h2><a class="small muted" style="cursor:pointer" onclick="Router.go('achievements')">View all →</a></div>
+    <div class="grid-3" id="home-achv-preview"></div>
+
+    <div class="section-title"><h2>🏆 Leaderboard <span class="small muted">(demo)</span></h2></div>
+    <div class="card" id="leaderboard-box"></div>
+
+  </section>
+
+  <!-- ============ TOPICS SCREEN ============ -->
+  <section id="screen-topics" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
+      <h2>🗺️ Syllabus Topics</h2>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+    </div>
+    <div class="grid-3" id="topics-grid"></div>
+  </section>
+
+  <!-- ============ QUIZ SCREEN (practice / exam / daily / topic) ============ -->
+  <section id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <span class="tag" id="quiz-mode-tag">PRACTICE</span>
+        <span id="quiz-progress-txt">Question 1 of 10</span>
+        <span class="tag" id="quiz-difficulty-tag">Easy</span>
+      </div>
+      <div class="flex items-center gap-12">
+        <div class="timer-pill" id="quiz-timer" style="display:none;">02:00</div>
+        <button class="btn btn-ghost btn-sm" onclick="App.quitQuiz()">✕ Exit</button>
+      </div>
+    </div>
+    <div class="progress-track mt-10" style="margin-bottom:18px;">
+      <div class="progress-fill teal" id="quiz-progress-fill" style="width:0%"></div>
+    </div>
+
+    <div class="quiz-grid">
+      <div class="stage" id="stage"></div>
+
+      <div>
+        <div class="card">
+          <div class="flex justify-between items-center gap-8">
+            <span class="small muted" id="quiz-topic-label">Topic</span>
+            <span class="small muted" id="quiz-xp-label">+10 XP</span>
+          </div>
+          <div class="q-text" id="q-text"></div>
+          <div class="options" id="q-options"></div>
+
+          <div class="hint-box" id="hint-box"></div>
+
+          <div class="quiz-actions">
+            <div class="hint-row" id="hint-row"></div>
+            <button class="btn btn-primary btn-sm" id="submit-btn" onclick="App.submitAnswer()" disabled>Submit Answer</button>
+          </div>
+
+          <div class="feedback" id="feedback"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS SCREEN ============ -->
+  <section id="screen-results" class="screen">
+    <div class="card result-hero">
+      <div class="grade-badge" id="grade-badge">A</div>
+      <h2 id="result-title">Great work!</h2>
+      <p class="muted mt-10" id="result-subtitle">You scored 80%</p>
+      <div class="stat-row">
+        <div class="stat-box"><div class="num" id="res-score">0/0</div><div class="lbl">Score</div></div>
+        <div class="stat-box"><div class="num" id="res-percent">0%</div><div class="lbl">Percentage</div></div>
+        <div class="stat-box"><div class="num" id="res-xp">0</div><div class="lbl">XP Earned</div></div>
+        <div class="stat-box"><div class="num" id="res-coins">0</div><div class="lbl">Coins</div></div>
+        <div class="stat-box"><div class="num" id="res-time">0:00</div><div class="lbl">Time Taken</div></div>
+      </div>
+      <div class="flex justify-between" style="gap:12px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="App.startExam()">↻ Retake Exam</button>
+        <button class="btn btn-teal" onclick="Router.go('home')">🏠 Back Home</button>
+        <button class="btn btn-green" id="cert-btn" onclick="App.printCertificate()" style="display:none;">🎓 Print Certificate</button>
+      </div>
+    </div>
+
+    <div class="grid-2 mt-20">
+      <div class="card">
+        <h3 class="mt-10" style="margin-bottom:14px;">📊 Topic Performance</h3>
+        <div id="topic-breakdown"></div>
+      </div>
+      <div class="card">
+        <h3 class="mt-10" style="margin-bottom:14px;">💡 Recommendations</h3>
+        <div id="recommendations" class="muted small" style="line-height:1.8;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ACHIEVEMENTS SCREEN ============ -->
+  <section id="screen-achievements" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
+      <h2>🏅 Achievements & Badges</h2>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+    </div>
+    <div class="grid-3" id="achv-grid"></div>
+
+    <div class="section-title"><h2>🎒 Collected Components</h2></div>
+    <div class="card" id="collection-box"></div>
+  </section>
+
+  <!-- ============ ADMIN / QUESTION BANK SCREEN ============ -->
+  <section id="screen-admin" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
+      <h2>🗃️ Question Bank</h2>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+    </div>
+    <div class="card mt-10">
+      <div class="flex justify-between items-center gap-12" style="flex-wrap:wrap; margin-bottom:14px;">
+        <div class="flex gap-8" style="flex-wrap:wrap;">
+          <span class="pill"><span id="admin-count">0</span> questions loaded</span>
+          <span class="pill">from <code>/data/questions.json</code></span>
+        </div>
+        <input id="admin-search" placeholder="Search questions or topics…" class="btn-ghost btn" style="padding:8px 14px; font-weight:400;">
+      </div>
+      <div style="max-height:520px; overflow:auto;">
+        <table class="admin-table">
+          <thead><tr><th>#</th><th>Topic</th><th>Diff.</th><th>Type</th><th>Question</th><th>XP</th></tr></thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDENTS SCREEN (admin only) ============ -->
+  <section id="screen-students" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
+      <h2>👨‍👩‍👧‍👦 Student Progress</h2>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+    </div>
+    <div class="grid-3" id="students-grid"></div>
+  </section>
+
+</div>
+
+<!-- ============ ARDUINO BUDDY (AI Tutor mascot) ============ -->
+<div class="buddy">
+  <div class="buddy-bubble" id="buddy-bubble"></div>
+  <div class="buddy-avatar" id="buddy-avatar" onclick="App.buddyTalk(true)">🤖</div>
+</div>
+
+<script src="animations.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
