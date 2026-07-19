@@ -1,0 +1,31 @@
+{
+  "weeks": [
+    {
+      "week": 1,
+      "title": "Week 1 — Welcome to Level 1 (placeholder)",
+      "reading": [
+        "This is placeholder reading material for Beginner Level 1's weekly quiz gate.",
+        "Once the instructor provides the real Level 1 course content (an Excel sheet with topics and details), this will be replaced with the actual Week 1 reading material for this class.",
+        "This placeholder exists so the full reading-then-quiz flow can be tested end-to-end for Level 1, the same way it was built and tested for Level 2."
+      ],
+      "questions": [
+        {
+          "id": "l1-w1-1",
+          "type": "mcq",
+          "question": "What is this Week 1 content for Level 1 right now?",
+          "options": ["Real course content", "Placeholder content", "A final exam", "Nothing"],
+          "answer": "Placeholder content",
+          "explanation": "This will be swapped out once the real Level 1 syllabus is provided."
+        },
+        {
+          "id": "l1-w1-2",
+          "type": "fillblank",
+          "question": "Fill in the blank: This weekly quiz content is a ______ until the real Level 1 material arrives.",
+          "answer": "placeholder",
+          "acceptable": ["placeholder content", "temporary"],
+          "explanation": "Same reading-then-quiz gate mechanism as Level 2, just waiting on real content."
+        }
+      ]
+    }
+  ]
+}

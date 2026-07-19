@@ -1,0 +1,43 @@
+[
+  {
+    "id": 1,
+    "topic": "Welcome to Robotics & AI (placeholder)",
+    "difficulty": "Easy",
+    "type": "MCQ",
+    "question": "This is placeholder content for Beginner Level 1 — what should replace this question bank?",
+    "options": [
+      "The real Level 1 syllabus, once the course Excel sheet is provided",
+      "Nothing, this is final",
+      "A random fact",
+      "None of these"
+    ],
+    "answer": "The real Level 1 syllabus, once the course Excel sheet is provided",
+    "explanation": "This whole file is a placeholder so the Level 1 class experience (home screen, topics, practice/exam modes, weekly quiz) can be tested end-to-end. Once the instructor shares the Level 1 course content (Excel sheet), this will be replaced with real topics and questions, built the same way data/l2/questions.json was.",
+    "hint1": "Think about what's still missing.",
+    "hint2": "It was mentioned earlier in this conversation.",
+    "hint3": "It's a spreadsheet with course content.",
+    "animation": null,
+    "image": null,
+    "formula": null,
+    "xp": 10,
+    "marks": 1
+  },
+  {
+    "id": 2,
+    "topic": "Welcome to Robotics & AI (placeholder)",
+    "difficulty": "Easy",
+    "type": "TrueFalse",
+    "question": "True or False: Level 1 and Level 2 students have completely separate progress, question banks, and weekly quizzes.",
+    "options": ["True", "False"],
+    "answer": "True",
+    "explanation": "Each class has its own data files and its own progress tracking, even though both run on the same site and the same Supabase backend.",
+    "hint1": "They're two different classes taught separately.",
+    "hint2": "Think about how the site is structured now.",
+    "hint3": "Separate data/l1 and data/l2 folders.",
+    "animation": null,
+    "image": null,
+    "formula": null,
+    "xp": 10,
+    "marks": 1
+  }
+]

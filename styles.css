@@ -313,3 +313,17 @@ button{font-family:var(--font-body); cursor:pointer;}
   background:rgba(255,255,255,.04); color:var(--text-1); font-size:1rem; letter-spacing:.1em; text-align:center;
 }
 .login-pin-input:focus{outline:none; border-color:var(--teal);}
+
+/* ---------------- Weekly quiz: matching / fill-blank ---------------- */
+.match-row{padding:10px 0; border-bottom:1px solid var(--card-border);}
+.match-row:last-child{border-bottom:none;}
+.wq-select{
+  padding:10px 14px; border-radius:10px; border:1.5px solid var(--card-border);
+  background:var(--bg-1); color:var(--text-1); font-size:.9rem; min-width:220px;
+}
+.wq-select:focus{outline:none; border-color:var(--teal);}
+.wq-blank-input{
+  width:100%; padding:12px 16px; border-radius:12px; border:1.5px solid var(--card-border);
+  background:rgba(255,255,255,.04); color:var(--text-1); font-size:1rem;
+}
+.wq-blank-input:focus{outline:none; border-color:var(--teal);}

@@ -27,7 +27,8 @@ function topicMastered(state, topics){
 const DEFAULT_STATE = {
   xp:0, coins:0, stars:0, streak:1, lastPlayDate: null,
   totalCorrect:0, totalAnswered:0, perfectExams:0, fastAnswers:0,
-  topicStats:{}, unlockedAchievements:[], collection:[], examHistory:[]
+  topicStats:{}, unlockedAchievements:[], collection:[], examHistory:[],
+  weeklyCompleted:{}
 };
 
 /* ---------------- AUTH (Supabase) ---------------- */
@@ -39,12 +40,15 @@ const STUDENTS = [
   {key:"sanula", name:"Sanula", email:"sanula@arduino-academy.local", role:"student"},
   {key:"himaru", name:"Himaru", email:"himaru@arduino-academy.local", role:"student"},
   {key:"navanjana", name:"Navanjana", email:"navanjana@arduino-academy.local", role:"student"},
+  {key:"testuser", name:"Test Student (demo)", email:"testuser@arduino-academy.local", role:"student"},
   {key:"admin", name:"Admin", email:"admin@arduino-academy.local", role:"admin"},
 ];
 
 const Auth = {
-  profile: null, // {id, name, role}
+  profile: null, // {id, name, role, class, username}
   selected: null,
+  classContext: null, // 'l1' | 'l2' — which class screen the user is currently going through
+  pendingProfile: null, // {name, role, class, username} — used to provision a profile row on first login
 
   buildLoginScreen(){
     const box = document.getElementById("login-names");
@@ -71,6 +75,7 @@ const Auth = {
     if(pin.length < 4){ errEl.textContent = "PIN too short."; return; }
     const btn = document.getElementById("login-btn");
     btn.disabled = true; btn.textContent = "Logging in…"; errEl.textContent = "";
+    this.pendingProfile = {name:this.selected.name, role:this.selected.role, class:"l2"};
     try{
       let { data, error } = await sb.auth.signInWithPassword({email:this.selected.email, password:pin});
       if(error){
@@ -80,7 +85,8 @@ const Auth = {
           throw new Error("Account created, but Supabase is asking for email confirmation. Disable \"Confirm email\" under Authentication settings, then try again.");
         }
         data = signup.data;
-        await sb.from("profiles").upsert({id:data.user.id, name:this.selected.name, role:this.selected.role});
+        const { error: profileError } = await sb.from("profiles").upsert({id:data.user.id, name:this.selected.name, role:this.selected.role, class:"l2"});
+        if(profileError) throw profileError;
       }
       await this.afterLogin(data.user);
     }catch(e){
@@ -90,16 +96,39 @@ const Auth = {
     }
   },
 
+  async signUpL1({name, username, password}){
+    const email = `${username}@l1.arduino-academy.local`;
+    this.pendingProfile = {name, role:"student", class:"l1", username};
+    const { data, error } = await sb.auth.signUp({email, password});
+    if(error) throw error;
+    if(!data.session){
+      throw new Error("Account created, but Supabase is asking for email confirmation. Ask the instructor to disable \"Confirm email\", then try again.");
+    }
+    const { error: profileError } = await sb.from("profiles").upsert({id:data.user.id, name, role:"student", class:"l1", username});
+    if(profileError) throw profileError;
+    await this.afterLogin(data.user);
+  },
+
+  async logInL1({username, password}){
+    const email = `${username}@l1.arduino-academy.local`;
+    this.pendingProfile = {class:"l1"};
+    const { data, error } = await sb.auth.signInWithPassword({email, password});
+    if(error) throw error;
+    await this.afterLogin(data.user);
+  },
+
   async afterLogin(authUser){
     let { data: profile } = await sb.from("profiles").select("*").eq("id", authUser.id).maybeSingle();
     if(!profile){
-      await sb.from("profiles").upsert({
-        id: authUser.id,
-        name: this.selected ? this.selected.name : "Student",
-        role: this.selected ? this.selected.role : "student"
+      const pp = this.pendingProfile || {name:"Student", role:"student", class:"l2"};
+      const { error: profileError } = await sb.from("profiles").upsert({
+        id: authUser.id, name: pp.name || "Student", role: pp.role || "student",
+        class: pp.class || "l2", username: pp.username || null
       });
+      if(profileError) throw profileError;
       const res = await sb.from("profiles").select("*").eq("id", authUser.id).maybeSingle();
       profile = res.data;
+      if(!profile) throw new Error("Account created, but couldn't load your profile afterward. Please try logging in again.");
     }
     this.profile = profile;
     await App.startSession();
@@ -118,6 +147,8 @@ const Auth = {
     await sb.auth.signOut();
     this.profile = null;
     this.selected = null;
+    this.classContext = null;
+    this.pendingProfile = null;
     App.state = structuredClone(DEFAULT_STATE);
     document.getElementById("user-badge").style.display = "none";
     document.getElementById("nav-btns").style.display = "none";
@@ -127,7 +158,93 @@ const Auth = {
     document.getElementById("login-pin").style.display = "none";
     document.getElementById("login-btn").style.display = "none";
     document.querySelectorAll(".login-name-btn").forEach(b=>b.classList.remove("active"));
-    Router.go("login");
+    ClassGate.backToSelect();
+  }
+};
+
+/* ---------------- CLASS GATE (Level 1 / Level 2 picker + Level 1 signup/login) ---------------- */
+const ClassGate = {
+  chosen: null, // 'l1' | 'l2'
+
+  choose(cls){
+    this.chosen = cls;
+    Auth.classContext = cls;
+    if(cls === "l2"){
+      Router.go("login");
+    } else {
+      this.showL1Tab("login");
+      Router.go("login-l1");
+    }
+  },
+
+  backToSelect(){
+    this.chosen = null;
+    Auth.classContext = null;
+    Auth.selected = null;
+    document.getElementById("login-pin").style.display = "none";
+    document.getElementById("login-btn").style.display = "none";
+    document.getElementById("login-error").textContent = "";
+    document.querySelectorAll(".login-name-btn").forEach(b=>b.classList.remove("active"));
+    const l1LoginErr = document.getElementById("l1-login-error");
+    const l1SignupErr = document.getElementById("l1-signup-error");
+    if(l1LoginErr) l1LoginErr.textContent = "";
+    if(l1SignupErr) l1SignupErr.textContent = "";
+    Router.go("class-select");
+  },
+
+  showL1Tab(tab){
+    const loginForm = document.getElementById("l1-login-form");
+    const signupForm = document.getElementById("l1-signup-form");
+    const loginTab = document.getElementById("l1-tab-login");
+    const signupTab = document.getElementById("l1-tab-signup");
+    if(tab === "login"){
+      loginForm.style.display = "block"; signupForm.style.display = "none";
+      loginTab.className = "btn btn-primary btn-sm"; signupTab.className = "btn btn-ghost btn-sm";
+    } else {
+      loginForm.style.display = "none"; signupForm.style.display = "block";
+      loginTab.className = "btn btn-ghost btn-sm"; signupTab.className = "btn btn-primary btn-sm";
+    }
+  },
+
+  async submitL1Login(){
+    const username = document.getElementById("l1-login-username").value.trim().toLowerCase();
+    const password = document.getElementById("l1-login-password").value;
+    const errEl = document.getElementById("l1-login-error");
+    errEl.textContent = "";
+    if(!username || !password){ errEl.textContent = "Enter your username and password."; return; }
+    const btn = document.getElementById("l1-login-btn");
+    btn.disabled = true; btn.textContent = "Logging in…";
+    try{
+      await Auth.logInL1({username, password});
+    }catch(e){
+      errEl.textContent = e.message === "Invalid login credentials" ? "Wrong username or password." : (e.message || "Login failed.");
+    }finally{
+      btn.disabled = false; btn.textContent = "Log In";
+    }
+  },
+
+  async submitL1Signup(){
+    const name = document.getElementById("l1-signup-name").value.trim();
+    const username = document.getElementById("l1-signup-username").value.trim().toLowerCase();
+    const password = document.getElementById("l1-signup-password").value;
+    const confirm = document.getElementById("l1-signup-confirm").value;
+    const errEl = document.getElementById("l1-signup-error");
+    errEl.textContent = "";
+    if(!name){ errEl.textContent = "Enter your name."; return; }
+    if(!/^[a-z0-9_.]{3,20}$/.test(username)){ errEl.textContent = "Username must be 3-20 characters: letters, numbers, . or _ only."; return; }
+    if(password.length < 6){ errEl.textContent = "Password must be at least 6 characters."; return; }
+    if(password !== confirm){ errEl.textContent = "Passwords don't match."; return; }
+    const btn = document.getElementById("l1-signup-btn");
+    btn.disabled = true; btn.textContent = "Creating account…";
+    try{
+      await Auth.signUpL1({name, username, password});
+    }catch(e){
+      errEl.textContent = (e.message||"").toLowerCase().includes("already registered")
+        ? "That username is taken — try logging in instead, or pick another username."
+        : (e.message || "Sign up failed.");
+    }finally{
+      btn.disabled = false; btn.textContent = "Create Account";
+    }
   }
 };
 
@@ -146,6 +263,185 @@ const Store = {
   }
 };
 
+/* ---------------- WEEKLY QUIZ (reading gate + MCQ/fill-blank/matching) ---------------- */
+const Weekly = {
+  dataByClass: { l1:null, l2:null }, // each: {week, title, reading[], questions[]} | null
+  quiz: null,
+  pending: null, // in-progress answer state for the question on screen
+
+  current(){
+    return this.dataByClass[App.activeClass()] || null;
+  },
+
+  async load(){
+    const loadOne = async (cls)=>{
+      try{
+        const res = await fetch(`data/${cls}/weekly.json`);
+        const json = await res.json();
+        const weeks = json.weeks || [];
+        return weeks.length ? weeks[weeks.length-1] : null;
+      }catch(e){
+        return null;
+      }
+    };
+    const [l1, l2] = await Promise.all([loadOne("l1"), loadOne("l2")]);
+    this.dataByClass = { l1, l2 };
+  },
+
+  isPending(){
+    const cur = this.current();
+    if(!cur || !Auth.profile || Auth.profile.role !== "student") return false;
+    return !(App.state.weeklyCompleted || {})[cur.week];
+  },
+
+  begin(){
+    const cur = this.current();
+    document.getElementById("stat-pills").style.display = "none";
+    document.getElementById("nav-btns").style.display = "none";
+    document.getElementById("wr-title").textContent = cur.title;
+    document.getElementById("wr-content").innerHTML =
+      cur.reading.map(p => `<p style="margin-bottom:12px;">${p}</p>`).join("");
+    Router.go("weekly-reading");
+  },
+
+  startQuiz(){
+    this.quiz = { index:0, correct:0, pool:this.current().questions };
+    Router.go("weekly-quiz");
+    this.renderQuestion();
+  },
+
+  esc(s){ return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); },
+
+  shuffledMatches(pairs){ return [...pairs.map(p=>p.match)].sort(()=>Math.random()-0.5); },
+
+  renderQuestion(){
+    const q = this.quiz.pool[this.quiz.index];
+    this.pending = { selected:null };
+    document.getElementById("wq-progress-txt").textContent = `Question ${this.quiz.index+1} of ${this.quiz.pool.length}`;
+    document.getElementById("wq-progress-fill").style.width = (this.quiz.index/this.quiz.pool.length*100)+"%";
+    document.getElementById("wq-text").textContent = q.question;
+    document.getElementById("wq-feedback").className = "feedback";
+    document.getElementById("wq-feedback").innerHTML = "";
+
+    const body = document.getElementById("wq-body");
+    if(q.type === "mcq"){
+      body.innerHTML = `
+        <div class="options" id="wq-options">${q.options.map((opt,i)=>`
+          <button class="opt" data-i="${i}" onclick="Weekly.selectMCQ(${i})">
+            <span class="k">${String.fromCharCode(65+i)}</span><span>${opt}</span>
+          </button>`).join("")}</div>
+        <button class="btn btn-primary btn-sm mt-20" id="wq-submit" onclick="Weekly.submit()" disabled>Submit Answer</button>`;
+    } else if(q.type === "fillblank"){
+      body.innerHTML = `
+        <input type="text" id="wq-blank-input" class="wq-blank-input" placeholder="Type your answer…" onkeydown="if(event.key==='Enter') Weekly.submit()">
+        <button class="btn btn-primary btn-sm mt-20" id="wq-submit" onclick="Weekly.submit()">Submit Answer</button>`;
+      setTimeout(()=>{ const el=document.getElementById("wq-blank-input"); if(el) el.focus(); }, 0);
+    } else if(q.type === "matching"){
+      const choices = this.shuffledMatches(q.pairs);
+      body.innerHTML = `
+        <div id="wq-match-rows">${q.pairs.map((p,i)=>`
+          <div class="match-row flex items-center justify-between gap-8">
+            <div style="flex:1;">${p.term}</div>
+            <select class="wq-select" id="wq-match-${i}">
+              <option value="">Choose match…</option>
+              ${choices.map(c=>`<option value="${this.esc(c)}">${c}</option>`).join("")}
+            </select>
+          </div>`).join("")}</div>
+        <button class="btn btn-primary btn-sm mt-20" id="wq-submit" onclick="Weekly.submit()">Submit Answer</button>`;
+    }
+  },
+
+  selectMCQ(i){
+    this.pending.selected = i;
+    document.querySelectorAll("#wq-options .opt").forEach((el,idx)=>{
+      el.style.borderColor = idx===i ? "var(--orange)" : "";
+    });
+    document.getElementById("wq-submit").disabled = false;
+  },
+
+  submit(){
+    const q = this.quiz.pool[this.quiz.index];
+    let correct = false, correctText = "";
+
+    if(q.type === "mcq"){
+      correct = this.pending.selected != null && q.options[this.pending.selected] === q.answer;
+      correctText = q.answer;
+      document.querySelectorAll("#wq-options .opt").forEach((el,i)=>{
+        el.disabled = true;
+        if(q.options[i] === q.answer) el.classList.add("correct");
+        else if(i === this.pending.selected) el.classList.add("wrong");
+      });
+    } else if(q.type === "fillblank"){
+      const input = document.getElementById("wq-blank-input");
+      const val = input.value.trim().toLowerCase();
+      const accepted = [q.answer, ...(q.acceptable||[])].map(a=>a.toLowerCase().trim());
+      correct = accepted.includes(val);
+      correctText = q.answer;
+      input.disabled = true;
+      input.style.borderColor = correct ? "var(--green)" : "#ff5252";
+    } else if(q.type === "matching"){
+      correct = true;
+      q.pairs.forEach((p,i)=>{
+        const sel = document.getElementById(`wq-match-${i}`);
+        const ok = sel.value === p.match;
+        if(!ok) correct = false;
+        sel.disabled = true;
+        sel.style.borderColor = ok ? "var(--green)" : "#ff5252";
+      });
+      correctText = q.pairs.map(p=>`${p.term} → ${p.match}`).join("; ");
+    }
+
+    document.getElementById("wq-submit").style.display = "none";
+    if(correct) this.quiz.correct++;
+    App.state.totalAnswered++;
+    if(correct){
+      App.state.totalCorrect++;
+      App.state.xp += 8;
+      App.state.coins += 4;
+    }
+    Store.save(App.state);
+
+    const fb = document.getElementById("wq-feedback");
+    fb.className = "feedback show " + (correct ? "correct-fb" : "wrong-fb");
+    const nextLabel = this.quiz.index < this.quiz.pool.length-1 ? "Next Question →" : "Finish →";
+    fb.innerHTML = `
+      <h4>${correct ? "✅ Correct!" : "🤖 Not quite."}</h4>
+      ${!correct ? `<p><strong>Correct answer:</strong> ${correctText}</p>` : ""}
+      <p class="mt-10">${q.explanation || ""}</p>
+      <div class="mt-20"><button class="btn btn-primary btn-sm" onclick="Weekly.next()">${nextLabel}</button></div>`;
+  },
+
+  next(){
+    if(this.quiz.index < this.quiz.pool.length-1){
+      this.quiz.index++;
+      this.renderQuestion();
+    } else {
+      this.showDone();
+    }
+  },
+
+  showDone(){
+    App.state.weeklyCompleted = App.state.weeklyCompleted || {};
+    App.state.weeklyCompleted[this.current().week] = {
+      completedAt: Date.now(), score:this.quiz.correct, total:this.quiz.pool.length
+    };
+    App.state.xp += 30;
+    App.state.coins += 15;
+    Store.save(App.state);
+    document.getElementById("wq-done-subtitle").textContent =
+      `You scored ${this.quiz.correct}/${this.quiz.pool.length} — plus a 30 bonus XP reward for finishing!`;
+    this.quiz = null;
+    Router.go("weekly-done");
+  },
+
+  finish(){
+    document.getElementById("stat-pills").style.display = "flex";
+    document.getElementById("nav-btns").style.display = "flex";
+    App.renderHome();
+    Router.go("home");
+  }
+};
+
 const BUDDY_LINES = {
   correct: ["Nice work! ⚡", "You're sparking with genius!", "Circuit complete — correct!", "Boom! Nailed it.", "That's the current path to mastery!"],
   wrong: ["Almost! Let's learn 🔧", "No worries — even Edison needed retries!", "Close one! Let's break it down.", "That's a common mix-up — let's fix it."],
@@ -155,41 +451,68 @@ const BUDDY_LINES = {
   streak: ["Your streak is on fire! 🔥 Keep it up!"]
 };
 
+const CLASS_META = {
+  l2: {brand:"Arduino Junior Academy", chipEmoji:"🔌", heroTitle:"Master Arduino, one spark at a time.",
+    heroSub:"Learn electronics, sensors, motors and robotics through bite-sized animated challenges. Earn XP, collect components, and become an Arduino Master."},
+  l1: {brand:"Robotics & AI Academy — Level 1", chipEmoji:"🤖", heroTitle:"Discover Robotics & AI, one build at a time.",
+    heroSub:"Learn the fundamentals of robotics and AI through bite-sized animated challenges. Earn XP, collect components, and level up your skills."}
+};
+
 const App = {
   state: structuredClone(DEFAULT_STATE),
-  questions: [],
+  classData: { l1:{questions:[]}, l2:{questions:[]} },
+  adminClass: "l2",
   quiz: null, // active quiz session
+
+  activeClass(){
+    return (Auth.profile && Auth.profile.class) || Auth.classContext || "l2";
+  },
+  activeQuestions(){
+    const cls = this.activeClass();
+    return (this.classData[cls] && this.classData[cls].questions) || [];
+  },
 
   async init(){
     this.buildParticles();
     this.buildPinrow();
     Auth.buildLoginScreen();
     try{
-      const res = await fetch("data/questions.json");
-      this.questions = await res.json();
+      const [l1res, l2res] = await Promise.all([
+        fetch("data/l1/questions.json"),
+        fetch("data/l2/questions.json")
+      ]);
+      this.classData.l1.questions = await l1res.json();
+      this.classData.l2.questions = await l2res.json();
     }catch(e){
       document.getElementById("stage").innerHTML =
         `<div style="padding:24px;text-align:center;color:#ff8a80;font-size:.85rem;">
-          Couldn't load data/questions.json.<br><br>
+          Couldn't load the question banks.<br><br>
           Browsers block local file:// requests — please serve this folder with a local server, e.g.<br>
           <code style="color:#ffd699;">npx serve .</code> or <code style="color:#ffd699;">python3 -m http.server</code><br>
           then open the printed http://localhost address.
         </div>`;
     }
+    await Weekly.load();
     this.buddyIdleLoop();
     const restored = await Auth.restoreSession();
     if(restored){ await this.startSession(); }
-    else { Router.go("login"); }
+    else { Router.go("class-select"); }
   },
 
   async startSession(){
     this.state = await Store.load();
     this.bumpStreak();
-    document.getElementById("stat-pills").style.display = "flex";
-    document.getElementById("nav-btns").style.display = "flex";
     document.getElementById("user-badge").style.display = "flex";
     document.getElementById("pill-user").textContent = (Auth.profile.role==="admin" ? "🛠️ " : "🧑‍🎓 ") + Auth.profile.name;
     document.getElementById("nav-students-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
+
+    if(Weekly.isPending()){
+      Weekly.begin();
+      return;
+    }
+
+    document.getElementById("stat-pills").style.display = "flex";
+    document.getElementById("nav-btns").style.display = "flex";
     this.renderHome();
     Router.go("home");
   },
@@ -225,7 +548,18 @@ const App = {
   },
 
   /* ---------------- HOME RENDER ---------------- */
+  applyClassBranding(){
+    const meta = CLASS_META[this.activeClass()] || CLASS_META.l2;
+    const commaIdx = meta.heroTitle.indexOf(",");
+    document.getElementById("hero-title").innerHTML = commaIdx === -1 ? meta.heroTitle :
+      `${meta.heroTitle.slice(0, commaIdx+1)} <span class="accent">${meta.heroTitle.slice(commaIdx+1).trim()}</span>`;
+    document.getElementById("hero-sub").textContent = meta.heroSub;
+    document.getElementById("brand-chip").textContent = meta.chipEmoji;
+    document.getElementById("brand-text").textContent = meta.brand;
+  },
+
   renderHome(){
+    this.applyClassBranding();
     const s = this.state;
     document.getElementById("pill-xp").textContent = `${s.xp} XP`;
     document.getElementById("pill-coins").textContent = s.coins;
@@ -275,11 +609,12 @@ const App = {
   },
 
   renderTopics(){
-    if(!this.questions.length) return;
-    const topics = [...new Set(this.questions.map(q=>q.topic))];
+    const questions = this.activeQuestions();
+    if(!questions.length) return;
+    const topics = [...new Set(questions.map(q=>q.topic))];
     const grid = document.getElementById("topics-grid");
     grid.innerHTML = topics.map(t=>{
-      const qs = this.questions.filter(q=>q.topic===t);
+      const qs = questions.filter(q=>q.topic===t);
       const stat = this.state.topicStats[t] || {correct:0, attempted:0};
       const pct = qs.length ? Math.round((stat.correct/qs.length)*100) : 0;
       return `<div class="card mode-card card-hover">
@@ -313,10 +648,19 @@ const App = {
     }
   },
 
+  setAdminClass(cls){
+    this.adminClass = cls;
+    this.renderAdmin();
+  },
+
   renderAdmin(){
     const tbody = document.getElementById("admin-tbody");
     if(!tbody) return;
-    document.getElementById("admin-count").textContent = this.questions.length;
+    document.getElementById("admin-class-l1-btn").className = "btn btn-sm " + (this.adminClass==="l1" ? "btn-primary" : "btn-ghost");
+    document.getElementById("admin-class-l2-btn").className = "btn btn-sm " + (this.adminClass==="l2" ? "btn-primary" : "btn-ghost");
+    document.getElementById("admin-source-path").textContent = `/data/${this.adminClass}/questions.json`;
+    const questions = (this.classData[this.adminClass] && this.classData[this.adminClass].questions) || [];
+    document.getElementById("admin-count").textContent = questions.length;
     const render = (list)=> tbody.innerHTML = list.map(q=>`
       <tr>
         <td>${q.id}</td><td>${q.topic}</td>
@@ -325,12 +669,43 @@ const App = {
         <td>${q.question.slice(0,70).replace(/\n/g," ")}${q.question.length>70?'…':''}</td>
         <td>${q.xp}</td>
       </tr>`).join("");
-    render(this.questions);
+    render(questions);
     const search = document.getElementById("admin-search");
     if(search) search.oninput = (e)=>{
       const v = e.target.value.toLowerCase();
-      render(this.questions.filter(q => q.question.toLowerCase().includes(v) || q.topic.toLowerCase().includes(v)));
+      render(questions.filter(q => q.question.toLowerCase().includes(v) || q.topic.toLowerCase().includes(v)));
     };
+  },
+
+  studentCard(p, progressByUser){
+    const row = progressByUser[p.id];
+    const s = row ? Object.assign(structuredClone(DEFAULT_STATE), row.state||{}) : structuredClone(DEFAULT_STATE);
+    const acc = s.totalAnswered ? Math.round((s.totalCorrect/s.totalAnswered)*100) : 0;
+    let lvl = LEVELS[0];
+    for(const l of LEVELS){ if(s.xp >= l.min) lvl = l; }
+    const lastActive = row && row.updated_at ? new Date(row.updated_at).toLocaleString() : "Never played";
+    const topics = Object.entries(s.topicStats||{});
+    const wc = s.weeklyCompleted || {};
+    const weekData = Weekly.dataByClass[p.class || "l2"];
+    const weekResult = weekData ? wc[weekData.week] : null;
+    const weeklyLine = weekData
+      ? (weekResult
+        ? `✅ ${weekData.title}: ${weekResult.score}/${weekResult.total} (done ${new Date(weekResult.completedAt).toLocaleDateString()})`
+        : `⏳ ${weekData.title}: not completed yet`)
+      : `No weekly quiz published yet`;
+    return `<div class="card">
+      <h3>🧑‍🎓 ${p.name}${p.username ? ` <span class="small muted">(@${p.username})</span>` : ""}</h3>
+      <div class="flex gap-12 mt-10" style="flex-wrap:wrap;">
+        <span class="pill">⚡ ${s.xp} XP</span>
+        <span class="pill">🏆 ${lvl.name}</span>
+        <span class="pill">🔥 ${s.streak} day streak</span>
+        <span class="pill">🎯 ${acc}% accuracy</span>
+      </div>
+      <p class="small muted mt-10">✅ ${s.totalCorrect}/${s.totalAnswered} answered · 🏅 ${(s.unlockedAchievements||[]).length} achievements</p>
+      <p class="small muted">Last active: ${lastActive}</p>
+      <p class="small muted mt-10"><strong>${weeklyLine}</strong></p>
+      ${topics.length ? `<div class="mt-10">${topics.map(([t,st])=>`<div class="small muted">${t}: ${st.correct}/${st.attempted}</div>`).join("")}</div>` : ""}
+    </div>`;
   },
 
   async renderStudents(){
@@ -342,27 +717,19 @@ const App = {
       sb.from("progress").select("*")
     ]);
     const progressByUser = Object.fromEntries((progressRows||[]).map(r=>[r.user_id, r]));
-    grid.innerHTML = (profiles||[]).map(p=>{
-      const row = progressByUser[p.id];
-      const s = row ? Object.assign(structuredClone(DEFAULT_STATE), row.state||{}) : structuredClone(DEFAULT_STATE);
-      const acc = s.totalAnswered ? Math.round((s.totalCorrect/s.totalAnswered)*100) : 0;
-      let lvl = LEVELS[0];
-      for(const l of LEVELS){ if(s.xp >= l.min) lvl = l; }
-      const lastActive = row && row.updated_at ? new Date(row.updated_at).toLocaleString() : "Never played";
-      const topics = Object.entries(s.topicStats||{});
-      return `<div class="card">
-        <h3>🧑‍🎓 ${p.name}</h3>
-        <div class="flex gap-12 mt-10" style="flex-wrap:wrap;">
-          <span class="pill">⚡ ${s.xp} XP</span>
-          <span class="pill">🏆 ${lvl.name}</span>
-          <span class="pill">🔥 ${s.streak} day streak</span>
-          <span class="pill">🎯 ${acc}% accuracy</span>
-        </div>
-        <p class="small muted mt-10">✅ ${s.totalCorrect}/${s.totalAnswered} answered · 🏅 ${(s.unlockedAchievements||[]).length} achievements</p>
-        <p class="small muted">Last active: ${lastActive}</p>
-        ${topics.length ? `<div class="mt-10">${topics.map(([t,st])=>`<div class="small muted">${t}: ${st.correct}/${st.attempted}</div>`).join("")}</div>` : ""}
-      </div>`;
-    }).join("") || `<p class="muted small">No students have logged in yet.</p>`;
+    const all = profiles || [];
+    const l1 = all.filter(p=>p.class==="l1");
+    const l2 = all.filter(p=>(p.class||"l2")==="l2");
+    if(!all.length){
+      grid.innerHTML = `<p class="muted small">No students have logged in yet.</p>`;
+      return;
+    }
+    grid.innerHTML = `
+      <div class="section-title" style="grid-column:1/-1;"><h3>🤖 Level 1 Students</h3></div>
+      ${l1.length ? l1.map(p=>this.studentCard(p, progressByUser)).join("") : `<p class="muted small" style="grid-column:1/-1;">No Level 1 students have signed up yet.</p>`}
+      <div class="section-title" style="grid-column:1/-1;"><h3>🔌 Level 2 Students</h3></div>
+      ${l2.length ? l2.map(p=>this.studentCard(p, progressByUser)).join("") : `<p class="muted small" style="grid-column:1/-1;">No Level 2 students have logged in yet.</p>`}
+    `;
   },
 
   /* ---------------- BUDDY ---------------- */
@@ -387,18 +754,19 @@ const App = {
   },
 
   /* ---------------- QUIZ SESSION ---------------- */
-  startPractice(){ this.beginQuiz({mode:"practice", pool:this.shuffled(this.questions), hints:true, retries:true, timer:false}); },
+  startPractice(){ this.beginQuiz({mode:"practice", pool:this.shuffled(this.activeQuestions()), hints:true, retries:true, timer:false}); },
   startExam(){
-    const pool = this.shuffled(this.questions).slice(0, Math.min(40, this.questions.length));
+    const questions = this.activeQuestions();
+    const pool = this.shuffled(questions).slice(0, Math.min(40, questions.length));
     this.beginQuiz({mode:"exam", pool, hints:false, retries:false, timer:60});
     this.buddySay("start_exam");
   },
   startDaily(){
-    const pool = this.shuffled(this.questions).slice(0,5);
+    const pool = this.shuffled(this.activeQuestions()).slice(0,5);
     this.beginQuiz({mode:"daily", pool, hints:true, retries:true, timer:false});
   },
   startTopic(topic){
-    const pool = this.shuffled(this.questions.filter(q=>q.topic===topic));
+    const pool = this.shuffled(this.activeQuestions().filter(q=>q.topic===topic));
     this.beginQuiz({mode:"topic", pool, hints:true, retries:true, timer:false, topic});
   },
 
@@ -413,6 +781,12 @@ const App = {
     };
     Router.go("quiz");
     this.renderQuestion();
+  },
+
+  goHome(){
+    if(!Auth.profile) return; // not logged in yet — logo shouldn't do anything on the login screen
+    if(Weekly.isPending()) return; // still mid weekly reading/quiz gate — can't skip out via the logo
+    Router.go("home");
   },
 
   quitQuiz(){
@@ -605,7 +979,7 @@ const App = {
   retryQuestion(){
     // Serve a different question from the same topic if available, else re-show same one.
     const q = this.currentQuestion();
-    const alts = this.questions.filter(x=>x.topic===q.topic && x.id!==q.id);
+    const alts = this.activeQuestions().filter(x=>x.topic===q.topic && x.id!==q.id);
     if(alts.length){
       const pick = alts[Math.floor(Math.random()*alts.length)];
       this.quiz.pool[this.quiz.index] = pick;
@@ -686,14 +1060,14 @@ const App = {
   lastSessionXP(quiz){
     return quiz.perQuestion.reduce((sum,p)=>{
       if(!p.correct) return sum;
-      const q = this.questions.find(x=>x.id===p.id);
+      const q = this.activeQuestions().find(x=>x.id===p.id);
       return sum + (q ? q.xp : 10);
     },0);
   },
   lastSessionCoins(quiz){
     return quiz.perQuestion.reduce((sum,p)=>{
       if(!p.correct) return sum;
-      const q = this.questions.find(x=>x.id===p.id);
+      const q = this.activeQuestions().find(x=>x.id===p.id);
       return sum + (q ? q.marks*2 : 2);
     },0);
   },

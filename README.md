@@ -22,7 +22,7 @@ Then open the printed `http://localhost:...` address.
 - `styles.css` — dark + orange Arduino theme, glassmorphism cards, animated buttons
 - `app.js` — gamification state (XP/coins/stars/streak/levels/achievements), quiz engine, hint system, confetti/coin FX, exam timer, results & certificate, Arduino Buddy mascot
 - `animations.js` — SVG animation engine, one visual per question topic-family (circuits, Ohm's law, components, Arduino code, digital/analog I/O, serial, DHT, motors, servos, PWM, buzzer, LCD, ultrasonic, IR, robotics, kinematics)
-- `data/questions.json` — the question bank (schema below), loaded dynamically at runtime
+- `data/l2/questions.json` — the question bank (schema below), loaded dynamically at runtime
 - `build_questions.py` — the script that generated `questions.json`; edit it and re-run (`python3 build_questions.py`) to add/change questions in bulk, or hand-edit the JSON directly
 
 ## Question schema

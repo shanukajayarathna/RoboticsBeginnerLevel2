@@ -35,3 +35,11 @@ create policy "own progress update" on public.progress for update using (auth.ui
 create policy "admin progress select" on public.progress for select using (
   (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
 );
+
+-- ---------------------------------------------------------------------
+-- Two-class support (Level 1 self-signup + Level 2 existing roster).
+-- Safe to re-run: only adds columns if they don't already exist.
+-- Run this in the Supabase SQL Editor once before Level 1 signup is used.
+-- ---------------------------------------------------------------------
+alter table public.profiles add column if not exists class text not null default 'l2' check (class in ('l1','l2'));
+alter table public.profiles add column if not exists username text;

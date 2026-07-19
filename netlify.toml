@@ -4,7 +4,12 @@
 # Make sure kids always get the latest question bank instead of a
 # stale cached copy after you redeploy with edited questions.
 [[headers]]
-  for = "/data/questions.json"
+  for = "/data/l1/*.json"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/data/l2/*.json"
   [headers.values]
     Cache-Control = "no-cache, must-revalidate"
 

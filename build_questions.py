@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Builds data/questions.json for Arduino Junior Certification Academy.
+Builds data/l2/questions.json for Arduino Junior Certification Academy.
 Run: python3 build_questions.py
 """
 import json
@@ -894,10 +894,10 @@ add("Robotic Arm Control", "Hard", "CodeReading",
 # ---------------------------------------------------------------
 # Save
 # ---------------------------------------------------------------
-with open("data/questions.json", "w", encoding="utf-8") as f:
+with open("data/l2/questions.json", "w", encoding="utf-8") as f:
     json.dump(Q, f, indent=2, ensure_ascii=False)
 
-print(f"Wrote {len(Q)} questions to data/questions.json")
+print(f"Wrote {len(Q)} questions to data/l2/questions.json")
 
 # quick topic/difficulty breakdown
 from collections import Counter

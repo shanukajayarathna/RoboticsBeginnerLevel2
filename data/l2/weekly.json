@@ -1,0 +1,44 @@
+{
+  "weeks": [
+    {
+      "week": 1,
+      "title": "Week 1 — Foundations of Electronics",
+      "reading": [
+        "Electricity is the flow of tiny particles called electrons through a material. When electrons move in one steady direction through a wire, we call that flow electric current, measured in Amperes (A).",
+        "For current to flow at all, it needs a complete, unbroken loop — a closed circuit. If the loop is broken anywhere (like when you flip a light switch off), current stops flowing, just like water can't flow through a cut pipe.",
+        "Voltage is what pushes the current through the circuit — think of it like water pressure in a pipe. It's measured in Volts (V) and is created by a power source, like a battery.",
+        "Resistance is anything that opposes the flow of current, measured in Ohms (Ω). Materials like copper conduct electricity easily (low resistance), while materials like rubber or plastic resist it strongly (high resistance) — which is why wires are coated in plastic.",
+        "These three ideas — Voltage, Current, and Resistance — are connected by Ohm's Law, one of the most important formulas in electronics: V = I × R."
+      ],
+      "questions": [
+        {
+          "id": "w1-1",
+          "type": "mcq",
+          "question": "What is electric current measured in?",
+          "options": ["Volts", "Amperes", "Ohms", "Watts"],
+          "answer": "Amperes",
+          "explanation": "Electric current is the flow of electric charge, measured in Amperes (A)."
+        },
+        {
+          "id": "w1-2",
+          "type": "fillblank",
+          "question": "Fill in the blank: A circuit must be a ______ loop for current to flow.",
+          "answer": "closed",
+          "acceptable": ["closed loop", "complete"],
+          "explanation": "Current only flows in a complete (closed) circuit — if the loop is broken, current can't flow."
+        },
+        {
+          "id": "w1-3",
+          "type": "matching",
+          "question": "Match each electrical term to what it means.",
+          "pairs": [
+            { "term": "Voltage", "match": "Electrical pressure that pushes current" },
+            { "term": "Current", "match": "The flow of electric charge" },
+            { "term": "Resistance", "match": "Opposition to the flow of current" }
+          ],
+          "explanation": "Voltage pushes, current flows, and resistance opposes — together they're connected by Ohm's Law: V = I × R."
+        }
+      ]
+    }
+  ]
+}
