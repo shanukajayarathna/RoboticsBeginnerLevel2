@@ -28,6 +28,12 @@
     <button data-nav="achievements" onclick="Router.go('achievements')">Achievements</button>
     <button data-nav="admin" onclick="Router.go('admin')">Question Bank</button>
     <button data-nav="students" id="nav-students-btn" onclick="Router.go('students')" style="display:none;">Students</button>
+    <button data-nav="manage-l1" id="nav-manage-l1-btn" onclick="Router.go('manage-l1')" style="display:none;">Manage L1</button>
+  </div>
+  <div class="nav-btns" id="nav-btns-l1" style="display:none;">
+    <button data-nav="home-l1" onclick="Router.go('home-l1')">🏠 Dashboard</button>
+    <button data-nav="learn-l1" onclick="Router.go('learn-l1')">📚 Learn</button>
+    <button data-nav="achievements" onclick="Router.go('achievements')">🏅 Badges</button>
   </div>
   <div class="flex items-center gap-8" id="user-badge" style="display:none;">
     <span class="pill" id="pill-user">👤</span>
@@ -195,11 +201,97 @@
 
   </section>
 
+  <!-- ============ LEVEL 1 DASHBOARD ============ -->
+  <section id="screen-home-l1" class="screen">
+
+    <div class="l1-hero">
+      <div class="l1-hero-blob b1"></div>
+      <div class="l1-hero-blob b2"></div>
+      <div class="l1-hero-content">
+        <div class="l1-mascot">🤖</div>
+        <div>
+          <h1 class="l1-hello">Hi <span id="l1-name">Explorer</span>! 👋</h1>
+          <p class="l1-hello-sub">Ready to learn something awesome today?</p>
+        </div>
+      </div>
+      <div class="l1-level-card">
+        <div class="flex justify-between items-center" style="margin-bottom:8px;">
+          <strong id="l1-level-title">Level 1 · Beginner</strong>
+          <span class="l1-level-txt" id="l1-level-progress-txt">0 / 200 XP</span>
+        </div>
+        <div class="l1-progress-track"><div class="l1-progress-fill" id="l1-level-progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="l1-stat-row">
+      <div class="l1-stat tile-xp"><div class="l1-stat-ico">⚡</div><div class="l1-stat-num" id="l1-xp">0</div><div class="l1-stat-lbl">XP Points</div></div>
+      <div class="l1-stat tile-correct"><div class="l1-stat-ico">✅</div><div class="l1-stat-num" id="l1-correct">0</div><div class="l1-stat-lbl">Correct</div></div>
+      <div class="l1-stat tile-acc"><div class="l1-stat-ico">🎯</div><div class="l1-stat-num" id="l1-accuracy">0%</div><div class="l1-stat-lbl">Marks</div></div>
+      <div class="l1-stat tile-streak"><div class="l1-stat-ico">🔥</div><div class="l1-stat-num" id="l1-streak">0</div><div class="l1-stat-lbl">Day Streak</div></div>
+      <div class="l1-stat tile-stars"><div class="l1-stat-ico">⭐</div><div class="l1-stat-num" id="l1-stars">0</div><div class="l1-stat-lbl">Stars</div></div>
+    </div>
+
+    <div class="l1-daily" onclick="App.startDaily()">
+      <div class="l1-daily-emoji">🎯</div>
+      <div style="flex:1;">
+        <h3>Daily Challenge</h3>
+        <p>Answer 5 fun questions and win a bonus reward. Come back every day!</p>
+      </div>
+      <button class="l1-daily-btn">Start ⚡</button>
+    </div>
+
+    <h2 class="l1-section-title">🎮 Choose an Activity</h2>
+    <div class="l1-activity-grid" id="l1-activity-grid"></div>
+
+    <div class="l1-two-col">
+      <div>
+        <h2 class="l1-section-title">🏆 Class Leaderboard</h2>
+        <div class="l1-card" id="l1-leaderboard"></div>
+      </div>
+      <div>
+        <h2 class="l1-section-title">🏅 Your Badges</h2>
+        <div class="l1-card" id="l1-badges"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ LEVEL 1 LEARN AREA ============ -->
+  <section id="screen-learn-l1" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:6px;">
+      <h1 class="l1-learn-title">📚 Learning Zone</h1>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('home-l1')">← Dashboard</button>
+    </div>
+    <p class="l1-learn-intro" id="l1-learn-intro"></p>
+
+    <h2 class="l1-section-title">📖 Lessons</h2>
+    <div class="l1-lesson-grid" id="l1-lesson-grid"></div>
+
+    <h2 class="l1-section-title">🎮 Fun Activities</h2>
+    <div class="l1-activity-grid" id="l1-learn-activity-grid"></div>
+  </section>
+
+  <!-- ============ LEVEL 1 LESSON DETAIL ============ -->
+  <section id="screen-lesson-l1" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+      <h1 class="l1-lesson-detail-title" id="l1-lesson-detail-title">Lesson</h1>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('learn-l1')">← All Lessons</button>
+    </div>
+    <div class="l1-notes" id="l1-lesson-notes"></div>
+    <div class="l1-lesson-quiz-cta">
+      <div>
+        <h3 id="l1-lesson-quiz-title">Ready to test what you learned?</h3>
+        <p>Answer a few friendly questions — you'll get an explanation after each one. 🌟</p>
+      </div>
+      <button class="btn btn-primary" id="l1-lesson-quiz-btn">📝 Take the Lesson Quiz</button>
+    </div>
+  </section>
+
   <!-- ============ TOPICS SCREEN ============ -->
   <section id="screen-topics" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
       <h2>🗺️ Syllabus Topics</h2>
-      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
     </div>
     <div class="grid-3" id="topics-grid"></div>
   </section>
@@ -304,7 +396,7 @@
       </div>
       <div class="flex justify-between" style="gap:12px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="App.startExam()">↻ Retake Exam</button>
-        <button class="btn btn-teal" onclick="Router.go('home')">🏠 Back Home</button>
+        <button class="btn btn-teal" onclick="App.goHome()">🏠 Back Home</button>
         <button class="btn btn-green" id="cert-btn" onclick="App.printCertificate()" style="display:none;">🎓 Print Certificate</button>
       </div>
     </div>
@@ -325,7 +417,7 @@
   <section id="screen-achievements" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
       <h2>🏅 Achievements & Badges</h2>
-      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
     </div>
     <div class="grid-3" id="achv-grid"></div>
 
@@ -367,6 +459,30 @@
     <div class="grid-3" id="students-grid"></div>
   </section>
 
+  <!-- ============ MANAGE LEVEL 1 (admin only — live question editor) ============ -->
+  <section id="screen-manage-l1" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+      <h2>🛠️ Manage Level 1 Questions</h2>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+    </div>
+    <p class="small muted" style="margin-bottom:14px;">Add, edit, or remove the Level 1 practice questions. Changes save to the database and go live for students right away.</p>
+
+    <div class="card" id="ml1-info" style="margin-bottom:14px;"></div>
+    <div id="ml1-form" style="display:none;"></div>
+    <div class="card" style="margin-top:14px;">
+      <div style="max-height:520px; overflow:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Topic</th><th>Diff.</th><th>Type</th><th>Question</th><th></th></tr></thead>
+          <tbody id="ml1-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>📖 Lesson Notes <span class="small muted">(read-only)</span></h2></div>
+    <p class="small muted" style="margin-bottom:12px;">Notes are authored in the course files. Tell Claude what to change and it will be updated.</p>
+    <div class="card" id="ml1-notes-preview"></div>
+  </section>
+
 </div>
 
 <!-- ============ ARDUINO BUDDY (AI Tutor mascot) ============ -->
@@ -376,6 +492,7 @@
 </div>
 
 <script src="animations.js"></script>
+<script src="l1-content.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

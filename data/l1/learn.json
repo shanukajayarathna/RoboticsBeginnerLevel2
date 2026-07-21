@@ -1,0 +1,126 @@
+{
+  "intro": "Welcome to your Robotics & AI adventure! 🤖 Work through the lessons in order. Read the notes, look at the pictures, try the activities — then take the lesson quiz to earn XP. You learn best by doing, so have fun and don't be afraid to experiment!",
+  "lessons": [
+    {
+      "icon": "🤖",
+      "title": "Lesson 1 — Robotics & AI Basics",
+      "topic": "Robotics & AI Basics",
+      "summary": "What is a robot? What is AI? Where do we see them in real life?",
+      "notes": [
+        { "type": "text", "text": "A <b>robot</b> is a machine that can <b>sense</b> the world around it, <b>think</b> about what to do, and then <b>act</b> — like moving, beeping, or lighting up. Robots do jobs that are boring, dangerous, or very precise." },
+        { "type": "diagram", "key": "robot-parts" },
+        { "type": "text", "text": "Every robot has three main parts:<br>👀 <b>Sensors</b> — to feel the world (like eyes and ears).<br>🧠 <b>A controller (brain)</b> — to make decisions.<br>🦿 <b>Actuators</b> — motors and lights that make it move or react." },
+        { "type": "text", "text": "<b>AI (Artificial Intelligence)</b> is when a computer learns to do clever things — like recognising a face, understanding speech, or spotting a cat in a photo. Just like <i>you</i> get better with practice, AI gets better by looking at lots of examples." },
+        { "type": "text", "text": "🌍 <b>Real-world robots & AI:</b> factory arms building cars, robot vacuum cleaners, self-driving cars, drones, voice assistants like Siri, and robots that explore Mars! In the future, robots will help even more in hospitals, farms, and homes." },
+        { "type": "activity", "text": "🔎 <b>Try it!</b> Look around your home. Can you spot 3 machines that 'sense' something and react? (Hint: a fridge light, an automatic door, a phone that unlocks with your face.)" }
+      ]
+    },
+    {
+      "icon": "🔌",
+      "title": "Lesson 2 — Arduino & Electronics",
+      "topic": "Arduino & Electronics",
+      "summary": "Meet the Arduino board and the basic electronic parts.",
+      "notes": [
+        { "type": "text", "text": "<b>Arduino</b> is a tiny computer board that acts as a robot's brain. You give it instructions (a program), and it controls lights, motors, and reads sensors." },
+        { "type": "diagram", "key": "arduino-board" },
+        { "type": "text", "text": "🧰 <b>Basic electronic parts you'll use:</b><br>• <b>Resistor</b> — slows down electricity to protect parts.<br>• <b>LED</b> — a small light 💡.<br>• <b>Buzzer</b> — makes sound 🔊.<br>• <b>Capacitor</b> — stores a little electricity.<br>• <b>Diode</b> — lets electricity flow one way only.<br>• <b>DC motor</b> — spins to make things move.<br>• <b>Switch</b> — turns a circuit on or off." },
+        { "type": "text", "text": "Electricity needs a complete <b>loop</b> called a <b>circuit</b>. If the loop is broken (like a switch turned off), nothing works — just like water can't flow through a cut pipe." },
+        { "type": "diagram", "key": "simple-circuit" },
+        { "type": "text", "text": "A <b>breadboard</b> lets you build circuits by pushing parts into holes — no glue or soldering needed. Perfect for trying ideas and fixing mistakes quickly!" },
+        { "type": "diagram", "key": "breadboard-led" },
+        { "type": "activity", "text": "💡 <b>Try it!</b> On a breadboard, light one LED using a battery and a resistor. Then add a switch so you can turn it on and off. What happens if you remove the resistor? (Ask your teacher — never skip it, it protects the LED!)" }
+      ]
+    },
+    {
+      "icon": "🟩",
+      "title": "Lesson 3 — micro:bit Coding",
+      "topic": "micro:bit Coding",
+      "summary": "Program the micro:bit with easy drag-and-drop blocks.",
+      "notes": [
+        { "type": "text", "text": "The <b>micro:bit</b> is a pocket-sized computer with 25 tiny LEDs, 2 buttons (A and B), and built-in sensors. It's a super friendly way to start coding." },
+        { "type": "diagram", "key": "microbit" },
+        { "type": "text", "text": "You program it with <b>blocks</b> — colourful puzzle pieces you drag together. No typing needed at first! Later you can switch to <b>text code</b> when you're ready." },
+        { "type": "text", "text": "💡 <b>Inputs</b> are things the micro:bit senses: button presses, shaking, light, and temperature.<br>🔆 <b>Outputs</b> are things it does: light up LEDs, show pictures, or make sounds." },
+        { "type": "text", "text": "A simple idea: <i>WHEN button A is pressed → SHOW a heart ❤️</i>. That's input → action, the same 'sense and act' idea from Lesson 1!" },
+        { "type": "activity", "text": "🎮 <b>Try it!</b> In the micro:bit editor, make a program: when you press button A, show a smiley 😀; when you press button B, show a heart ❤️. Then try 'on shake → show a random number' to build a dice!" }
+      ]
+    },
+    {
+      "icon": "💻",
+      "title": "Lesson 4 — Arduino Programming",
+      "topic": "Arduino Programming",
+      "summary": "Write code for the Arduino using the Arduino IDE and Tinkercad.",
+      "notes": [
+        { "type": "text", "text": "We write Arduino programs in the <b>Arduino IDE</b> (a free app) and can test them for free online in <b>Tinkercad</b> before using real parts." },
+        { "type": "text", "text": "Every Arduino program has two main parts:<br>• <code>setup()</code> — runs <b>once</b> at the start (get things ready).<br>• <code>loop()</code> — runs <b>again and again</b> forever (the robot's heartbeat)." },
+        { "type": "text", "text": "🧱 <b>Building blocks of code:</b><br>• <b>Variables</b> store information (like a labelled box).<br>• <b>Loops</b> repeat actions.<br>• <b>Conditionals</b> (<code>if / else</code>) make decisions: <i>IF it's dark → turn the light ON</i>." },
+        { "type": "text", "text": "Arduino pins can be <b>INPUT</b> (read a sensor) or <b>OUTPUT</b> (control an LED or motor). The <b>Serial Monitor</b> lets the Arduino print messages to your screen — great for checking what's happening and fixing bugs 🐞." },
+        { "type": "diagram", "key": "arduino-board" },
+        { "type": "activity", "text": "✨ <b>Try it!</b> In Tinkercad, make an LED blink: turn it ON, wait 1 second, turn it OFF, wait 1 second — forever. Change the waiting time to make it blink faster or slower!" }
+      ]
+    },
+    {
+      "icon": "📡",
+      "title": "Lesson 5 — Sensors & Actuators",
+      "topic": "Sensors & Actuators",
+      "summary": "How robots feel the world and how they move.",
+      "notes": [
+        { "type": "text", "text": "<b>Sensors</b> are the robot's senses (inputs). Some common ones:<br>• <b>Ultrasonic</b> — measures distance with sound 🔊.<br>• <b>IR</b> — spots objects or follows a line.<br>• <b>LDR</b> — senses light (bright or dark).<br>• <b>Temperature</b> — senses hot or cold.<br>• <b>Touch / limit</b> — senses a press or bump." },
+        { "type": "diagram", "key": "ultrasonic" },
+        { "type": "text", "text": "<b>Actuators</b> make the robot do things (outputs):<br>• <b>DC motor</b> — spins wheels to drive around.<br>• <b>Servo motor</b> — turns to an exact angle (great for arms and steering).<br>• <b>LED & buzzer</b> — light and sound to show what's happening." },
+        { "type": "diagram", "key": "servo-motor" },
+        { "type": "text", "text": "The magic is putting them together: a sensor gives the Arduino information, the Arduino decides, and an actuator acts. This is called <b>feedback control</b>." },
+        { "type": "diagram", "key": "sensor-flow" },
+        { "type": "activity", "text": "🎯 <b>Try it!</b> Idea for a mini-project: use an ultrasonic sensor so a buzzer beeps faster as your hand gets closer — like a car parking sensor! Or use an LDR to turn on an LED when it gets dark." }
+      ]
+    },
+    {
+      "icon": "🧠",
+      "title": "Lesson 6 — AI & Machine Learning",
+      "topic": "AI & Machine Learning",
+      "summary": "Teach a computer to recognise pictures, sounds, and poses.",
+      "notes": [
+        { "type": "text", "text": "<b>Machine Learning (ML)</b> is a type of AI where a computer <b>learns from examples</b> instead of being told every rule. Show it lots of cat photos and dog photos, and it learns to tell them apart!" },
+        { "type": "diagram", "key": "ai-teachable" },
+        { "type": "text", "text": "The steps are always the same:<br>1️⃣ <b>Collect examples</b> (photos, sounds, or poses).<br>2️⃣ <b>Train</b> the model on those examples.<br>3️⃣ <b>Predict</b> — show it something new and it guesses the answer." },
+        { "type": "text", "text": "<b>Google Teachable Machine</b> is a free website 🌐 that lets you train your own AI in minutes — right in your browser. You can teach it to recognise images, sounds, or body poses." },
+        { "type": "text", "text": "⚖️ <b>Important:</b> AI is only as good as its examples. If you give it messy or unfair examples, it makes mistakes. Good examples = smart AI!" },
+        { "type": "activity", "text": "📷 <b>Try it!</b> On Teachable Machine, train an image model with two classes: 'thumbs up 👍' and 'thumbs down 👎'. Give lots of examples of each, then test it live with your webcam. How accurate is it?" }
+      ]
+    },
+    {
+      "icon": "🚗",
+      "title": "Lesson 7 — Build a Robot",
+      "topic": "Build a Robot",
+      "summary": "Design, build, and program an obstacle-avoidance robot.",
+      "notes": [
+        { "type": "text", "text": "Now we bring everything together to build an <b>obstacle-avoidance robot</b> — a robot car that drives around and turns away when it sees something in the way." },
+        { "type": "diagram", "key": "robot-car" },
+        { "type": "text", "text": "🛠️ <b>The build steps:</b><br>1️⃣ Build the body (chassis) and attach the wheels and motors.<br>2️⃣ Add the Arduino brain and the battery.<br>3️⃣ Fit an ultrasonic sensor at the front (the robot's eyes 👀).<br>4️⃣ Upload the code.<br>5️⃣ Test and improve!" },
+        { "type": "text", "text": "🧠 <b>The robot's thinking (the code idea):</b><br><i>IF something is close in front → STOP and turn.<br>ELSE → drive forward.</i><br>This repeats over and over in the <code>loop()</code>, just like Lesson 4." },
+        { "type": "diagram", "key": "sensor-flow" },
+        { "type": "text", "text": "🧪 <b>Testing & refining</b> means trying it, seeing what goes wrong, and fixing it — maybe the turn is too small, or it stops too late. Real engineers improve their robots this way!" },
+        { "type": "activity", "text": "📓 <b>Try it!</b> Keep a project logbook. Draw your robot, list its parts, and write down every problem you fixed. What distance should trigger a turn — 10 cm or 20 cm? Test both and pick the best!" }
+      ]
+    },
+    {
+      "icon": "🏆",
+      "title": "Lesson 8 — Project & Future",
+      "topic": "Project & Future",
+      "summary": "Show off your robot and dream about what's next!",
+      "notes": [
+        { "type": "text", "text": "🎉 <b>Project Showcase!</b> This is where you show your robot to others, explain how it works, and maybe race it in a friendly competition. Be proud — you built a real robot!" },
+        { "type": "text", "text": "📝 <b>Your project report</b> tells the story of your robot: your design idea, how you coded it, the problems you faced, and what you learned from start to finish." },
+        { "type": "text", "text": "🔮 <b>The future of robotics:</b> robots that help doctors, farm our food, clean the oceans, and explore space. AI is getting smarter every year. The skills you learned here — sensing, thinking, acting, and coding — are the same ones real engineers use!" },
+        { "type": "diagram", "key": "robot-parts" },
+        { "type": "activity", "text": "🌟 <b>Try it!</b> Imagine a robot that solves a problem in YOUR life. What does it sense? What does it do? Draw it and give it a name. Who knows — you might build it one day!" }
+      ]
+    }
+  ],
+  "activities": [
+    { "icon": "🎯", "title": "Daily Challenge", "desc": "5 quick questions for a bonus reward. Come back every day!", "action": "daily", "color": "orange" },
+    { "icon": "📘", "title": "Practice Mode", "desc": "Unlimited questions with hints. The best way to learn.", "action": "practice", "color": "teal" },
+    { "icon": "🗺️", "title": "Explore Topics", "desc": "Pick a lesson topic and become a master of it.", "action": "topics", "color": "green" },
+    { "icon": "📖", "title": "This Week's Quiz", "desc": "Read the weekly lesson, then take the quiz.", "action": "weekly", "color": "purple" }
+  ]
+}

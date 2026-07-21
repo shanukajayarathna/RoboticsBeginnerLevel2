@@ -1,43 +1,362 @@
 [
   {
-    "id": 1,
-    "topic": "Welcome to Robotics & AI (placeholder)",
-    "difficulty": "Easy",
-    "type": "MCQ",
-    "question": "This is placeholder content for Beginner Level 1 — what should replace this question bank?",
-    "options": [
-      "The real Level 1 syllabus, once the course Excel sheet is provided",
-      "Nothing, this is final",
-      "A random fact",
-      "None of these"
-    ],
-    "answer": "The real Level 1 syllabus, once the course Excel sheet is provided",
-    "explanation": "This whole file is a placeholder so the Level 1 class experience (home screen, topics, practice/exam modes, weekly quiz) can be tested end-to-end. Once the instructor shares the Level 1 course content (Excel sheet), this will be replaced with real topics and questions, built the same way data/l2/questions.json was.",
-    "hint1": "Think about what's still missing.",
-    "hint2": "It was mentioned earlier in this conversation.",
-    "hint3": "It's a spreadsheet with course content.",
-    "animation": null,
-    "image": null,
-    "formula": null,
-    "xp": 10,
-    "marks": 1
+    "id": 1, "topic": "Robotics & AI Basics", "difficulty": "Easy", "type": "MCQ",
+    "question": "What are the three main jobs every robot does?",
+    "options": ["Sense, Think, Act", "Eat, Sleep, Play", "Read, Write, Draw", "Buy, Sell, Trade"],
+    "answer": "Sense, Think, Act",
+    "explanation": "Every robot senses the world (sensors), thinks about what to do (its controller/brain), and then acts (motors and lights). Sense → Think → Act!",
+    "hint1": "Think about how a robot works step by step.", "hint2": "It starts by feeling the world around it.", "hint3": "Sense... Think... ?",
+    "animation": "robot-parts", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
-    "id": 2,
-    "topic": "Welcome to Robotics & AI (placeholder)",
-    "difficulty": "Easy",
-    "type": "TrueFalse",
-    "question": "True or False: Level 1 and Level 2 students have completely separate progress, question banks, and weekly quizzes.",
-    "options": ["True", "False"],
-    "answer": "True",
-    "explanation": "Each class has its own data files and its own progress tracking, even though both run on the same site and the same Supabase backend.",
-    "hint1": "They're two different classes taught separately.",
-    "hint2": "Think about how the site is structured now.",
-    "hint3": "Separate data/l1 and data/l2 folders.",
-    "animation": null,
-    "image": null,
-    "formula": null,
-    "xp": 10,
-    "marks": 1
+    "id": 2, "topic": "Robotics & AI Basics", "difficulty": "Easy", "type": "MCQ",
+    "question": "Which part of a robot is like its 'eyes and ears'?",
+    "options": ["The motors", "The sensors", "The battery", "The wheels"],
+    "answer": "The sensors",
+    "explanation": "Sensors let a robot feel the world — light, distance, touch, temperature and more. They are the robot's senses.",
+    "hint1": "Which part collects information?", "hint2": "It helps the robot 'feel' things.", "hint3": "The word starts with 'S'.",
+    "animation": "robot-parts", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 3, "topic": "Robotics & AI Basics", "difficulty": "Easy", "type": "MCQ",
+    "question": "What does AI stand for?",
+    "options": ["Automatic Internet", "Artificial Intelligence", "Amazing Invention", "Auto Input"],
+    "answer": "Artificial Intelligence",
+    "explanation": "AI means Artificial Intelligence — computers doing clever things like recognising faces or understanding speech.",
+    "hint1": "The first word means 'made by people'.", "hint2": "The second word means 'being smart'.", "hint3": "Artificial... I...?",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 4, "topic": "Robotics & AI Basics", "difficulty": "Easy", "type": "TrueFalse",
+    "question": "True or False: A robot vacuum cleaner is an example of a robot in real life.",
+    "options": ["True", "False"], "answer": "True",
+    "explanation": "Yes! A robot vacuum senses walls and dirt, decides where to go, and moves — it senses, thinks, and acts.",
+    "hint1": "Does it sense and move on its own?", "hint2": "Think about what it does when it meets a wall.", "hint3": "It's a helpful home robot.",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 5, "topic": "Robotics & AI Basics", "difficulty": "Medium", "type": "MCQ",
+    "question": "How does AI mainly get 'smart'?",
+    "options": ["By learning from lots of examples", "By eating batteries", "By being switched off", "By moving quickly"],
+    "answer": "By learning from lots of examples",
+    "explanation": "Just like you get better with practice, AI learns from lots of examples. More good examples means smarter AI.",
+    "hint1": "How do YOU get better at something?", "hint2": "It needs lots of practice data.", "hint3": "It learns from ex______.",
+    "animation": "ai-teachable", "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+
+  {
+    "id": 6, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
+    "question": "What is an Arduino?",
+    "options": ["A tiny computer board that controls electronics", "A type of battery", "A kind of wheel", "A drawing app"],
+    "answer": "A tiny computer board that controls electronics",
+    "explanation": "Arduino is a small programmable board that acts as a robot's brain, controlling lights, motors and sensors.",
+    "hint1": "It's the 'brain' of many projects.", "hint2": "You give it a program to run.", "hint3": "It's a small computer board.",
+    "animation": "arduino-board", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 7, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
+    "question": "What does an LED do?",
+    "options": ["Makes sound", "Gives out light", "Stores water", "Measures time"],
+    "answer": "Gives out light",
+    "explanation": "An LED is a small light. We use it to show that a circuit is working or as an output in projects.",
+    "hint1": "The 'L' stands for Light.", "hint2": "You see it, you don't hear it.", "hint3": "💡",
+    "animation": "breadboard-led", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 8, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
+    "question": "Why do we use a resistor with an LED?",
+    "options": ["To make it brighter forever", "To protect the LED from too much electricity", "To make sound", "To store power"],
+    "answer": "To protect the LED from too much electricity",
+    "explanation": "A resistor slows down the electricity so the LED doesn't get too much current and burn out.",
+    "hint1": "It keeps the LED safe.", "hint2": "It slows the electricity down.", "hint3": "Without it, the LED could break!",
+    "animation": "breadboard-led", "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 9, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "TrueFalse",
+    "question": "True or False: Electricity needs a complete loop (circuit) to flow.",
+    "options": ["True", "False"], "answer": "True",
+    "explanation": "Correct! If the loop is broken — like a switch turned off — the electricity can't flow, so nothing works.",
+    "hint1": "Think about a switch turning a light off.", "hint2": "A broken loop stops the flow.", "hint3": "Like water in a cut pipe.",
+    "animation": "simple-circuit", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 10, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
+    "question": "What is a breadboard used for?",
+    "options": ["Cutting bread", "Building circuits without soldering", "Charging phones", "Playing music"],
+    "answer": "Building circuits without soldering",
+    "explanation": "A breadboard lets you push parts into holes to build and change circuits quickly — perfect for testing ideas.",
+    "hint1": "It's for making circuits.", "hint2": "No glue or soldering needed.", "hint3": "You push wires into holes.",
+    "animation": "breadboard-led", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+
+  {
+    "id": 11, "topic": "micro:bit Coding", "difficulty": "Easy", "type": "MCQ",
+    "question": "How many buttons does a micro:bit have on the front?",
+    "options": ["None", "One", "Two (A and B)", "Ten"],
+    "answer": "Two (A and B)",
+    "explanation": "The micro:bit has two buttons, A and B, that you can use as inputs in your programs.",
+    "hint1": "They are labelled with letters.", "hint2": "A and ...?", "hint3": "It's more than one, less than three.",
+    "animation": "microbit", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 12, "topic": "micro:bit Coding", "difficulty": "Easy", "type": "MCQ",
+    "question": "How do you usually start coding a micro:bit?",
+    "options": ["With drag-and-drop blocks", "By soldering wires", "By painting it", "By shaking it hard"],
+    "answer": "With drag-and-drop blocks",
+    "explanation": "You start with colourful blocks you drag together — no typing needed. Later you can switch to text code.",
+    "hint1": "It's beginner-friendly.", "hint2": "You drag puzzle-like pieces.", "hint3": "Blocks, not typing.",
+    "animation": "microbit", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 13, "topic": "micro:bit Coding", "difficulty": "Easy", "type": "MCQ",
+    "question": "Pressing button A is an example of what?",
+    "options": ["An output", "An input", "A battery", "A motor"],
+    "answer": "An input",
+    "explanation": "Pressing a button gives the micro:bit information, so it is an input. Lighting the LEDs would be an output.",
+    "hint1": "Is it information coming IN or going OUT?", "hint2": "The micro:bit senses your press.", "hint3": "In... put.",
+    "animation": "microbit", "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 14, "topic": "micro:bit Coding", "difficulty": "Easy", "type": "MCQ",
+    "question": "Lighting up the micro:bit's LEDs to show a heart is an example of what?",
+    "options": ["An input", "An output", "A sensor", "A battery"],
+    "answer": "An output",
+    "explanation": "Showing something on the LEDs is the micro:bit DOING something — that's an output.",
+    "hint1": "Is the micro:bit sensing or doing?", "hint2": "It's showing something to you.", "hint3": "Out... put.",
+    "animation": "microbit", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 15, "topic": "micro:bit Coding", "difficulty": "Easy", "type": "TrueFalse",
+    "question": "True or False: The micro:bit has a grid of tiny LEDs you can program.",
+    "options": ["True", "False"], "answer": "True",
+    "explanation": "Yes — it has a 5×5 grid of 25 LEDs you can light up to show pictures, numbers and letters.",
+    "hint1": "Think of the little red lights.", "hint2": "They form a square grid.", "hint3": "5 rows by 5 columns.",
+    "animation": "microbit", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+
+  {
+    "id": 16, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
+    "question": "Which part of an Arduino program runs again and again, forever?",
+    "options": ["setup()", "loop()", "start()", "end()"],
+    "answer": "loop()",
+    "explanation": "loop() repeats over and over — it's the robot's heartbeat. setup() runs only once at the start.",
+    "hint1": "Its name is a big clue!", "hint2": "It repeats round and round.", "hint3": "loo...?",
+    "animation": "arduino-board", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 17, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
+    "question": "Which part of an Arduino program runs only once at the start?",
+    "options": ["loop()", "setup()", "again()", "repeat()"],
+    "answer": "setup()",
+    "explanation": "setup() runs one time when the Arduino turns on, to get everything ready. Then loop() runs forever.",
+    "hint1": "You 'set up' before you start.", "hint2": "It runs a single time.", "hint3": "set...?",
+    "animation": "arduino-board", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 18, "topic": "Arduino Programming", "difficulty": "Medium", "type": "MCQ",
+    "question": "What does an 'if' statement let a program do?",
+    "options": ["Make a decision", "Charge the battery", "Spin a wheel", "Draw a picture"],
+    "answer": "Make a decision",
+    "explanation": "An 'if' statement checks something and decides what to do — for example: IF it's dark, turn the light ON.",
+    "hint1": "It's about choosing.", "hint2": "IF something is true, THEN do this.", "hint3": "It makes a de______.",
+    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 19, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
+    "question": "What is a variable in code?",
+    "options": ["A labelled box that stores information", "A type of motor", "A kind of wire", "A drawing tool"],
+    "answer": "A labelled box that stores information",
+    "explanation": "A variable is like a labelled box where you keep a piece of information, such as a number or a sensor reading.",
+    "hint1": "It holds something for later.", "hint2": "Think of a box with a name on it.", "hint3": "It stores in________.",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 20, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
+    "question": "What is the Serial Monitor useful for?",
+    "options": ["Seeing messages from the Arduino to fix bugs", "Charging the Arduino", "Painting the board", "Making the robot heavier"],
+    "answer": "Seeing messages from the Arduino to fix bugs",
+    "explanation": "The Serial Monitor prints messages from the Arduino to your screen, so you can check what's happening and fix problems.",
+    "hint1": "It shows words on your screen.", "hint2": "Great for finding bugs 🐞.", "hint3": "It helps you debug.",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 21, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
+    "question": "Which free tool lets you build and test Arduino circuits online before using real parts?",
+    "options": ["Tinkercad", "A calculator", "A microwave", "A stopwatch"],
+    "answer": "Tinkercad",
+    "explanation": "Tinkercad is a free website where you can build and simulate Arduino circuits in your browser — no risk of breaking real parts.",
+    "hint1": "It's an online simulator.", "hint2": "By Autodesk, used in class.", "hint3": "Tinker...?",
+    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+
+  {
+    "id": 22, "topic": "Sensors & Actuators", "difficulty": "Easy", "type": "MCQ",
+    "question": "Which sensor measures distance using sound?",
+    "options": ["LDR", "Ultrasonic sensor", "Temperature sensor", "Touch sensor"],
+    "answer": "Ultrasonic sensor",
+    "explanation": "An ultrasonic sensor sends out a sound and times the echo coming back to work out how far away something is.",
+    "hint1": "Its name contains 'sonic' (sound).", "hint2": "Bats use something similar!", "hint3": "Ultra_______.",
+    "animation": "ultrasonic", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 23, "topic": "Sensors & Actuators", "difficulty": "Easy", "type": "MCQ",
+    "question": "What does an LDR sensor detect?",
+    "options": ["Light", "Sound", "Smell", "Weight"],
+    "answer": "Light",
+    "explanation": "An LDR (Light Dependent Resistor) senses how bright or dark it is. Great for automatic night lights!",
+    "hint1": "The 'L' stands for Light.", "hint2": "It knows if it's bright or dark.", "hint3": "Think of a street lamp at night.",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 24, "topic": "Sensors & Actuators", "difficulty": "Easy", "type": "MCQ",
+    "question": "Which of these is an actuator (something that DOES an action)?",
+    "options": ["Ultrasonic sensor", "LDR", "DC motor", "IR sensor"],
+    "answer": "DC motor",
+    "explanation": "A DC motor spins to make wheels turn — it's an actuator (output). The others are sensors (inputs).",
+    "hint1": "Which one MOVES something?", "hint2": "Sensors feel, actuators act.", "hint3": "It spins the wheels.",
+    "animation": "sensor-flow", "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 25, "topic": "Sensors & Actuators", "difficulty": "Medium", "type": "MCQ",
+    "question": "A servo motor is special because it can...",
+    "options": ["Turn to an exact angle", "Only spin very fast", "Make loud sounds", "Sense temperature"],
+    "answer": "Turn to an exact angle",
+    "explanation": "A servo motor turns to an exact position (like 90°), which is perfect for robot arms and steering.",
+    "hint1": "Think about precise positions.", "hint2": "Great for a robot arm.", "hint3": "It moves to an exact ang__.",
+    "animation": "servo-motor", "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 26, "topic": "Sensors & Actuators", "difficulty": "Easy", "type": "TrueFalse",
+    "question": "True or False: A sensor is an input and a motor is an output.",
+    "options": ["True", "False"], "answer": "True",
+    "explanation": "Correct! Sensors give the Arduino information (inputs) and motors/lights do actions (outputs).",
+    "hint1": "Sensors feel, motors act.", "hint2": "Information in, action out.", "hint3": "This one is true.",
+    "animation": "sensor-flow", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+
+  {
+    "id": 27, "topic": "AI & Machine Learning", "difficulty": "Easy", "type": "MCQ",
+    "question": "In Machine Learning, how does a computer learn?",
+    "options": ["From lots of examples", "By sleeping", "By spinning wheels", "By turning off"],
+    "answer": "From lots of examples",
+    "explanation": "Machine Learning means the computer learns patterns from many examples, instead of being given every rule.",
+    "hint1": "Same way you learn — practice!", "hint2": "It needs lots of data.", "hint3": "From ex______.",
+    "animation": "ai-teachable", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 28, "topic": "AI & Machine Learning", "difficulty": "Easy", "type": "MCQ",
+    "question": "What can Google Teachable Machine help you make?",
+    "options": ["Your own AI model that recognises images, sounds or poses", "A real robot arm", "A new battery", "A paper plane"],
+    "answer": "Your own AI model that recognises images, sounds or poses",
+    "explanation": "Teachable Machine is a free website where you can train your own AI to recognise images, sounds, or body poses.",
+    "hint1": "It's about training AI.", "hint2": "Images, sounds, and poses.", "hint3": "You teach it in your browser.",
+    "animation": "ai-teachable", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 29, "topic": "AI & Machine Learning", "difficulty": "Medium", "type": "MCQ",
+    "question": "What are the three main steps to make an AI model?",
+    "options": ["Collect examples, Train, Predict", "Eat, Sleep, Repeat", "Cut, Glue, Paint", "Run, Jump, Stop"],
+    "answer": "Collect examples, Train, Predict",
+    "explanation": "First you collect examples, then you train the model on them, then it can predict answers for new things.",
+    "hint1": "It starts by gathering data.", "hint2": "Collect → Train → ?", "hint3": "The last step is guessing new answers.",
+    "animation": "ai-teachable", "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 30, "topic": "AI & Machine Learning", "difficulty": "Medium", "type": "TrueFalse",
+    "question": "True or False: If you give an AI messy or unfair examples, it can make more mistakes.",
+    "options": ["True", "False"], "answer": "True",
+    "explanation": "True! AI is only as good as its examples. Good, fair examples make smarter and fairer AI.",
+    "hint1": "Good examples = smart AI.", "hint2": "Bad examples cause bad guesses.", "hint3": "This one is true.",
+    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+
+  {
+    "id": 31, "topic": "Build a Robot", "difficulty": "Easy", "type": "MCQ",
+    "question": "In an obstacle-avoidance robot, which sensor helps it 'see' walls?",
+    "options": ["Ultrasonic sensor", "Temperature sensor", "Microphone", "Light bulb"],
+    "answer": "Ultrasonic sensor",
+    "explanation": "The ultrasonic sensor measures the distance to objects, so the robot knows when something is in the way.",
+    "hint1": "It measures distance.", "hint2": "Same one from the sensors lesson.", "hint3": "Ultra_______.",
+    "animation": "robot-car", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 32, "topic": "Build a Robot", "difficulty": "Easy", "type": "MCQ",
+    "question": "What is the chassis of a robot?",
+    "options": ["Its body/frame that holds the parts", "Its software", "Its Wi-Fi", "Its password"],
+    "answer": "Its body/frame that holds the parts",
+    "explanation": "The chassis is the robot's body or frame — it holds the wheels, motors, board and battery together.",
+    "hint1": "It's a physical part.", "hint2": "Everything is attached to it.", "hint3": "It's the frame/body.",
+    "animation": "robot-car", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 33, "topic": "Build a Robot", "difficulty": "Medium", "type": "MCQ",
+    "question": "What is the robot's rule for avoiding obstacles?",
+    "options": ["IF something is close in front → stop and turn", "Always drive backwards", "Never move at all", "Spin forever"],
+    "answer": "IF something is close in front → stop and turn",
+    "explanation": "The code checks the distance: if something is close, the robot stops and turns; otherwise it drives forward. This repeats in loop().",
+    "hint1": "It uses an 'if' decision.", "hint2": "What should it do when a wall is close?", "hint3": "Stop and t___.",
+    "animation": "sensor-flow", "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 34, "topic": "Build a Robot", "difficulty": "Easy", "type": "TrueFalse",
+    "question": "True or False: Testing and improving your robot is a normal, important part of building it.",
+    "options": ["True", "False"], "answer": "True",
+    "explanation": "Absolutely true! Real engineers test, find problems, and improve — that's how great robots are made.",
+    "hint1": "Do engineers get it perfect first try?", "hint2": "Trying and fixing is normal.", "hint3": "This one is true.",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 35, "topic": "Build a Robot", "difficulty": "Easy", "type": "MCQ",
+    "question": "What gives the robot the power to move?",
+    "options": ["The battery and motors", "The stickers", "The paint", "The name"],
+    "answer": "The battery and motors",
+    "explanation": "The battery supplies power and the motors turn the wheels, so the robot can drive around.",
+    "hint1": "One stores power, one spins wheels.", "hint2": "Battery and ...?", "hint3": "Think power + movement.",
+    "animation": "robot-car", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+
+  {
+    "id": 36, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
+    "question": "What is a project logbook used for?",
+    "options": ["Recording your ideas, progress and problems you fixed", "Playing games", "Charging the robot", "Storing snacks"],
+    "answer": "Recording your ideas, progress and problems you fixed",
+    "explanation": "A logbook is where you write your plans, progress, and how you solved problems — just like real engineers do.",
+    "hint1": "It's a kind of diary for your project.", "hint2": "You write down what you did.", "hint3": "Ideas, progress, fixes.",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 37, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
+    "question": "Which of these is a real future use of robots and AI?",
+    "options": ["Helping doctors and farmers", "Making the sky purple", "Stopping time", "Turning water into gold"],
+    "answer": "Helping doctors and farmers",
+    "explanation": "Robots and AI already help in hospitals, farms, factories and space — and they'll help even more in the future.",
+    "hint1": "Pick the realistic one.", "hint2": "Think helpful, everyday jobs.", "hint3": "Doctors and f______.",
+    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 38, "topic": "Project & Future", "difficulty": "Easy", "type": "TrueFalse",
+    "question": "True or False: The skills you learned (sensing, thinking, acting, coding) are used by real engineers.",
+    "options": ["True", "False"], "answer": "True",
+    "explanation": "True! You've been learning the same core ideas that real robotics engineers use every day. Well done!",
+    "hint1": "Are these real skills?", "hint2": "Engineers sense, think, act and code too.", "hint3": "This one is true.",
+    "animation": "robot-parts", "image": null, "formula": null, "xp": 10, "marks": 1
+  },
+  {
+    "id": 39, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
+    "question": "What should a good project report include?",
+    "options": ["Your design, code, challenges and what you learned", "Only your name", "A shopping list", "Nothing at all"],
+    "answer": "Your design, code, challenges and what you learned",
+    "explanation": "A project report tells the whole story: your design idea, how you coded it, the challenges, and your key learnings.",
+    "hint1": "It tells the story of your project.", "hint2": "Design, code, problems, learnings.", "hint3": "More than just a name!",
+    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+  },
+  {
+    "id": 40, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
+    "question": "Why is it great to take your robot home at the end of the course?",
+    "options": ["To keep learning and exploring your creation", "To throw it away", "To hide it", "To never touch it again"],
+    "answer": "To keep learning and exploring your creation",
+    "explanation": "Taking your robot home keeps your excitement alive so you can keep tinkering, improving, and learning even more!",
+    "hint1": "It keeps you excited to learn.", "hint2": "You can keep exploring it.", "hint3": "Learning doesn't stop!",
+    "animation": "robot-car", "image": null, "formula": null, "xp": 10, "marks": 1
   }
 ]

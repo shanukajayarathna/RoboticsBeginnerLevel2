@@ -152,6 +152,7 @@ const Auth = {
     App.state = structuredClone(DEFAULT_STATE);
     document.getElementById("user-badge").style.display = "none";
     document.getElementById("nav-btns").style.display = "none";
+    document.getElementById("nav-btns-l1").style.display = "none";
     document.getElementById("stat-pills").style.display = "none";
     document.getElementById("login-pin").value = "";
     document.getElementById("login-error").textContent = "";
@@ -435,10 +436,7 @@ const Weekly = {
   },
 
   finish(){
-    document.getElementById("stat-pills").style.display = "flex";
-    document.getElementById("nav-btns").style.display = "flex";
-    App.renderHome();
-    Router.go("home");
+    App.enterHome();
   }
 };
 
@@ -493,6 +491,8 @@ const App = {
         </div>`;
     }
     await Weekly.load();
+    await HomeL1.load();
+    await ManageL1.loadQuestions(); // override L1 bank from Supabase if the admin has published any
     this.buddyIdleLoop();
     const restored = await Auth.restoreSession();
     if(restored){ await this.startSession(); }
@@ -505,16 +505,35 @@ const App = {
     document.getElementById("user-badge").style.display = "flex";
     document.getElementById("pill-user").textContent = (Auth.profile.role==="admin" ? "🛠️ " : "🧑‍🎓 ") + Auth.profile.name;
     document.getElementById("nav-students-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
+    document.getElementById("nav-manage-l1-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
 
     if(Weekly.isPending()){
       Weekly.begin();
       return;
     }
 
-    document.getElementById("stat-pills").style.display = "flex";
-    document.getElementById("nav-btns").style.display = "flex";
-    this.renderHome();
-    Router.go("home");
+    this.enterHome();
+  },
+
+  isL1Student(){
+    return !!(Auth.profile && Auth.profile.role==="student" && Auth.profile.class==="l1");
+  },
+
+  // Show the correct home screen + nav/topbar for the logged-in user's class.
+  enterHome(){
+    if(this.isL1Student()){
+      document.getElementById("stat-pills").style.display = "none";
+      document.getElementById("nav-btns").style.display = "none";
+      document.getElementById("nav-btns-l1").style.display = "flex";
+      HomeL1.render();
+      Router.go("home-l1");
+    } else {
+      document.getElementById("nav-btns-l1").style.display = "none";
+      document.getElementById("stat-pills").style.display = "flex";
+      document.getElementById("nav-btns").style.display = "flex";
+      this.renderHome();
+      Router.go("home");
+    }
   },
 
   bumpStreak(){
@@ -786,7 +805,7 @@ const App = {
   goHome(){
     if(!Auth.profile) return; // not logged in yet — logo shouldn't do anything on the login screen
     if(Weekly.isPending()) return; // still mid weekly reading/quiz gate — can't skip out via the logo
-    Router.go("home");
+    Router.go(this.isL1Student() ? "home-l1" : "home");
   },
 
   quitQuiz(){
@@ -794,7 +813,7 @@ const App = {
       if(!confirm("Exit the exam? Your progress on this attempt will be lost.")) return;
     }
     this.quiz = null;
-    Router.go("home");
+    Router.go(this.isL1Student() ? "home-l1" : "home");
   },
 
   currentQuestion(){ return this.quiz.pool[this.quiz.index]; },
@@ -816,7 +835,14 @@ const App = {
     qTextEl.textContent = q.question;
     qTextEl.className = "q-text" + (q.type==="CodeReading" ? " code" : "");
 
-    renderAnimation(q.animation, document.getElementById("stage"), {});
+    const stageEl = document.getElementById("stage");
+    if(this.activeClass()==="l1"){
+      // Level 1 uses its own simple diagrams (or a friendly placeholder) — not the L2 animation engine.
+      const dia = (q.animation && typeof renderL1Diagram==="function") ? renderL1Diagram(q.animation) : "";
+      stageEl.innerHTML = dia || `<div class="l1-stage-placeholder">🤖<div>You've got this!</div></div>`;
+    } else {
+      renderAnimation(q.animation, stageEl, {});
+    }
 
     const optWrap = document.getElementById("q-options");
     optWrap.innerHTML = q.options.map((opt,i)=>`
@@ -1147,6 +1173,460 @@ const App = {
   },
 };
 
+/* ---------------- LEVEL 1 LEADERBOARD (real classmates, via the `leaderboard` view) ---------------- */
+const Leaderboard = {
+  async render(containerId, cls){
+    const box = document.getElementById(containerId);
+    if(!box) return;
+    box.innerHTML = `<p class="muted small" style="padding:8px;">Loading leaderboard…</p>`;
+    let rows = null;
+    try{
+      const { data, error } = await sb.from("leaderboard").select("*").eq("class", cls);
+      if(error) throw error;
+      rows = data || [];
+    }catch(e){
+      // The leaderboard view may not exist yet (SQL not run) — degrade gracefully.
+      const meXp = App.state.xp || 0;
+      box.innerHTML = `
+        <div class="l1-lb-row me">
+          <div class="l1-lb-rank">1</div>
+          <div class="l1-lb-avatar">🙂</div>
+          <div style="flex:1;"><strong>You</strong></div>
+          <div class="l1-lb-xp">${meXp} XP</div>
+        </div>
+        <p class="muted small" style="padding:8px 4px 2px;">Your classmates will show up here once more of them start playing. 🚀</p>`;
+      return;
+    }
+    rows.sort((a,b)=>(b.xp||0)-(a.xp||0));
+    const medals = ["🥇","🥈","🥉"];
+    box.innerHTML = rows.map((r,i)=>{
+      const me = Auth.profile && r.id === Auth.profile.id;
+      const rankBadge = i<3 ? medals[i] : (i+1);
+      return `<div class="l1-lb-row ${me?'me':''}">
+        <div class="l1-lb-rank">${rankBadge}</div>
+        <div class="l1-lb-avatar">${me?'🙂':'🧒'}</div>
+        <div style="flex:1;">${me?`<strong>${r.name} (You)</strong>`:r.name}</div>
+        <div class="l1-lb-xp">${r.xp||0} XP</div>
+      </div>`;
+    }).join("") || `<p class="muted small" style="padding:8px;">No students on the leaderboard yet — be the first! 🚀</p>`;
+  }
+};
+
+/* ---------------- LEVEL 1 DASHBOARD + LEARN AREA ---------------- */
+const HomeL1 = {
+  learn: null, // cached learn.json content
+  currentLesson: null,
+
+  async load(){
+    try{
+      const res = await fetch("data/l1/learn.json");
+      this.learn = await res.json();
+    }catch(e){
+      this.learn = null;
+    }
+  },
+
+  render(){
+    const s = App.state;
+    const meta = CLASS_META.l1;
+    document.getElementById("brand-chip").textContent = meta.chipEmoji;
+    document.getElementById("brand-text").textContent = meta.brand;
+    document.getElementById("l1-name").textContent = (Auth.profile && Auth.profile.name) || "Explorer";
+
+    const lvl = App.currentLevel();
+    document.getElementById("l1-level-title").textContent = `Level ${lvl.index} · ${lvl.name}`;
+    const span = lvl.next ? lvl.next - lvl.min : 1;
+    const prog = lvl.next ? Math.min(100, ((s.xp-lvl.min)/span)*100) : 100;
+    document.getElementById("l1-level-progress-fill").style.width = prog+"%";
+    document.getElementById("l1-level-progress-txt").textContent = lvl.next ? `${s.xp - lvl.min} / ${span} XP to next level` : "Max level! 🎉";
+
+    document.getElementById("l1-xp").textContent = s.xp;
+    document.getElementById("l1-correct").textContent = s.totalCorrect;
+    document.getElementById("l1-accuracy").textContent = (s.totalAnswered ? Math.round((s.totalCorrect/s.totalAnswered)*100) : 0)+"%";
+    document.getElementById("l1-streak").textContent = s.streak;
+    document.getElementById("l1-stars").textContent = s.stars;
+
+    this.renderActivities("l1-activity-grid");
+    this.renderBadges();
+    Leaderboard.render("l1-leaderboard", "l1");
+  },
+
+  activityDefs(){
+    return [
+      {icon:"🎯", title:"Daily Challenge", desc:"5 fun questions for a bonus reward!", action:"daily", color:"orange"},
+      {icon:"📘", title:"Practice Mode", desc:"Unlimited questions with hints.", action:"practice", color:"teal"},
+      {icon:"🗺️", title:"Explore Topics", desc:"Pick a topic and master it.", action:"topics", color:"green"},
+      {icon:"📖", title:"This Week's Quiz", desc:"Read the lesson, then quiz!", action:"weekly", color:"purple"}
+    ];
+  },
+
+  runActivity(action){
+    if(action==="daily") App.startDaily();
+    else if(action==="practice") App.startPractice();
+    else if(action==="topics") Router.go("topics");
+    else if(action==="weekly"){
+      if(Weekly.current()){ Weekly.begin(); }
+      else { alert("No weekly quiz is available yet — check back soon!"); }
+    }
+  },
+
+  renderActivities(containerId){
+    const box = document.getElementById(containerId);
+    if(!box) return;
+    box.innerHTML = this.activityDefs().map(a=>`
+      <div class="l1-activity c-${a.color}" onclick="HomeL1.runActivity('${a.action}')">
+        <div class="l1-activity-ico">${a.icon}</div>
+        <h3>${a.title}</h3>
+        <p>${a.desc}</p>
+      </div>`).join("");
+  },
+
+  renderBadges(){
+    const box = document.getElementById("l1-badges");
+    if(!box) return;
+    box.innerHTML = ACHIEVEMENTS.slice(0,6).map(a=>{
+      const unlocked = App.state.unlockedAchievements.includes(a.id);
+      return `<div class="l1-badge ${unlocked?'':'locked'}" title="${a.desc}">
+        <div class="l1-badge-ico">${a.icon}</div>
+        <div class="l1-badge-name">${a.name}</div>
+      </div>`;
+    }).join("");
+  },
+
+  lessons(){ return (this.learn && this.learn.lessons) || []; },
+
+  renderLearn(){
+    const c = this.learn;
+    const intro = document.getElementById("l1-learn-intro");
+    const lessonGrid = document.getElementById("l1-lesson-grid");
+    if(!c){
+      if(intro) intro.textContent = "Learning content is loading… if this stays, refresh the page.";
+      if(lessonGrid) lessonGrid.innerHTML = "";
+      return;
+    }
+    if(intro) intro.textContent = c.intro || "";
+    lessonGrid.innerHTML = this.lessons().map((lsn,i)=>`
+      <div class="l1-lesson" onclick="HomeL1.openLesson(${i})">
+        <div class="l1-lesson-head">
+          <div class="l1-lesson-ico">${lsn.icon||"📖"}</div>
+          <div style="flex:1;">
+            <h3>${lsn.title||""}</h3>
+            <p class="l1-lesson-summary">${lsn.summary||""}</p>
+          </div>
+          <div class="l1-lesson-go">Open →</div>
+        </div>
+      </div>`).join("");
+    // Activities row on the learn screen
+    const learnActs = document.getElementById("l1-learn-activity-grid");
+    if(learnActs){
+      const acts = (c.activities && c.activities.length) ? c.activities : this.activityDefs();
+      learnActs.innerHTML = acts.map(a=>`
+        <div class="l1-activity c-${a.color||'teal'}" onclick="HomeL1.runActivity('${a.action}')">
+          <div class="l1-activity-ico">${a.icon||"🎮"}</div>
+          <h3>${a.title||""}</h3>
+          <p>${a.desc||""}</p>
+        </div>`).join("");
+    }
+  },
+
+  openLesson(i){
+    const lsn = this.lessons()[i];
+    if(!lsn) return;
+    this.currentLesson = lsn;
+    document.getElementById("l1-lesson-detail-title").textContent = lsn.title || "Lesson";
+    const notesBox = document.getElementById("l1-lesson-notes");
+    notesBox.innerHTML = (lsn.notes||[]).map(block=>{
+      if(block.type === "diagram"){
+        return (typeof renderL1Diagram === "function") ? renderL1Diagram(block.key) : "";
+      }
+      if(block.type === "activity"){
+        return `<div class="l1-activity-box">${block.text||""}</div>`;
+      }
+      return `<p class="l1-note-p">${block.text||""}</p>`;
+    }).join("");
+    document.getElementById("l1-lesson-quiz-title").textContent = `Ready for the ${lsn.title||"lesson"} quiz?`;
+    const btn = document.getElementById("l1-lesson-quiz-btn");
+    const topic = lsn.topic;
+    const hasQs = App.activeQuestions().some(q=>q.topic===topic);
+    if(hasQs){
+      btn.style.display = "inline-flex";
+      btn.onclick = ()=>App.startTopic(topic);
+    } else {
+      btn.style.display = "none";
+    }
+    Router.go("lesson-l1");
+  }
+};
+
+/* ---------------- MANAGE LEVEL 1 (admin live question editor, Supabase-backed) ---------------- */
+const ManageL1 = {
+  source: "bundled",   // "bundled" (using built-in JSON) | "supabase" (admin-published rows)
+  bundled: [],         // the built-in starter questions from data/l1/questions.json
+  rows: [],            // raw Supabase rows
+  editing: null,       // question being edited (row) or null when adding
+
+  rowToQuestion(r){
+    return { id:r.id, topic:r.topic, difficulty:r.difficulty, type:r.type, question:r.question,
+      options:r.options||[], answer:r.answer, explanation:r.explanation||"",
+      hint1:r.hint1||"", hint2:r.hint2||"", hint3:r.hint3||"",
+      animation:r.animation||null, image:null, formula:null, xp:r.xp||10, marks:r.marks||1 };
+  },
+
+  // Called once at startup: if the admin has published rows, they become the live L1 bank.
+  async loadQuestions(){
+    this.bundled = (App.classData.l1.questions || []).slice();
+    try{
+      const { data, error } = await sb.from("l1_questions").select("*").order("sort").order("created_at");
+      if(error) throw error;
+      if(data && data.length){
+        this.rows = data;
+        this.source = "supabase";
+        App.classData.l1.questions = data.map(r=>this.rowToQuestion(r));
+      } else {
+        this.rows = []; this.source = "bundled";
+      }
+    }catch(e){
+      // Table may not exist yet (SQL not run) — keep the bundled JSON. No crash.
+      this.rows = []; this.source = "bundled";
+    }
+  },
+
+  async refresh(){
+    await this.loadQuestions();
+    this.render();
+  },
+
+  topicList(){
+    const fromLessons = (HomeL1.lessons()||[]).map(l=>l.topic).filter(Boolean);
+    const fromQs = (App.classData.l1.questions||[]).map(q=>q.topic);
+    return [...new Set([...fromLessons, ...fromQs])];
+  },
+
+  render(){
+    const info = document.getElementById("ml1-info");
+    const tbody = document.getElementById("ml1-tbody");
+    if(!info || !tbody) return;
+    const live = App.classData.l1.questions || [];
+    const editable = this.source === "supabase";
+
+    info.innerHTML = `
+      <div class="flex justify-between items-center gap-12" style="flex-wrap:wrap;">
+        <div class="flex gap-8" style="flex-wrap:wrap; align-items:center;">
+          <span class="pill">${live.length} questions live</span>
+          <span class="pill">${editable ? "✅ editable (saved in database)" : "📦 using built-in starter set"}</span>
+        </div>
+        <div class="flex gap-8" style="flex-wrap:wrap;">
+          ${editable
+            ? `<button class="btn btn-primary btn-sm" onclick="ManageL1.startAdd()">+ Add Question</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="ManageL1.importStarter()">⬇ Import starter questions to edit</button>`}
+        </div>
+      </div>
+      ${editable ? "" : `<p class="small muted mt-10">Right now students see the 40 built-in Level 1 questions. Click <b>Import starter questions</b> once to copy them into the database so you can add, edit, and delete them here.</p>`}`;
+
+    tbody.innerHTML = live.map((q,i)=>`
+      <tr>
+        <td>${q.topic}</td>
+        <td><span class="tag ${(q.difficulty||'easy').toLowerCase()}">${q.difficulty||''}</span></td>
+        <td>${q.type||''}</td>
+        <td>${(q.question||'').slice(0,64).replace(/</g,'&lt;')}${(q.question||'').length>64?'…':''}</td>
+        <td style="white-space:nowrap;">
+          ${editable
+            ? `<button class="btn btn-ghost btn-sm" onclick="ManageL1.startEdit('${q.id}')">✏️ Edit</button>
+               <button class="btn btn-ghost btn-sm" onclick="ManageL1.remove('${q.id}')">🗑️</button>`
+            : `<span class="small muted">read-only</span>`}
+        </td>
+      </tr>`).join("") || `<tr><td colspan="5" class="muted small">No questions yet.</td></tr>`;
+
+    this.renderNotesPreview();
+    // keep any open form hidden after a re-render
+    document.getElementById("ml1-form").style.display = "none";
+  },
+
+  renderNotesPreview(){
+    const box = document.getElementById("ml1-notes-preview");
+    if(!box) return;
+    const lessons = HomeL1.lessons();
+    box.innerHTML = lessons.length
+      ? lessons.map(l=>`<div style="padding:8px 0; border-bottom:1px solid var(--card-border);">
+          <strong>${l.icon||""} ${l.title||""}</strong>
+          <div class="small muted">${l.summary||""}</div>
+        </div>`).join("")
+      : `<p class="small muted">No lessons loaded.</p>`;
+  },
+
+  startAdd(){ this.editing = null; this.showForm({difficulty:"Easy", type:"MCQ", options:["","","",""], answer:""}); },
+  startEdit(id){
+    const row = this.rows.find(r=>String(r.id)===String(id));
+    if(!row) return;
+    this.editing = row;
+    this.showForm(this.rowToQuestion(row));
+  },
+
+  showForm(q){
+    const wrap = document.getElementById("ml1-form");
+    const diagramKeys = (typeof L1_DIAGRAMS !== "undefined") ? Object.keys(L1_DIAGRAMS) : [];
+    const isTF = q.type === "TrueFalse";
+    const opts = isTF ? ["True","False"] : (q.options && q.options.length ? q.options.concat(["","","",""]).slice(0,4) : ["","","",""]);
+    wrap.innerHTML = `
+      <div class="card ml1-form-card">
+        <h3 style="margin:0 0 12px;">${this.editing ? "✏️ Edit question" : "➕ New question"}</h3>
+        <div class="ml1-field"><label>Topic</label>
+          <input id="mf-topic" list="mf-topics" value="${this.esc(q.topic||"")}" placeholder="e.g. Sensors & Actuators">
+          <datalist id="mf-topics">${this.topicList().map(t=>`<option value="${this.esc(t)}">`).join("")}</datalist>
+        </div>
+        <div class="flex gap-12" style="flex-wrap:wrap;">
+          <div class="ml1-field" style="flex:1; min-width:150px;"><label>Difficulty</label>
+            <select id="mf-diff">${["Easy","Medium","Hard"].map(d=>`<option ${q.difficulty===d?"selected":""}>${d}</option>`).join("")}</select>
+          </div>
+          <div class="ml1-field" style="flex:1; min-width:150px;"><label>Type</label>
+            <select id="mf-type" onchange="ManageL1.onTypeChange()">
+              <option value="MCQ" ${q.type==="MCQ"?"selected":""}>Multiple choice</option>
+              <option value="TrueFalse" ${q.type==="TrueFalse"?"selected":""}>True / False</option>
+            </select>
+          </div>
+        </div>
+        <div class="ml1-field"><label>Question</label>
+          <textarea id="mf-question" rows="2" placeholder="Type the question…">${this.esc(q.question||"")}</textarea>
+        </div>
+        <div class="ml1-field"><label>Answers <span class="small muted">(tick the correct one)</span></label>
+          <div id="mf-options">${this.optionsHtml(opts, q.answer, isTF)}</div>
+        </div>
+        <div class="ml1-field"><label>Explanation <span class="small muted">(shown after they answer)</span></label>
+          <textarea id="mf-explanation" rows="2" placeholder="Explain the answer in a friendly way…">${this.esc(q.explanation||"")}</textarea>
+        </div>
+        <div class="ml1-field"><label>Picture / diagram <span class="small muted">(optional)</span></label>
+          <select id="mf-animation">
+            <option value="">None</option>
+            ${diagramKeys.map(k=>`<option value="${k}" ${q.animation===k?"selected":""}>${k}</option>`).join("")}
+          </select>
+        </div>
+        <div id="mf-error" class="small" style="color:#ff5252; min-height:18px;"></div>
+        <div class="flex gap-8" style="margin-top:6px;">
+          <button class="btn btn-primary btn-sm" onclick="ManageL1.save()">💾 Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="ManageL1.cancelForm()">Cancel</button>
+        </div>
+      </div>`;
+    wrap.style.display = "block";
+    wrap.scrollIntoView({behavior:"smooth", block:"start"});
+  },
+
+  optionsHtml(opts, answer, isTF){
+    if(isTF){
+      return ["True","False"].map(v=>`
+        <label class="ml1-opt"><input type="radio" name="mf-correct" value="${v}" ${answer===v?"checked":""}> ${v}</label>`).join("");
+    }
+    return opts.map((o,i)=>`
+      <div class="ml1-opt-row">
+        <input type="radio" name="mf-correct" value="opt${i}" ${(answer && answer===o)?"checked":""} title="Mark as correct">
+        <input type="text" class="mf-opt-text" data-i="${i}" value="${this.esc(o||"")}" placeholder="Answer ${i+1}">
+      </div>`).join("");
+  },
+
+  onTypeChange(){
+    const type = document.getElementById("mf-type").value;
+    const box = document.getElementById("mf-options");
+    box.innerHTML = this.optionsHtml(type==="TrueFalse"?["True","False"]:["","","",""], "", type==="TrueFalse");
+  },
+
+  cancelForm(){ document.getElementById("ml1-form").style.display = "none"; this.editing = null; },
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
+
+  collectForm(){
+    const type = document.getElementById("mf-type").value;
+    const topic = document.getElementById("mf-topic").value.trim();
+    const difficulty = document.getElementById("mf-diff").value;
+    const question = document.getElementById("mf-question").value.trim();
+    const explanation = document.getElementById("mf-explanation").value.trim();
+    const animation = document.getElementById("mf-animation").value || null;
+    let options, answer;
+    const correct = document.querySelector('input[name="mf-correct"]:checked');
+    if(type==="TrueFalse"){
+      options = ["True","False"];
+      answer = correct ? correct.value : "";
+    } else {
+      options = Array.from(document.querySelectorAll(".mf-opt-text")).map(el=>el.value.trim()).filter(v=>v);
+      // rebuild full 4-slot list to map the radio choice
+      const allTexts = Array.from(document.querySelectorAll(".mf-opt-text")).map(el=>el.value.trim());
+      if(correct){ const idx = parseInt(correct.value.replace("opt",""),10); answer = allTexts[idx] || ""; }
+      else answer = "";
+    }
+    const xpMap = {Easy:10, Medium:15, Hard:25}, markMap = {Easy:1, Medium:2, Hard:3};
+    return { topic, difficulty, type, question, options, answer, explanation, animation,
+      xp:xpMap[difficulty], marks:markMap[difficulty] };
+  },
+
+  validate(f){
+    if(!f.topic) return "Please enter a topic.";
+    if(!f.question) return "Please enter the question text.";
+    if(f.type==="MCQ" && f.options.length < 2) return "Please add at least two answers.";
+    if(!f.answer) return "Please tick which answer is correct.";
+    if(f.type==="MCQ" && !f.options.includes(f.answer)) return "The correct answer must be one of the typed answers.";
+    return null;
+  },
+
+  async save(){
+    const f = this.collectForm();
+    const err = this.validate(f);
+    const errEl = document.getElementById("mf-error");
+    if(err){ errEl.textContent = err; return; }
+    errEl.textContent = "Saving…";
+    try{
+      if(this.editing){
+        const { error } = await sb.from("l1_questions").update({ ...f, updated_at:new Date().toISOString() }).eq("id", this.editing.id);
+        if(error) throw error;
+      } else {
+        const { error } = await sb.from("l1_questions").insert({ ...f, sort:(this.rows.length+1) });
+        if(error) throw error;
+      }
+      this.editing = null;
+      await this.refresh();
+    }catch(e){
+      errEl.textContent = this.friendlyError(e);
+    }
+  },
+
+  async remove(id){
+    if(!confirm("Delete this question? This cannot be undone.")) return;
+    try{
+      const { error } = await sb.from("l1_questions").delete().eq("id", id);
+      if(error) throw error;
+      await this.refresh();
+    }catch(e){
+      alert(this.friendlyError(e));
+    }
+  },
+
+  async importStarter(){
+    if(!confirm("Copy the 40 built-in Level 1 questions into the database so you can edit them?")) return;
+    const info = document.getElementById("ml1-info");
+    if(info) info.insertAdjacentHTML("beforeend", `<p class="small muted" id="ml1-importing">Importing…</p>`);
+    try{
+      const payload = (this.bundled||[]).map((q,i)=>({
+        topic:q.topic, difficulty:q.difficulty||"Easy", type:q.type||"MCQ", question:q.question,
+        options:q.options||[], answer:q.answer, explanation:q.explanation||"",
+        hint1:q.hint1||"", hint2:q.hint2||"", hint3:q.hint3||"",
+        animation:q.animation||null, xp:q.xp||10, marks:q.marks||1, sort:i+1
+      }));
+      const { error } = await sb.from("l1_questions").insert(payload);
+      if(error) throw error;
+      await this.refresh();
+    }catch(e){
+      alert(this.friendlyError(e));
+      const el = document.getElementById("ml1-importing"); if(el) el.remove();
+    }
+  },
+
+  friendlyError(e){
+    const m = (e && e.message) || "Something went wrong.";
+    if(/row-level security|not authorized|permission/i.test(m))
+      return "You need to be logged in as the Admin to change questions.";
+    if(/relation .*l1_questions.* does not exist|schema cache/i.test(m))
+      return "The question database isn't set up yet. Run the l1_questions setup SQL in Supabase first.";
+    return m;
+  }
+};
+
 /* ---------------- ROUTER ---------------- */
 const Router = {
   go(name){
@@ -1156,9 +1636,13 @@ const Router = {
     document.querySelectorAll(".nav-btns button").forEach(b=>b.classList.toggle("active", b.dataset.nav===name));
     window.scrollTo({top:0, behavior:"smooth"});
     if(name==="home") App.renderHome();
+    if(name==="home-l1") HomeL1.render();
+    if(name==="learn-l1") HomeL1.renderLearn();
+    // "lesson-l1" is populated by HomeL1.openLesson() before navigation — no re-render needed.
     if(name==="achievements") App.renderAchievements();
     if(name==="admin") App.renderAdmin();
     if(name==="students") App.renderStudents();
+    if(name==="manage-l1") ManageL1.render();
   }
 };
 

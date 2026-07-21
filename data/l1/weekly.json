@@ -2,28 +2,41 @@
   "weeks": [
     {
       "week": 1,
-      "title": "Week 1 — Welcome to Level 1 (placeholder)",
+      "title": "Week 1 — What is a Robot?",
       "reading": [
-        "This is placeholder reading material for Beginner Level 1's weekly quiz gate.",
-        "Once the instructor provides the real Level 1 course content (an Excel sheet with topics and details), this will be replaced with the actual Week 1 reading material for this class.",
-        "This placeholder exists so the full reading-then-quiz flow can be tested end-to-end for Level 1, the same way it was built and tested for Level 2."
+        "A robot is a machine that can sense the world, think about what to do, and then act — like moving, lighting up, or making a sound.",
+        "Every robot has three main parts: sensors (to feel the world, like eyes and ears), a controller or 'brain' (to make decisions), and actuators like motors and lights (to move and react).",
+        "We call this simple idea 'Sense → Think → Act'. It is the pattern behind every robot, from a tiny toy to a Mars rover!",
+        "AI (Artificial Intelligence) is when a computer learns to do clever things, like recognising a face or a cat in a photo. Just like you get better with practice, AI learns from lots of examples.",
+        "You already meet robots and AI every day: robot vacuum cleaners, automatic doors, voice assistants, and phones that unlock with your face."
       ],
       "questions": [
         {
           "id": "l1-w1-1",
           "type": "mcq",
-          "question": "What is this Week 1 content for Level 1 right now?",
-          "options": ["Real course content", "Placeholder content", "A final exam", "Nothing"],
-          "answer": "Placeholder content",
-          "explanation": "This will be swapped out once the real Level 1 syllabus is provided."
+          "question": "What three things does every robot do?",
+          "options": ["Sense, Think, Act", "Eat, Sleep, Play", "Read, Write, Draw"],
+          "answer": "Sense, Think, Act",
+          "explanation": "Every robot senses the world, thinks about what to do, then acts. Sense → Think → Act!"
         },
         {
           "id": "l1-w1-2",
           "type": "fillblank",
-          "question": "Fill in the blank: This weekly quiz content is a ______ until the real Level 1 material arrives.",
-          "answer": "placeholder",
-          "acceptable": ["placeholder content", "temporary"],
-          "explanation": "Same reading-then-quiz gate mechanism as Level 2, just waiting on real content."
+          "question": "Fill in the blank: A robot uses ______ to feel the world, like eyes and ears.",
+          "answer": "sensors",
+          "acceptable": ["sensor", "a sensor"],
+          "explanation": "Sensors are a robot's senses — they let it feel light, distance, touch and more."
+        },
+        {
+          "id": "l1-w1-3",
+          "type": "matching",
+          "question": "Match each robot part to its job.",
+          "pairs": [
+            { "term": "Sensors", "match": "Feel the world (inputs)" },
+            { "term": "Controller (brain)", "match": "Make decisions" },
+            { "term": "Actuators", "match": "Move and react (outputs)" }
+          ],
+          "explanation": "Sensors feel, the controller decides, and actuators act — that's Sense → Think → Act!"
         }
       ]
     }
