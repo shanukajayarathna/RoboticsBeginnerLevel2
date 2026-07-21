@@ -287,7 +287,7 @@ button{font-family:var(--font-body); cursor:pointer;}
 .admin-table th{color:var(--text-3); font-weight:600; text-transform:uppercase; font-size:.7rem; letter-spacing:.04em;}
 
 /* Utility */
-.flex{display:flex;} .items-center{align-items:center;} .justify-between{justify-content:space-between;}
+.flex{display:flex;} .items-center{align-items:center;} .justify-between{justify-content:space-between;} .justify-center{justify-content:center;}
 .gap-8{gap:8px;} .gap-12{gap:12px;} .mt-10{margin-top:10px;} .mt-20{margin-top:20px;} .center{text-align:center;}
 .muted{color:var(--text-2);} .small{font-size:.8rem;}
 .spin-slow{animation:spin 5s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}}
@@ -475,6 +475,80 @@ button{font-family:var(--font-body); cursor:pointer;}
 .l1-lesson-quiz-cta p{margin:0; font-size:.88rem; opacity:.95;}
 .l1-stage-placeholder{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; height:100%; font-size:3rem; color:var(--text-2);}
 .l1-stage-placeholder div{font-size:.9rem; font-weight:600;}
+
+/* "How it works" button on the dashboard hero */
+.l1-help-btn{
+  align-self:flex-start; white-space:nowrap; cursor:pointer;
+  background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.35);
+  padding:8px 14px; border-radius:12px; font-weight:700; font-size:.82rem; transition:.15s;
+}
+.l1-help-btn:hover{background:rgba(255,255,255,.3);}
+
+/* Rich note blocks: headings, tips, videos, images */
+.l1-note-heading{font-size:1.15rem; margin:22px 0 8px; color:#fff;}
+.l1-tip{
+  display:flex; gap:12px; align-items:flex-start; margin:8px 0 18px; padding:14px 16px;
+  border-radius:16px; line-height:1.65; color:var(--text-1);
+  background:linear-gradient(135deg,rgba(255,197,61,.16),rgba(255,152,0,.10));
+  border:1px solid rgba(255,197,61,.4);
+}
+.l1-tip-ico{font-size:1.4rem; line-height:1;}
+.l1-tip b{color:#ffe082;}
+
+.l1-video{margin:6px 0 20px; max-width:820px;}
+.l1-video-frame{
+  position:relative; width:100%; padding-top:56.25%; /* 16:9 */
+  border-radius:18px; overflow:hidden; background:#000; border:1px solid var(--card-border);
+}
+.l1-video-frame iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+.l1-video figcaption, .l1-image figcaption{
+  margin-top:8px; font-size:.85rem; color:var(--text-2); text-align:center;
+}
+.l1-image{margin:6px 0 20px; max-width:820px; text-align:center;}
+.l1-image img{max-width:100%; height:auto; border-radius:18px; border:1px solid var(--card-border);}
+
+.l1-video-empty{
+  display:flex; align-items:center; gap:14px; margin:6px 0 20px; padding:18px 20px; max-width:820px;
+  border-radius:18px; border:2px dashed rgba(156,77,255,.5); background:rgba(156,77,255,.06);
+}
+.l1-video-empty-ico{font-size:2.2rem; line-height:1;}
+
+/* Onboarding walkthrough overlay */
+.l1-ob-overlay{
+  position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center;
+  padding:20px; background:rgba(10,8,20,.72); backdrop-filter:blur(4px);
+}
+.l1-ob-overlay.show{display:flex; animation:l1obfade .2s ease;}
+@keyframes l1obfade{from{opacity:0;}to{opacity:1;}}
+.l1-ob-card{
+  position:relative; width:100%; max-width:440px; text-align:center; padding:34px 28px 26px;
+  border-radius:26px; color:#fff; box-shadow:0 24px 60px rgba(0,0,0,.5);
+  background:linear-gradient(135deg,#7b2ff7 0%, #f107a3 100%);
+  animation:l1obpop .28s cubic-bezier(.2,.9,.3,1.3);
+}
+@keyframes l1obpop{from{transform:scale(.85); opacity:0;}to{transform:scale(1); opacity:1;}}
+.l1-ob-skip{
+  position:absolute; top:14px; right:14px; background:rgba(255,255,255,.16); color:#fff;
+  border:none; padding:6px 12px; border-radius:10px; font-size:.78rem; font-weight:600; cursor:pointer;
+}
+.l1-ob-skip:hover{background:rgba(255,255,255,.28);}
+.l1-ob-ico{font-size:3.4rem; line-height:1; animation:l1bob 2.6s ease-in-out infinite;}
+.l1-ob-title{margin:12px 0 8px; font-size:1.5rem;}
+.l1-ob-text{margin:0 auto; font-size:1rem; line-height:1.65; color:rgba(255,255,255,.94); max-width:340px; min-height:96px;}
+.l1-ob-text b{color:#ffe082;}
+.l1-ob-dots{display:flex; justify-content:center; gap:8px; margin:18px 0 20px;}
+.l1-ob-dot{width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.35); transition:.2s;}
+.l1-ob-dot.on{background:#fff; transform:scale(1.3);}
+.l1-ob-actions{display:flex; justify-content:space-between; align-items:center; gap:12px;}
+.l1-ob-actions .btn-primary{background:#fff; color:#7b2ff7; border:none;}
+.l1-ob-actions .btn-primary:hover{background:#f3e9ff;}
+
+/* Mobile: stack the L1 stat tiles and activity cards */
+@media (max-width:720px){
+  .l1-stat-row{grid-template-columns:repeat(3,1fr);}
+  .l1-activity-grid{grid-template-columns:repeat(2,1fr);}
+  .l1-two-col{grid-template-columns:1fr;}
+}
 
 /* Manage Level 1 — admin question editor form */
 .ml1-form-card{border:1.5px solid var(--l1-purple, #9C4DFF);}

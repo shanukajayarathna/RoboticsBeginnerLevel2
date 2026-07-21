@@ -28,7 +28,7 @@ const DEFAULT_STATE = {
   xp:0, coins:0, stars:0, streak:1, lastPlayDate: null,
   totalCorrect:0, totalAnswered:0, perfectExams:0, fastAnswers:0,
   topicStats:{}, unlockedAchievements:[], collection:[], examHistory:[],
-  weeklyCompleted:{}
+  weeklyCompleted:{}, lessonQuizzes:{}, l1SeenGuide:false
 };
 
 /* ---------------- AUTH (Supabase) ---------------- */
@@ -527,6 +527,7 @@ const App = {
       document.getElementById("nav-btns-l1").style.display = "flex";
       HomeL1.render();
       Router.go("home-l1");
+      Onboarding.maybeShow();
     } else {
       document.getElementById("nav-btns-l1").style.display = "none";
       document.getElementById("stat-pills").style.display = "flex";
@@ -1216,6 +1217,7 @@ const Leaderboard = {
 const HomeL1 = {
   learn: null, // cached learn.json content
   currentLesson: null,
+  currentLessonIndex: null,
 
   async load(){
     try{
@@ -1240,15 +1242,33 @@ const HomeL1 = {
     document.getElementById("l1-level-progress-fill").style.width = prog+"%";
     document.getElementById("l1-level-progress-txt").textContent = lvl.next ? `${s.xp - lvl.min} / ${span} XP to next level` : "Max level! 🎉";
 
-    document.getElementById("l1-xp").textContent = s.xp;
-    document.getElementById("l1-correct").textContent = s.totalCorrect;
-    document.getElementById("l1-accuracy").textContent = (s.totalAnswered ? Math.round((s.totalCorrect/s.totalAnswered)*100) : 0)+"%";
-    document.getElementById("l1-streak").textContent = s.streak;
-    document.getElementById("l1-stars").textContent = s.stars;
+    const acc = s.totalAnswered ? Math.round((s.totalCorrect/s.totalAnswered)*100) : 0;
+    this.animateCount("l1-xp", s.xp);
+    this.animateCount("l1-correct", s.totalCorrect);
+    this.animateCount("l1-accuracy", acc, "%");
+    this.animateCount("l1-streak", s.streak);
+    this.animateCount("l1-stars", s.stars);
 
     this.renderActivities("l1-activity-grid");
     this.renderBadges();
     Leaderboard.render("l1-leaderboard", "l1");
+  },
+
+  // Count a stat number up from 0 so the dashboard feels alive on each visit.
+  animateCount(elId, target, suffix){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    suffix = suffix || "";
+    target = Number(target) || 0;
+    if(target <= 0){ el.textContent = "0"+suffix; return; }
+    const dur = 650, start = performance.now();
+    const step = (now)=>{
+      const t = Math.min(1, (now-start)/dur);
+      const eased = 1 - Math.pow(1-t, 3); // ease-out cubic
+      el.textContent = Math.round(eased*target) + suffix;
+      if(t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   },
 
   activityDefs(){
@@ -1332,30 +1352,328 @@ const HomeL1 = {
   openLesson(i){
     const lsn = this.lessons()[i];
     if(!lsn) return;
+    this.currentLessonIndex = i;
     this.currentLesson = lsn;
     document.getElementById("l1-lesson-detail-title").textContent = lsn.title || "Lesson";
     const notesBox = document.getElementById("l1-lesson-notes");
-    notesBox.innerHTML = (lsn.notes||[]).map(block=>{
-      if(block.type === "diagram"){
-        return (typeof renderL1Diagram === "function") ? renderL1Diagram(block.key) : "";
-      }
-      if(block.type === "activity"){
-        return `<div class="l1-activity-box">${block.text||""}</div>`;
-      }
-      return `<p class="l1-note-p">${block.text||""}</p>`;
-    }).join("");
-    document.getElementById("l1-lesson-quiz-title").textContent = `Ready for the ${lsn.title||"lesson"} quiz?`;
-    const btn = document.getElementById("l1-lesson-quiz-btn");
+    notesBox.innerHTML = (lsn.notes||[]).map(block=>this.renderNoteBlock(block)).join("");
+
+    // Quiz call-to-action: prefer the lesson's own mixed-type quiz, fall back to the topic bank.
+    const hasLessonQuiz = Array.isArray(lsn.quiz) && lsn.quiz.length > 0;
     const topic = lsn.topic;
-    const hasQs = App.activeQuestions().some(q=>q.topic===topic);
-    if(hasQs){
+    const hasTopicQs = App.activeQuestions().some(q=>q.topic===topic);
+    const done = (App.state.lessonQuizzes||{})[this.lessonKey(lsn)];
+    const btn = document.getElementById("l1-lesson-quiz-btn");
+    const titleEl = document.getElementById("l1-lesson-quiz-title");
+    if(hasLessonQuiz || hasTopicQs){
+      titleEl.textContent = done
+        ? `⭐ You scored ${done.score}/${done.total} on this quiz — try again to beat it?`
+        : `Ready for the ${lsn.title||"lesson"} quiz?`;
       btn.style.display = "inline-flex";
-      btn.onclick = ()=>App.startTopic(topic);
+      btn.textContent = done ? "🔁 Retake the Lesson Quiz" : "📝 Take the Lesson Quiz";
+      btn.onclick = hasLessonQuiz ? ()=>LessonQuiz.start(lsn) : ()=>App.startTopic(topic);
     } else {
+      titleEl.textContent = "More questions for this lesson are coming soon!";
       btn.style.display = "none";
     }
     Router.go("lesson-l1");
+  },
+
+  lessonKey(lsn){ return lsn.id || lsn.topic || lsn.title || ""; },
+
+  // Render one note block. Supported types: text (default), diagram, activity,
+  // video (YouTube), image, tip/callout, heading.
+  renderNoteBlock(block){
+    if(!block) return "";
+    switch(block.type){
+      case "diagram":
+        return (typeof renderL1Diagram === "function") ? renderL1Diagram(block.key) : "";
+      case "activity":
+        return `<div class="l1-activity-box">${block.text||""}</div>`;
+      case "video":
+        return this.videoBlockHtml(block);
+      case "image":
+        return this.imageBlockHtml(block);
+      case "tip":
+      case "callout":
+        return `<div class="l1-tip"><span class="l1-tip-ico">${block.icon||"💡"}</span><div>${block.text||""}</div></div>`;
+      case "heading":
+        return `<h3 class="l1-note-heading">${block.text||""}</h3>`;
+      default:
+        return `<p class="l1-note-p">${block.text||""}</p>`;
+    }
+  },
+
+  // Pull the 11-char video id out of any common YouTube URL form (watch?v=, youtu.be/, embed/, shorts/).
+  youtubeId(url){
+    if(!url) return "";
+    const m = String(url).match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/|v\/))([A-Za-z0-9_-]{11})/);
+    if(m) return m[1];
+    const bare = String(url).match(/^[A-Za-z0-9_-]{11}$/); // allow a bare id
+    return bare ? bare[0] : "";
+  },
+
+  videoBlockHtml(block){
+    const id = this.youtubeId(block.url);
+    const title = block.title || "Watch & learn";
+    if(!id){
+      // No URL yet — show a friendly placeholder so it's obvious where a video goes.
+      return `<div class="l1-video-empty">
+        <div class="l1-video-empty-ico">🎬</div>
+        <div><strong>${title}</strong><br><span class="small muted">Video coming soon — an instructor will add it here.</span></div>
+      </div>`;
+    }
+    return `<figure class="l1-video">
+      <div class="l1-video-frame">
+        <iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1"
+          title="${this.escAttr(title)}" loading="lazy" allowfullscreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>🎬 ${title}</figcaption>
+    </figure>`;
+  },
+
+  imageBlockHtml(block){
+    if(!block.src){
+      return `<div class="l1-video-empty">
+        <div class="l1-video-empty-ico">🖼️</div>
+        <div><strong>${block.caption||"Picture"}</strong><br><span class="small muted">Image coming soon — an instructor will add it here.</span></div>
+      </div>`;
+    }
+    return `<figure class="l1-image">
+      <img src="${this.escAttr(block.src)}" alt="${this.escAttr(block.alt||block.caption||"Lesson picture")}" loading="lazy">
+      ${block.caption ? `<figcaption>${block.caption}</figcaption>` : ""}
+    </figure>`;
+  },
+
+  escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+};
+
+/* ---------------- LESSON QUIZ (per-lesson mixed quiz: MCQ / fill-blank / matching) ---------------- */
+const LessonQuiz = {
+  lesson:null, pool:[], index:0, correct:0, pending:null,
+
+  start(lesson){
+    if(!lesson || !Array.isArray(lesson.quiz) || !lesson.quiz.length){ return; }
+    this.lesson = lesson;
+    this.pool = lesson.quiz.slice();
+    this.index = 0; this.correct = 0;
+    document.getElementById("lq-title").textContent = `${lesson.icon||"📝"} ${lesson.title||"Lesson"} — Quiz`;
+    Router.go("lesson-quiz");
+    this.renderQuestion();
+  },
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); },
+  shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); },
+
+  // Normalise true/false questions into a 2-option MCQ shape.
+  optionsFor(q){
+    if(q.type === "truefalse") return ["True","False"];
+    return q.options || [];
+  },
+  answerFor(q){
+    if(q.type === "truefalse") return (q.answer===true||/^true$/i.test(String(q.answer))) ? "True" : "False";
+    return q.answer;
+  },
+
+  renderQuestion(){
+    const q = this.pool[this.index];
+    this.pending = { selected:null };
+    const total = this.pool.length;
+    document.getElementById("lq-progress-txt").textContent = `Question ${this.index+1} of ${total}`;
+    document.getElementById("lq-progress-fill").style.width = (this.index/total*100)+"%";
+
+    const type = (q.type==="truefalse") ? "mcq" : q.type;
+    let body = "";
+    if(type === "mcq"){
+      const opts = this.optionsFor(q);
+      body = `<div class="options" id="lq-options">${opts.map((opt,i)=>`
+        <button class="opt" data-i="${i}" onclick="LessonQuiz.selectMCQ(${i})">
+          <span class="k">${String.fromCharCode(65+i)}</span><span>${this.esc(opt)}</span>
+        </button>`).join("")}</div>
+        <button class="btn btn-primary btn-sm mt-20" id="lq-submit" onclick="LessonQuiz.submit()" disabled>Submit Answer</button>`;
+    } else if(type === "fillblank"){
+      body = `<input type="text" id="lq-blank-input" class="wq-blank-input" placeholder="Type your answer…" onkeydown="if(event.key==='Enter') LessonQuiz.submit()">
+        <button class="btn btn-primary btn-sm mt-20" id="lq-submit" onclick="LessonQuiz.submit()">Submit Answer</button>`;
+      setTimeout(()=>{ const el=document.getElementById("lq-blank-input"); if(el) el.focus(); }, 0);
+    } else if(type === "matching"){
+      const choices = this.shuffle(q.pairs.map(p=>p.match));
+      body = `<div id="lq-match-rows">${q.pairs.map((p,i)=>`
+        <div class="match-row flex items-center justify-between gap-8">
+          <div style="flex:1;">${this.esc(p.term)}</div>
+          <select class="wq-select" id="lq-match-${i}">
+            <option value="">Choose match…</option>
+            ${choices.map(c=>`<option value="${this.esc(c)}">${this.esc(c)}</option>`).join("")}
+          </select>
+        </div>`).join("")}</div>
+        <button class="btn btn-primary btn-sm mt-20" id="lq-submit" onclick="LessonQuiz.submit()">Submit Answer</button>`;
+    }
+
+    document.getElementById("lq-root").innerHTML = `
+      <div class="q-text">${this.esc(q.question)}</div>
+      <div id="lq-body">${body}</div>
+      <div class="feedback" id="lq-feedback"></div>`;
+  },
+
+  selectMCQ(i){
+    this.pending.selected = i;
+    document.querySelectorAll("#lq-options .opt").forEach((el,idx)=>{
+      el.style.borderColor = idx===i ? "var(--orange)" : "";
+    });
+    document.getElementById("lq-submit").disabled = false;
+  },
+
+  submit(){
+    const q = this.pool[this.index];
+    const type = (q.type==="truefalse") ? "mcq" : q.type;
+    let correct = false, correctText = "";
+
+    if(type === "mcq"){
+      const opts = this.optionsFor(q), ans = this.answerFor(q);
+      correct = this.pending.selected != null && opts[this.pending.selected] === ans;
+      correctText = ans;
+      document.querySelectorAll("#lq-options .opt").forEach((el,i)=>{
+        el.disabled = true;
+        if(opts[i] === ans) el.classList.add("correct");
+        else if(i === this.pending.selected) el.classList.add("wrong");
+      });
+    } else if(type === "fillblank"){
+      const input = document.getElementById("lq-blank-input");
+      const val = input.value.trim().toLowerCase();
+      const accepted = [q.answer, ...(q.acceptable||[])].map(a=>String(a).toLowerCase().trim());
+      correct = accepted.includes(val);
+      correctText = q.answer;
+      input.disabled = true;
+      input.style.borderColor = correct ? "var(--green)" : "#ff5252";
+    } else if(type === "matching"){
+      correct = true;
+      q.pairs.forEach((p,i)=>{
+        const sel = document.getElementById(`lq-match-${i}`);
+        const ok = sel.value === p.match;
+        if(!ok) correct = false;
+        sel.disabled = true;
+        sel.style.borderColor = ok ? "var(--green)" : "#ff5252";
+      });
+      correctText = q.pairs.map(p=>`${p.term} → ${p.match}`).join("; ");
+    }
+
+    const submitBtn = document.getElementById("lq-submit");
+    if(submitBtn) submitBtn.style.display = "none";
+
+    // Scoring — mirrors the weekly quiz rewards and feeds the same progress stats.
+    if(correct) this.correct++;
+    App.state.totalAnswered++;
+    const ts = App.state.topicStats[this.lesson.topic] = App.state.topicStats[this.lesson.topic] || {correct:0, attempted:0};
+    ts.attempted++;
+    if(correct){
+      App.state.totalCorrect++;
+      ts.correct++;
+      App.state.xp += 8;
+      App.state.coins += 4;
+      App.state.stars += 1;
+      App.celebrate();
+    }
+    Store.save(App.state);
+    App.checkAchievements();
+
+    const fb = document.getElementById("lq-feedback");
+    fb.className = "feedback show " + (correct ? "correct-fb" : "wrong-fb");
+    const nextLabel = this.index < this.pool.length-1 ? "Next Question →" : "Finish →";
+    fb.innerHTML = `
+      <h4>${correct ? "✅ Correct! +8 XP" : "🤖 Not quite."}</h4>
+      ${!correct ? `<p><strong>Correct answer:</strong> ${this.esc(correctText)}</p>` : ""}
+      ${q.explanation ? `<p class="mt-10">${q.explanation}</p>` : ""}
+      <div class="mt-20"><button class="btn btn-primary btn-sm" onclick="LessonQuiz.next()">${nextLabel}</button></div>`;
+  },
+
+  next(){
+    if(this.index < this.pool.length-1){
+      this.index++;
+      this.renderQuestion();
+    } else {
+      this.finish();
+    }
+  },
+
+  finish(){
+    const total = this.pool.length;
+    const key = HomeL1.lessonKey(this.lesson);
+    App.state.lessonQuizzes = App.state.lessonQuizzes || {};
+    const prev = App.state.lessonQuizzes[key];
+    // Bonus XP only the first time a lesson quiz is completed.
+    if(!prev){ App.state.xp += 20; App.state.coins += 10; }
+    if(!prev || this.correct > prev.score){
+      App.state.lessonQuizzes[key] = { score:this.correct, total, completedAt:Date.now() };
+    }
+    Store.save(App.state);
+    App.checkAchievements();
+
+    const pct = Math.round((this.correct/total)*100);
+    const msg = pct>=80 ? "Amazing work! 🌟" : pct>=50 ? "Nice job! 💪" : "Good try — review the lesson and go again! 🔧";
+    document.getElementById("lq-root").innerHTML = `
+      <div style="text-align:center; padding:10px 0;">
+        <div style="font-size:3.4rem;">${pct>=80?"🎉":pct>=50?"👍":"📚"}</div>
+        <h2 style="margin:8px 0;">${msg}</h2>
+        <p class="muted">You scored <strong>${this.correct}/${total}</strong> (${pct}%)${!prev?" — plus a 20 XP finishing bonus!":""}</p>
+        <div class="flex justify-center gap-8 mt-20" style="flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="LessonQuiz.start(LessonQuiz.lesson)">🔁 Try Again</button>
+          <button class="btn btn-teal" onclick="HomeL1.openLesson(HomeL1.currentLessonIndex)">← Back to Lesson</button>
+          <button class="btn btn-green" onclick="App.enterHome()">🏠 Dashboard</button>
+        </div>
+      </div>`;
+    document.getElementById("lq-progress-fill").style.width = "100%";
+    document.getElementById("lq-progress-txt").textContent = `Done — ${this.correct}/${total}`;
+  },
+
+  quit(){
+    if(HomeL1.currentLessonIndex != null){ HomeL1.openLesson(HomeL1.currentLessonIndex); }
+    else { App.enterHome(); }
   }
+};
+
+/* ---------------- ONBOARDING GUIDE (first-login walkthrough for Level 1 kids) ---------------- */
+const Onboarding = {
+  index:0,
+  slides:[
+    {ico:"👋", title:"Welcome to the Academy!", text:"Hi there, explorer! This quick guide shows how everything works. It only takes 20 seconds — then you're off to build robots and train AI! 🤖"},
+    {ico:"📚", title:"Read & Watch Lessons", text:"Tap <b>📚 Learn</b> to open your lessons. Each one has friendly notes, colourful pictures, and videos you can play right on the page. Go through them in order."},
+    {ico:"📝", title:"Take the Lesson Quiz", text:"After reading, take the lesson quiz. Questions can be <b>multiple choice</b>, <b>fill-in-the-blank</b>, or <b>matching</b>. Every answer comes with an explanation, so you always learn something!"},
+    {ico:"⚡", title:"Earn XP, Marks & Stars", text:"Right answers earn <b>⚡ XP</b> that levels you up: Beginner → Maker → Inventor → and beyond! Your <b>🎯 Marks</b> show your accuracy, and <b>⭐ Stars</b> pile up as you go."},
+    {ico:"🔥", title:"Keep Your Streak", text:"Play a little <b>every day</b> to grow your <b>🔥 day streak</b>. Try the <b>🎯 Daily Challenge</b>, <b>📘 Practice Mode</b>, and <b>🗺️ Explore Topics</b> for extra fun and rewards."},
+    {ico:"🏅", title:"Badges & Leaderboard", text:"Unlock shiny <b>🏅 badges</b> for reaching goals, and climb the <b>🏆 class leaderboard</b> against your friends. Ready? Let's start with Lesson 1! 🚀"}
+  ],
+
+  maybeShow(){
+    if(!App.isL1Student()) return;
+    if(App.state.l1SeenGuide) return;
+    this.open();
+  },
+
+  open(){ this.index = 0; document.getElementById("l1-onboarding").classList.add("show"); this.render(); },
+
+  render(){
+    const s = this.slides[this.index];
+    const last = this.index === this.slides.length-1;
+    document.getElementById("l1-ob-ico").textContent = s.ico;
+    document.getElementById("l1-ob-title").textContent = s.title;
+    document.getElementById("l1-ob-text").innerHTML = s.text;
+    document.getElementById("l1-ob-dots").innerHTML = this.slides.map((_,i)=>
+      `<span class="l1-ob-dot ${i===this.index?'on':''}"></span>`).join("");
+    document.getElementById("l1-ob-back").style.visibility = this.index===0 ? "hidden" : "visible";
+    document.getElementById("l1-ob-next").textContent = last ? "Let's Go! 🚀" : "Next →";
+  },
+
+  next(){
+    if(this.index < this.slides.length-1){ this.index++; this.render(); }
+    else { this.finish(); }
+  },
+  prev(){ if(this.index>0){ this.index--; this.render(); } },
+
+  finish(){
+    if(!App.state.l1SeenGuide){ App.state.l1SeenGuide = true; Store.save(App.state); }
+    this.close();
+  },
+  close(){ document.getElementById("l1-onboarding").classList.remove("show"); }
 };
 
 /* ---------------- MANAGE LEVEL 1 (admin live question editor, Supabase-backed) ---------------- */

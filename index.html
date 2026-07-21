@@ -209,10 +209,11 @@
       <div class="l1-hero-blob b2"></div>
       <div class="l1-hero-content">
         <div class="l1-mascot">🤖</div>
-        <div>
+        <div style="flex:1;">
           <h1 class="l1-hello">Hi <span id="l1-name">Explorer</span>! 👋</h1>
           <p class="l1-hello-sub">Ready to learn something awesome today?</p>
         </div>
+        <button class="l1-help-btn" onclick="Onboarding.open()" title="How does this work?">❓ How it works</button>
       </div>
       <div class="l1-level-card">
         <div class="flex justify-between items-center" style="margin-bottom:8px;">
@@ -284,6 +285,26 @@
         <p>Answer a few friendly questions — you'll get an explanation after each one. 🌟</p>
       </div>
       <button class="btn btn-primary" id="l1-lesson-quiz-btn">📝 Take the Lesson Quiz</button>
+    </div>
+  </section>
+
+  <!-- ============ LEVEL 1 LESSON QUIZ (MCQ / fill-blank / matching) ============ -->
+  <section id="screen-lesson-quiz" class="screen">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <span class="tag">LESSON QUIZ</span>
+        <span id="lq-title">Lesson — Quiz</span>
+        <span id="lq-progress-txt">Question 1 of 3</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="LessonQuiz.quit()">✕ Exit</button>
+    </div>
+    <div class="progress-track mt-10" style="margin-bottom:18px;">
+      <div class="progress-fill teal" id="lq-progress-fill" style="width:0%"></div>
+    </div>
+    <div class="login-wrap" style="min-height:auto;padding:0;">
+      <div class="card" style="max-width:640px;width:100%;">
+        <div id="lq-root"></div>
+      </div>
     </div>
   </section>
 
@@ -483,6 +504,21 @@
     <div class="card" id="ml1-notes-preview"></div>
   </section>
 
+</div>
+
+<!-- ============ LEVEL 1 ONBOARDING GUIDE (first-login walkthrough) ============ -->
+<div class="l1-ob-overlay" id="l1-onboarding">
+  <div class="l1-ob-card">
+    <button class="l1-ob-skip" onclick="Onboarding.finish()" title="Skip">Skip ✕</button>
+    <div class="l1-ob-ico" id="l1-ob-ico">👋</div>
+    <h2 class="l1-ob-title" id="l1-ob-title">Welcome!</h2>
+    <p class="l1-ob-text" id="l1-ob-text"></p>
+    <div class="l1-ob-dots" id="l1-ob-dots"></div>
+    <div class="l1-ob-actions">
+      <button class="btn btn-ghost btn-sm" id="l1-ob-back" onclick="Onboarding.prev()">← Back</button>
+      <button class="btn btn-primary" id="l1-ob-next" onclick="Onboarding.next()">Next →</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============ ARDUINO BUDDY (AI Tutor mascot) ============ -->
