@@ -76,7 +76,14 @@ const Auth = {
       if(error.message === "Invalid login credentials"){
         // Could be a wrong PIN OR a brand-new account. Try to create it.
         const signup = await sb.auth.signUp({email, password:pin});
-        if(signup.error) throw signup.error;
+        if(signup.error){
+          // "User already registered" here means the account exists and the
+          // PIN was simply wrong — report that, not a scary "already exists".
+          if(/already\s*(registered|exists)|been registered/i.test(signup.error.message)){
+            throw new Error("Invalid login credentials");
+          }
+          throw signup.error;
+        }
         if(!signup.data.session){
           throw new Error("Account created, but Supabase is asking for email confirmation. Disable \"Confirm email\" under Authentication settings, then try again.");
         }
