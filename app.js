@@ -1357,6 +1357,7 @@ const Accounts = {
         <div class="flex gap-8" style="flex-wrap:wrap; align-items:center;">
           <input id="accounts-search" placeholder="Search name or username…" class="btn btn-ghost" style="padding:8px 14px;font-weight:400;" oninput="Accounts.onSearch(this.value)" value="${this.esc(this.search)}">
           <button class="btn btn-teal btn-sm" onclick="Accounts.exportCSV()">⬇ Export CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="Accounts.changeAdminPin()">🔑 My PIN</button>
           <button class="btn btn-ghost btn-sm" onclick="Accounts.render()">↻ Refresh</button>
         </div>
       </div>
@@ -1372,7 +1373,7 @@ const Accounts = {
           </tbody>
         </table>
       </div>
-      <p class="small muted" style="margin-top:12px;">Need to change a password or fully delete an account? Do it in the Supabase dashboard → Authentication → Users (those need the secret service key and can't be done safely from the browser).</p>`;
+      <p class="small muted" style="margin-top:12px;">Row buttons: <b>→L1/→L2</b> move class · <b>♻</b> reset progress · <b>🔑</b> reset password · <b>🗑</b> delete account. Use <b>🔑 My PIN</b> above to change your own admin PIN. (🔑 and 🗑 need the <code>admin-actions</code> Edge Function deployed.)</p>`;
     this.applySearch();
   },
 
@@ -1396,6 +1397,8 @@ const Accounts = {
       <td style="white-space:nowrap;">
         <button class="btn btn-ghost btn-sm" title="Move to the other class" onclick="Accounts.changeClass('${r.id}','${other}')">${otherLabel}</button>
         <button class="btn btn-ghost btn-sm" title="Reset all progress to zero" onclick="Accounts.resetProgress('${r.id}')">♻</button>
+        <button class="btn btn-ghost btn-sm" title="Reset this student's password" onclick="Accounts.resetPassword('${r.id}')">🔑</button>
+        <button class="btn btn-ghost btn-sm" title="Delete this account permanently" onclick="Accounts.deleteUser('${r.id}')">🗑</button>
       </td>
     </tr>`;
   },
@@ -1415,6 +1418,50 @@ const Accounts = {
     const { error } = await sb.from("progress").delete().eq("user_id", id);
     if(error){ alert(this.friendlyError(error)); return; }
     await this.render();
+  },
+
+  // Reset a student's login password (needs the admin-actions Edge Function).
+  async resetPassword(id){
+    const r = this.data.find(x=>x.id===id); if(!r) return;
+    const np = prompt(`Set a NEW password for ${r.name} (at least 6 characters).\nThey'll use this to log in from now on:`);
+    if(np==null) return;
+    if(np.trim().length < 6){ alert("Password must be at least 6 characters."); return; }
+    const { data, error } = await sb.functions.invoke("admin-actions", {
+      body:{ action:"reset_password", user_id:id, new_password:np.trim() }
+    });
+    if(error || (data && data.error)){ alert(this.fnError(error, data)); return; }
+    alert(`✅ Done! ${r.name}'s password is now:\n\n${np.trim()}\n\nWrite it down or tell them.`);
+    await this.render();
+  },
+
+  // Permanently delete a student's whole account (needs the Edge Function).
+  async deleteUser(id){
+    const r = this.data.find(x=>x.id===id); if(!r) return;
+    if(!confirm(`Permanently DELETE ${r.name}'s account?\nThis removes their login, progress and saved password. It cannot be undone.`)) return;
+    if(!confirm(`Last check — really delete ${r.name}? There's no way back.`)) return;
+    const { data, error } = await sb.functions.invoke("admin-actions", {
+      body:{ action:"delete_user", user_id:id }
+    });
+    if(error || (data && data.error)){ alert(this.fnError(error, data)); return; }
+    await this.render();
+  },
+
+  // Change the master admin's OWN PIN — done client-side (the admin is signed in).
+  async changeAdminPin(){
+    const np = prompt("Set a NEW Master Admin PIN (at least 4 characters).\nYou'll use it next time you log in:");
+    if(np==null) return;
+    if(np.trim().length < 4){ alert("PIN must be at least 4 characters."); return; }
+    const { error } = await sb.auth.updateUser({ password: np.trim() });
+    if(error){ alert(error.message || "Couldn't change the PIN."); return; }
+    alert("✅ Your Master Admin PIN has been changed. Use the new PIN next time you log in.");
+  },
+
+  fnError(error, data){
+    if(data && data.error) return data.error;
+    const m = (error && error.message) || "";
+    if(/not found|Failed to (send|fetch)|404|does not exist/i.test(m))
+      return "The admin-actions Edge Function isn't deployed yet.\nDeploy it in Supabase (Edge Functions → create \"admin-actions\"), then try again.";
+    return m || "That action failed. Is the admin-actions Edge Function deployed?";
   },
 
   exportCSV(){
