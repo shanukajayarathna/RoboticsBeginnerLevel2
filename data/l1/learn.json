@@ -9,7 +9,7 @@
       "summary": "What is a robot? What is AI? Where do we see them in real life?",
       "notes": [
         { "type": "text", "text": "A <b>robot</b> is a machine that can <b>sense</b> the world around it, <b>think</b> about what to do, and then <b>act</b> — like moving, beeping, or lighting up. Robots do jobs that are boring, dangerous, or very precise." },
-        { "type": "video", "url": "", "title": "What is a robot? What is AI?" },
+        { "type": "video", "url": "https://youtu.be/3g0W9OVJSsE", "title": "What is a robot? What is AI?" },
         { "type": "diagram", "key": "robot-parts" },
         { "type": "text", "text": "Every robot has three main parts:<br>👀 <b>Sensors</b> — to feel the world (like eyes and ears).<br>🧠 <b>A controller (brain)</b> — to make decisions.<br>🦿 <b>Actuators</b> — motors and lights that make it move or react." },
         { "type": "text", "text": "<b>AI (Artificial Intelligence)</b> is when a computer learns to do clever things — like recognising a face, understanding speech, or spotting a cat in a photo. Just like <i>you</i> get better with practice, AI gets better by looking at lots of examples." },
@@ -31,7 +31,7 @@
       "summary": "Meet the Arduino board and the basic electronic parts.",
       "notes": [
         { "type": "text", "text": "<b>Arduino</b> is a tiny computer board that acts as a robot's brain. You give it instructions (a program), and it controls lights, motors, and reads sensors." },
-        { "type": "video", "url": "", "title": "Meet the Arduino & basic components" },
+        { "type": "video", "url": "https://youtu.be/CSx6k-zXlLE", "title": "Meet the Arduino & basic components" },
         { "type": "diagram", "key": "arduino-board" },
         { "type": "text", "text": "🧰 <b>Basic electronic parts you'll use:</b><br>• <b>Resistor</b> — slows down electricity to protect parts.<br>• <b>LED</b> — a small light 💡.<br>• <b>Buzzer</b> — makes sound 🔊.<br>• <b>Capacitor</b> — stores a little electricity.<br>• <b>Diode</b> — lets electricity flow one way only.<br>• <b>DC motor</b> — spins to make things move.<br>• <b>Switch</b> — turns a circuit on or off." },
         { "type": "text", "text": "Electricity needs a complete <b>loop</b> called a <b>circuit</b>. If the loop is broken (like a switch turned off), nothing works — just like water can't flow through a cut pipe." },
@@ -55,7 +55,7 @@
       "summary": "Program the micro:bit with easy drag-and-drop blocks.",
       "notes": [
         { "type": "text", "text": "The <b>micro:bit</b> is a pocket-sized computer with 25 tiny LEDs, 2 buttons (A and B), and built-in sensors. It's a super friendly way to start coding." },
-        { "type": "video", "url": "", "title": "Getting started with the micro:bit" },
+        { "type": "video", "url": "https://youtu.be/P3hyXeUxs2Y", "title": "Getting started with the micro:bit" },
         { "type": "diagram", "key": "microbit" },
         { "type": "text", "text": "You program it with <b>blocks</b> — colourful puzzle pieces you drag together. No typing needed at first! Later you can switch to <b>text code</b> when you're ready." },
         { "type": "text", "text": "💡 <b>Inputs</b> are things the micro:bit senses: button presses, shaking, light, and temperature.<br>🔆 <b>Outputs</b> are things it does: light up LEDs, show pictures, or make sounds." },
@@ -77,7 +77,7 @@
       "summary": "Write code for the Arduino using the Arduino IDE and Tinkercad.",
       "notes": [
         { "type": "text", "text": "We write Arduino programs in the <b>Arduino IDE</b> (a free app) and can test them for free online in <b>Tinkercad</b> before using real parts." },
-        { "type": "video", "url": "", "title": "Your first Arduino program (blink an LED)" },
+        { "type": "video", "url": "https://youtu.be/WlkxvDq_hUE", "title": "Your first Arduino program (blink an LED)" },
         { "type": "text", "text": "Every Arduino program has two main parts:<br>• <code>setup()</code> — runs <b>once</b> at the start (get things ready).<br>• <code>loop()</code> — runs <b>again and again</b> forever (the robot's heartbeat)." },
         { "type": "text", "text": "🧱 <b>Building blocks of code:</b><br>• <b>Variables</b> store information (like a labelled box).<br>• <b>Loops</b> repeat actions.<br>• <b>Conditionals</b> (<code>if / else</code>) make decisions: <i>IF it's dark → turn the light ON</i>." },
         { "type": "text", "text": "Arduino pins can be <b>INPUT</b> (read a sensor) or <b>OUTPUT</b> (control an LED or motor). The <b>Serial Monitor</b> lets the Arduino print messages to your screen — great for checking what's happening and fixing bugs 🐞." },
@@ -99,7 +99,7 @@
       "summary": "How robots feel the world and how they move.",
       "notes": [
         { "type": "text", "text": "<b>Sensors</b> are the robot's senses (inputs). Some common ones:<br>• <b>Ultrasonic</b> — measures distance with sound 🔊.<br>• <b>IR</b> — spots objects or follows a line.<br>• <b>LDR</b> — senses light (bright or dark).<br>• <b>Temperature</b> — senses hot or cold.<br>• <b>Touch / limit</b> — senses a press or bump." },
-        { "type": "video", "url": "", "title": "How sensors and motors work" },
+        { "type": "video", "url": "https://youtu.be/SdtjTCxDo1o", "title": "How sensors and motors work" },
         { "type": "diagram", "key": "ultrasonic" },
         { "type": "text", "text": "<b>Actuators</b> make the robot do things (outputs):<br>• <b>DC motor</b> — spins wheels to drive around.<br>• <b>Servo motor</b> — turns to an exact angle (great for arms and steering).<br>• <b>LED & buzzer</b> — light and sound to show what's happening." },
         { "type": "diagram", "key": "servo-motor" },
@@ -122,7 +122,7 @@
       "summary": "Teach a computer to recognise pictures, sounds, and poses.",
       "notes": [
         { "type": "text", "text": "<b>Machine Learning (ML)</b> is a type of AI where a computer <b>learns from examples</b> instead of being told every rule. Show it lots of cat photos and dog photos, and it learns to tell them apart!" },
-        { "type": "video", "url": "", "title": "Teach a machine with Google Teachable Machine" },
+        { "type": "video", "url": "https://youtu.be/Qb1U2TmUmGA", "title": "Teach a machine with Google Teachable Machine" },
         { "type": "diagram", "key": "ai-teachable" },
         { "type": "text", "text": "The steps are always the same:<br>1️⃣ <b>Collect examples</b> (photos, sounds, or poses).<br>2️⃣ <b>Train</b> the model on those examples.<br>3️⃣ <b>Predict</b> — show it something new and it guesses the answer." },
         { "type": "text", "text": "<b>Google Teachable Machine</b> is a free website 🌐 that lets you train your own AI in minutes — right in your browser. You can teach it to recognise images, sounds, or body poses." },
@@ -144,7 +144,7 @@
       "summary": "Design, build, and program an obstacle-avoidance robot.",
       "notes": [
         { "type": "text", "text": "Now we bring everything together to build an <b>obstacle-avoidance robot</b> — a robot car that drives around and turns away when it sees something in the way." },
-        { "type": "video", "url": "", "title": "Building an obstacle-avoiding robot" },
+        { "type": "video", "url": "https://youtu.be/4CFO0MiSlM8", "title": "Building an obstacle-avoiding robot" },
         { "type": "diagram", "key": "robot-car" },
         { "type": "text", "text": "🛠️ <b>The build steps:</b><br>1️⃣ Build the body (chassis) and attach the wheels and motors.<br>2️⃣ Add the Arduino brain and the battery.<br>3️⃣ Fit an ultrasonic sensor at the front (the robot's eyes 👀).<br>4️⃣ Upload the code.<br>5️⃣ Test and improve!" },
         { "type": "text", "text": "🧠 <b>The robot's thinking (the code idea):</b><br><i>IF something is close in front → STOP and turn.<br>ELSE → drive forward.</i><br>This repeats over and over in the <code>loop()</code>, just like Lesson 4." },
@@ -167,7 +167,8 @@
       "summary": "Show off your robot and dream about what's next!",
       "notes": [
         { "type": "text", "text": "🎉 <b>Project Showcase!</b> This is where you show your robot to others, explain how it works, and maybe race it in a friendly competition. Be proud — you built a real robot!" },
-        { "type": "video", "url": "", "title": "The amazing future of robotics" },
+        { "type": "video", "url": "https://youtu.be/fRaNmO4skfQ", "title": "The future of robotics & AI" },
+        { "type": "video", "url": "https://youtu.be/oRJf8NGkxaI", "title": "Robots & AI in our world" },
         { "type": "text", "text": "📝 <b>Your project report</b> tells the story of your robot: your design idea, how you coded it, the problems you faced, and what you learned from start to finish." },
         { "type": "text", "text": "🔮 <b>The future of robotics:</b> robots that help doctors, farm our food, clean the oceans, and explore space. AI is getting smarter every year. The skills you learned here — sensing, thinking, acting, and coding — are the same ones real engineers use!" },
         { "type": "diagram", "key": "robot-parts" },
