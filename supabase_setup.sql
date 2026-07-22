@@ -98,3 +98,49 @@ create policy "l1q admin update" on public.l1_questions for update using (
 create policy "l1q admin delete" on public.l1_questions for delete using (
   (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
 );
+
+-- ---------------------------------------------------------------------
+-- MASTER ADMIN: account management + student credential book.
+-- Run once in the Supabase SQL Editor. Safe to re-run.
+--
+-- SECURITY NOTE: student_credentials stores each student's username and
+-- password IN PLAINTEXT so the teacher/master-admin can recover them for
+-- young learners who forget. Supabase Auth itself only keeps a one-way
+-- hash, so this is the only way to show a real password. RLS below means
+-- ONLY the master-admin account can read this table; each student may
+-- write only their own row. The app fills it in as students log in.
+-- ---------------------------------------------------------------------
+create table if not exists public.student_credentials (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  name text,
+  username text,
+  password text,
+  class text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.student_credentials enable row level security;
+
+-- Each user may create / update ONLY their own credential row.
+create policy "own cred insert" on public.student_credentials for insert with check (auth.uid() = user_id);
+create policy "own cred update" on public.student_credentials for update using (auth.uid() = user_id);
+create policy "own cred select" on public.student_credentials for select using (auth.uid() = user_id);
+-- Only the master admin can read the whole credential book.
+create policy "admin cred select" on public.student_credentials for select using (
+  (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
+);
+
+-- Let the master admin MANAGE accounts from the app:
+--   • change a student's class (l1 <-> l2)   -> profiles update
+--   • reset a student's progress             -> progress delete
+create policy "admin profile update" on public.profiles for update using (
+  (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
+) with check (
+  (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
+);
+create policy "admin progress delete" on public.progress for delete using (
+  (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
+);
+create policy "admin cred update" on public.student_credentials for update using (
+  (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
+);

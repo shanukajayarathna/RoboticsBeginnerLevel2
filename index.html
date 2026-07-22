@@ -26,6 +26,7 @@
   <div class="nav-btns" id="nav-btns" style="display:none;">
     <button data-nav="home" onclick="Router.go('home')">Home</button>
     <button data-nav="achievements" onclick="Router.go('achievements')">Achievements</button>
+    <button data-nav="accounts" id="nav-accounts-btn" onclick="Router.go('accounts')" style="display:none;">👑 Accounts</button>
     <button data-nav="admin" onclick="Router.go('admin')">Question Bank</button>
     <button data-nav="students" id="nav-students-btn" onclick="Router.go('students')" style="display:none;">Students</button>
     <button data-nav="manage-l1" id="nav-manage-l1-btn" onclick="Router.go('manage-l1')" style="display:none;">Manage L1</button>
@@ -46,26 +47,25 @@
   <!-- ============ CLASS SELECT SCREEN ============ -->
   <section id="screen-class-select" class="screen active">
     <div class="login-wrap">
-      <div style="width:100%;max-width:720px;">
-        <div class="chip" style="width:56px;height:56px;font-size:1.8rem;margin:0 auto 14px;">🔌</div>
-        <h2 style="text-align:center;">Robotics &amp; AI Academy</h2>
-        <p class="muted small" style="text-align:center;margin-bottom:24px;">Which class are you in?</p>
-        <div class="grid-2" style="gap:16px;">
-          <div class="card mode-card card-hover" style="cursor:pointer;" onclick="ClassGate.choose('l1')">
-            <div class="glow" style="background:var(--green);"></div>
-            <div class="emoji">🤖</div>
-            <h3>Beginner Level 1</h3>
-            <p>Robotics &amp; AI fundamentals — sign up or log in with your own username.</p>
-            <button class="btn btn-green btn-sm">Enter Level 1</button>
-          </div>
-          <div class="card mode-card card-hover" style="cursor:pointer;" onclick="ClassGate.choose('l2')">
-            <div class="glow" style="background:var(--teal);"></div>
-            <div class="emoji">🔌</div>
-            <h3>Beginner Level 2</h3>
-            <p>Arduino Junior Academy — pick your name and enter your PIN.</p>
-            <button class="btn btn-teal btn-sm">Enter Level 2</button>
-          </div>
+      <div class="auth-card auth-card-wide">
+        <div class="auth-badge">🤖</div>
+        <h2 class="auth-title">Robotics &amp; AI Academy</h2>
+        <p class="auth-sub">Welcome, explorer! 👋 Which class are you in?</p>
+        <div class="class-pick">
+          <button class="class-card cc-green" onclick="ClassGate.choose('l1')">
+            <div class="class-emoji">🤖</div>
+            <div class="class-name">Beginner Level 1</div>
+            <div class="class-desc">Robotics &amp; AI fundamentals. Sign up or log in with your own username.</div>
+            <span class="class-go">Enter Level 1 →</span>
+          </button>
+          <button class="class-card cc-teal" onclick="ClassGate.choose('l2')">
+            <div class="class-emoji">🔌</div>
+            <div class="class-name">Beginner Level 2</div>
+            <div class="class-desc">Arduino Junior Academy. Pick your name and enter your PIN.</div>
+            <span class="class-go">Enter Level 2 →</span>
+          </button>
         </div>
+        <button class="auth-teacher-link" onclick="Router.go('login-admin')">👩‍🏫 Teacher / Master Admin login</button>
       </div>
     </div>
   </section>
@@ -73,15 +73,18 @@
   <!-- ============ LEVEL 2 LOGIN SCREEN ============ -->
   <section id="screen-login" class="screen">
     <div class="login-wrap">
-      <div class="card login-card">
-        <div class="chip" style="width:56px;height:56px;font-size:1.8rem;margin:0 auto 14px;">🔌</div>
-        <h2 style="text-align:center;">Arduino Junior Academy</h2>
-        <p class="muted small" style="text-align:center;margin-bottom:20px;">Beginner Level 2 · Who's learning today?</p>
+      <div class="auth-card">
+        <div class="auth-badge auth-badge-teal">🔌</div>
+        <h2 class="auth-title">Arduino Junior Academy</h2>
+        <p class="auth-sub">Beginner Level 2 · Who's learning today?</p>
         <div class="login-names" id="login-names"></div>
-        <input id="login-pin" type="password" inputmode="numeric" placeholder="Enter PIN" class="login-pin-input" style="display:none;" onkeydown="if(event.key==='Enter') Auth.submitLogin()">
-        <div id="login-error" class="small" style="color:#ff5252;min-height:18px;margin-top:10px;text-align:center;"></div>
-        <button class="btn btn-primary" id="login-btn" style="display:none;width:100%;margin-top:10px;justify-content:center;" onclick="Auth.submitLogin()">Log In</button>
-        <p class="small muted" style="text-align:center;margin-top:16px;"><a style="cursor:pointer;color:var(--teal);" onclick="ClassGate.backToSelect()">← Choose a different class</a></p>
+        <div class="auth-pw" id="login-pin-wrap" style="display:none;">
+          <input id="login-pin" type="password" inputmode="numeric" placeholder="Enter your PIN" class="auth-input" onkeydown="if(event.key==='Enter') Auth.submitLogin()">
+          <button type="button" class="pw-toggle" onclick="App.togglePw('login-pin', this)" title="Show / hide">👁</button>
+        </div>
+        <div id="login-error" class="auth-error"></div>
+        <button class="btn btn-primary auth-submit" id="login-btn" style="display:none;" onclick="Auth.submitLogin()">Log In</button>
+        <button class="auth-back" onclick="ClassGate.backToSelect()">← Choose a different class</button>
       </div>
     </div>
   </section>
@@ -89,31 +92,59 @@
   <!-- ============ LEVEL 1 LOGIN / SIGN UP SCREEN ============ -->
   <section id="screen-login-l1" class="screen">
     <div class="login-wrap">
-      <div class="card login-card">
-        <div class="chip" style="width:56px;height:56px;font-size:1.8rem;margin:0 auto 14px;">🤖</div>
-        <h2 style="text-align:center;">Robotics &amp; AI — Level 1</h2>
-        <div class="flex gap-8" style="margin:16px 0 20px;justify-content:center;">
-          <button class="btn btn-primary btn-sm" id="l1-tab-login" onclick="ClassGate.showL1Tab('login')">Log In</button>
-          <button class="btn btn-ghost btn-sm" id="l1-tab-signup" onclick="ClassGate.showL1Tab('signup')">Sign Up</button>
+      <div class="auth-card">
+        <div class="auth-badge auth-badge-green">🤖</div>
+        <h2 class="auth-title">Robotics &amp; AI — Level 1</h2>
+        <p class="auth-sub">Log in to keep learning, or sign up to start! 🚀</p>
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="l1-tab-login" onclick="ClassGate.showL1Tab('login')">Log In</button>
+          <button class="auth-tab" id="l1-tab-signup" onclick="ClassGate.showL1Tab('signup')">Sign Up</button>
         </div>
 
         <div id="l1-login-form">
-          <input id="l1-login-username" type="text" placeholder="Username" class="login-pin-input" style="text-align:left;letter-spacing:normal;">
-          <input id="l1-login-password" type="password" placeholder="Password" class="login-pin-input" style="text-align:left;letter-spacing:normal;" onkeydown="if(event.key==='Enter') ClassGate.submitL1Login()">
-          <div id="l1-login-error" class="small" style="color:#ff5252;min-height:18px;margin-top:10px;text-align:center;"></div>
-          <button class="btn btn-primary" id="l1-login-btn" style="width:100%;margin-top:10px;justify-content:center;" onclick="ClassGate.submitL1Login()">Log In</button>
+          <input id="l1-login-username" type="text" placeholder="Username" class="auth-input" autocomplete="username">
+          <div class="auth-pw">
+            <input id="l1-login-password" type="password" placeholder="Password" class="auth-input" autocomplete="current-password" onkeydown="if(event.key==='Enter') ClassGate.submitL1Login()">
+            <button type="button" class="pw-toggle" onclick="App.togglePw('l1-login-password', this)" title="Show / hide">👁</button>
+          </div>
+          <div id="l1-login-error" class="auth-error"></div>
+          <button class="btn btn-primary auth-submit" id="l1-login-btn" onclick="ClassGate.submitL1Login()">Log In</button>
         </div>
 
         <div id="l1-signup-form" style="display:none;">
-          <input id="l1-signup-name" type="text" placeholder="Your name" class="login-pin-input" style="text-align:left;letter-spacing:normal;">
-          <input id="l1-signup-username" type="text" placeholder="Choose a username" class="login-pin-input" style="text-align:left;letter-spacing:normal;">
-          <input id="l1-signup-password" type="password" placeholder="Choose a password (6+ characters)" class="login-pin-input" style="text-align:left;letter-spacing:normal;">
-          <input id="l1-signup-confirm" type="password" placeholder="Confirm password" class="login-pin-input" style="text-align:left;letter-spacing:normal;" onkeydown="if(event.key==='Enter') ClassGate.submitL1Signup()">
-          <div id="l1-signup-error" class="small" style="color:#ff5252;min-height:18px;margin-top:10px;text-align:center;"></div>
-          <button class="btn btn-primary" id="l1-signup-btn" style="width:100%;margin-top:10px;justify-content:center;" onclick="ClassGate.submitL1Signup()">Create Account</button>
+          <input id="l1-signup-name" type="text" placeholder="Your name" class="auth-input">
+          <input id="l1-signup-username" type="text" placeholder="Choose a username" class="auth-input" autocomplete="username">
+          <div class="auth-pw">
+            <input id="l1-signup-password" type="password" placeholder="Choose a password (6+ characters)" class="auth-input" autocomplete="new-password">
+            <button type="button" class="pw-toggle" onclick="App.togglePw('l1-signup-password', this)" title="Show / hide">👁</button>
+          </div>
+          <div class="auth-pw">
+            <input id="l1-signup-confirm" type="password" placeholder="Confirm password" class="auth-input" onkeydown="if(event.key==='Enter') ClassGate.submitL1Signup()">
+            <button type="button" class="pw-toggle" onclick="App.togglePw('l1-signup-confirm', this)" title="Show / hide">👁</button>
+          </div>
+          <div id="l1-signup-error" class="auth-error"></div>
+          <button class="btn btn-primary auth-submit" id="l1-signup-btn" onclick="ClassGate.submitL1Signup()">Create Account</button>
         </div>
 
-        <p class="small muted" style="text-align:center;margin-top:16px;"><a style="cursor:pointer;color:var(--teal);" onclick="ClassGate.backToSelect()">← Choose a different class</a></p>
+        <button class="auth-back" onclick="ClassGate.backToSelect()">← Choose a different class</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MASTER ADMIN LOGIN SCREEN ============ -->
+  <section id="screen-login-admin" class="screen">
+    <div class="login-wrap">
+      <div class="auth-card">
+        <div class="auth-badge auth-badge-admin">👑</div>
+        <h2 class="auth-title">Master Admin</h2>
+        <p class="auth-sub">Teacher login — manage accounts, passwords &amp; progress across both classes.</p>
+        <div class="auth-pw">
+          <input id="admin-pin" type="password" inputmode="numeric" placeholder="Admin PIN" class="auth-input" onkeydown="if(event.key==='Enter') Auth.submitAdminLogin()">
+          <button type="button" class="pw-toggle" onclick="App.togglePw('admin-pin', this)" title="Show / hide">👁</button>
+        </div>
+        <div id="admin-login-error" class="auth-error"></div>
+        <button class="btn btn-primary auth-submit" id="admin-login-btn" onclick="Auth.submitAdminLogin()">Log In as Admin</button>
+        <button class="auth-back" onclick="ClassGate.backToSelect()">← Back</button>
       </div>
     </div>
   </section>
@@ -469,6 +500,16 @@
         </table>
       </div>
     </div>
+  </section>
+
+  <!-- ============ ACCOUNTS SCREEN (master admin only) ============ -->
+  <section id="screen-accounts" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+      <h2>👑 Accounts — Master Admin</h2>
+      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+    </div>
+    <p class="small muted" style="margin-bottom:14px;">Every student across both classes — usernames, passwords, and progress. Move a student between classes or reset their progress. Passwords are saved automatically as students log in.</p>
+    <div class="card" id="accounts-body"></div>
   </section>
 
   <!-- ============ STUDENTS SCREEN (admin only) ============ -->

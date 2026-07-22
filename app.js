@@ -52,20 +52,54 @@ const Auth = {
 
   buildLoginScreen(){
     const box = document.getElementById("login-names");
-    box.innerHTML = STUDENTS.map(s=>
-      `<button class="login-name-btn" data-key="${s.key}" onclick="Auth.pick('${s.key}')">${s.role==='admin'?'🛠️':'🧑‍🎓'} ${s.name}</button>`
+    // Students only — the master admin has its own private login (not shown here).
+    box.innerHTML = STUDENTS.filter(s=>s.role==="student").map(s=>
+      `<button class="login-name-btn" data-key="${s.key}" onclick="Auth.pick('${s.key}')">🧑‍🎓 ${s.name}</button>`
     ).join("");
   },
 
   pick(key){
     this.selected = STUDENTS.find(s=>s.key===key);
     document.querySelectorAll(".login-name-btn").forEach(b=>b.classList.toggle("active", b.dataset.key===key));
-    document.getElementById("login-pin").style.display = "block";
+    document.getElementById("login-pin-wrap").style.display = "flex";
     document.getElementById("login-btn").style.display = "inline-flex";
     document.getElementById("login-error").textContent = "";
     const pinEl = document.getElementById("login-pin");
     pinEl.value = "";
     pinEl.focus();
+  },
+
+  // Shared: sign in, or create the account on first use, then upsert its profile.
+  async signInOrUp(email, pin, profileFields){
+    let { data, error } = await sb.auth.signInWithPassword({email, password:pin});
+    if(error){
+      if(error.message === "Invalid login credentials"){
+        // Could be a wrong PIN OR a brand-new account. Try to create it.
+        const signup = await sb.auth.signUp({email, password:pin});
+        if(signup.error) throw signup.error;
+        if(!signup.data.session){
+          throw new Error("Account created, but Supabase is asking for email confirmation. Disable \"Confirm email\" under Authentication settings, then try again.");
+        }
+        data = signup.data;
+        const { error: profileError } = await sb.from("profiles").upsert({id:data.user.id, ...profileFields});
+        if(profileError) throw profileError;
+      } else {
+        throw error;
+      }
+    }
+    return data.user;
+  },
+
+  // Store a student's username + password so the master admin can recover it.
+  // Fire-and-forget: the table may not exist yet (SQL not run) — never blocks login.
+  async captureCredential(userId, {name, username, password, cls}){
+    try{
+      const { error } = await sb.from("student_credentials").upsert({
+        user_id:userId, name:name||null, username:username||null,
+        password:password||null, class:cls||null, updated_at:new Date().toISOString()
+      });
+      if(error) console.debug("credential capture skipped:", error.message);
+    }catch(e){ /* ignore — best effort */ }
   },
 
   async submitLogin(){
@@ -77,22 +111,34 @@ const Auth = {
     btn.disabled = true; btn.textContent = "Logging in…"; errEl.textContent = "";
     this.pendingProfile = {name:this.selected.name, role:this.selected.role, class:"l2"};
     try{
-      let { data, error } = await sb.auth.signInWithPassword({email:this.selected.email, password:pin});
-      if(error){
-        const signup = await sb.auth.signUp({email:this.selected.email, password:pin});
-        if(signup.error) throw signup.error;
-        if(!signup.data.session){
-          throw new Error("Account created, but Supabase is asking for email confirmation. Disable \"Confirm email\" under Authentication settings, then try again.");
-        }
-        data = signup.data;
-        const { error: profileError } = await sb.from("profiles").upsert({id:data.user.id, name:this.selected.name, role:this.selected.role, class:"l2"});
-        if(profileError) throw profileError;
-      }
-      await this.afterLogin(data.user);
+      const user = await this.signInOrUp(this.selected.email, pin,
+        {name:this.selected.name, role:this.selected.role, class:"l2"});
+      await this.afterLogin(user);
+      this.captureCredential(user.id, {name:this.selected.name, username:this.selected.key, password:pin, cls:"l2"});
     }catch(e){
       errEl.textContent = e.message === "Invalid login credentials" ? "Wrong PIN." : (e.message || "Login failed.");
     }finally{
       btn.disabled = false; btn.textContent = "Log In";
+    }
+  },
+
+  async submitAdminLogin(){
+    const pin = (document.getElementById("admin-pin").value || "").trim();
+    const errEl = document.getElementById("admin-login-error");
+    errEl.textContent = "";
+    if(pin.length < 4){ errEl.textContent = "PIN too short (4+ digits)."; return; }
+    const admin = STUDENTS.find(s=>s.role==="admin");
+    this.selected = admin;
+    this.pendingProfile = {name:admin.name, role:"admin", class:"l2"};
+    const btn = document.getElementById("admin-login-btn");
+    btn.disabled = true; btn.textContent = "Logging in…";
+    try{
+      const user = await this.signInOrUp(admin.email, pin, {name:admin.name, role:"admin", class:"l2"});
+      await this.afterLogin(user);
+    }catch(e){
+      errEl.textContent = e.message === "Invalid login credentials" ? "Wrong admin PIN." : (e.message || "Login failed.");
+    }finally{
+      btn.disabled = false; btn.textContent = "Log In as Admin";
     }
   },
 
@@ -107,6 +153,7 @@ const Auth = {
     const { error: profileError } = await sb.from("profiles").upsert({id:data.user.id, name, role:"student", class:"l1", username});
     if(profileError) throw profileError;
     await this.afterLogin(data.user);
+    this.captureCredential(data.user.id, {name, username, password, cls:"l1"});
   },
 
   async logInL1({username, password}){
@@ -115,6 +162,7 @@ const Auth = {
     const { data, error } = await sb.auth.signInWithPassword({email, password});
     if(error) throw error;
     await this.afterLogin(data.user);
+    this.captureCredential(data.user.id, {name:(this.profile && this.profile.name)||null, username, password, cls:"l1"});
   },
 
   async afterLogin(authUser){
@@ -156,8 +204,10 @@ const Auth = {
     document.getElementById("stat-pills").style.display = "none";
     document.getElementById("login-pin").value = "";
     document.getElementById("login-error").textContent = "";
-    document.getElementById("login-pin").style.display = "none";
+    document.getElementById("login-pin-wrap").style.display = "none";
     document.getElementById("login-btn").style.display = "none";
+    const adminPin = document.getElementById("admin-pin");
+    if(adminPin) adminPin.value = "";
     document.querySelectorAll(".login-name-btn").forEach(b=>b.classList.remove("active"));
     ClassGate.backToSelect();
   }
@@ -182,14 +232,17 @@ const ClassGate = {
     this.chosen = null;
     Auth.classContext = null;
     Auth.selected = null;
-    document.getElementById("login-pin").style.display = "none";
+    const pinWrap = document.getElementById("login-pin-wrap");
+    if(pinWrap) pinWrap.style.display = "none";
     document.getElementById("login-btn").style.display = "none";
     document.getElementById("login-error").textContent = "";
     document.querySelectorAll(".login-name-btn").forEach(b=>b.classList.remove("active"));
     const l1LoginErr = document.getElementById("l1-login-error");
     const l1SignupErr = document.getElementById("l1-signup-error");
+    const adminErr = document.getElementById("admin-login-error");
     if(l1LoginErr) l1LoginErr.textContent = "";
     if(l1SignupErr) l1SignupErr.textContent = "";
+    if(adminErr) adminErr.textContent = "";
     Router.go("class-select");
   },
 
@@ -198,13 +251,11 @@ const ClassGate = {
     const signupForm = document.getElementById("l1-signup-form");
     const loginTab = document.getElementById("l1-tab-login");
     const signupTab = document.getElementById("l1-tab-signup");
-    if(tab === "login"){
-      loginForm.style.display = "block"; signupForm.style.display = "none";
-      loginTab.className = "btn btn-primary btn-sm"; signupTab.className = "btn btn-ghost btn-sm";
-    } else {
-      loginForm.style.display = "none"; signupForm.style.display = "block";
-      loginTab.className = "btn btn-ghost btn-sm"; signupTab.className = "btn btn-primary btn-sm";
-    }
+    const isLogin = tab === "login";
+    loginForm.style.display = isLogin ? "block" : "none";
+    signupForm.style.display = isLogin ? "none" : "block";
+    loginTab.classList.toggle("active", isLogin);
+    signupTab.classList.toggle("active", !isLogin);
   },
 
   async submitL1Login(){
@@ -504,6 +555,7 @@ const App = {
     this.bumpStreak();
     document.getElementById("user-badge").style.display = "flex";
     document.getElementById("pill-user").textContent = (Auth.profile.role==="admin" ? "🛠️ " : "🧑‍🎓 ") + Auth.profile.name;
+    document.getElementById("nav-accounts-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
     document.getElementById("nav-students-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
     document.getElementById("nav-manage-l1-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
 
@@ -558,6 +610,16 @@ const App = {
   },
   buildPinrow(){
     document.getElementById("pinrow").innerHTML = Array.from({length:14}).map(()=>"<span></span>").join("");
+  },
+
+  // Show/hide a password field (used by the 👁 buttons on the login screens).
+  togglePw(inputId, btn){
+    const el = document.getElementById(inputId);
+    if(!el) return;
+    const show = el.type === "password";
+    el.type = show ? "text" : "password";
+    if(btn){ btn.textContent = show ? "🙈" : "👁"; btn.classList.toggle("on", show); }
+    el.focus();
   },
 
   currentLevel(){
@@ -1210,6 +1272,169 @@ const Leaderboard = {
         <div class="l1-lb-xp">${r.xp||0} XP</div>
       </div>`;
     }).join("") || `<p class="muted small" style="padding:8px;">No students on the leaderboard yet — be the first! 🚀</p>`;
+  }
+};
+
+/* ---------------- MASTER ADMIN — ACCOUNTS CONTROL CENTER ---------------- */
+const Accounts = {
+  data: [],            // joined rows across both classes
+  classFilter: "all",  // 'all' | 'l1' | 'l2'
+  search: "",
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
+
+  async render(){
+    const wrap = document.getElementById("accounts-body");
+    if(!wrap) return;
+    if(!Auth.profile || Auth.profile.role!=="admin"){ wrap.innerHTML = `<p class="muted small">Master admin only.</p>`; return; }
+    wrap.innerHTML = `<p class="muted small" style="padding:12px;">Loading accounts…</p>`;
+    const [profRes, progRes, credRes] = await Promise.all([
+      sb.from("profiles").select("*"),
+      sb.from("progress").select("*"),
+      sb.from("student_credentials").select("*")
+    ]);
+    const progById = Object.fromEntries(((progRes && progRes.data)||[]).map(p=>[p.user_id, p]));
+    const credById = Object.fromEntries(((credRes && credRes.data)||[]).map(c=>[c.user_id, c]));
+    this.data = ((profRes && profRes.data)||[]).map(p=>{
+      const pr = progById[p.id];
+      const st = pr ? Object.assign(structuredClone(DEFAULT_STATE), pr.state||{}) : structuredClone(DEFAULT_STATE);
+      let lvl = LEVELS[0]; for(const l of LEVELS){ if(st.xp>=l.min) lvl=l; }
+      const cred = credById[p.id];
+      return {
+        id:p.id, name:p.name||"—", role:p.role||"student", class:p.class||"l2",
+        username: p.username || (cred && cred.username) || "",
+        password: (cred && cred.password) || "",
+        xp: st.xp, level: lvl.name, correct: st.totalCorrect, answered: st.totalAnswered,
+        acc: st.totalAnswered ? Math.round((st.totalCorrect/st.totalAnswered)*100) : 0,
+        streak: st.streak || 0,
+        lastActive: pr && pr.updated_at ? new Date(pr.updated_at) : null
+      };
+    });
+    this.draw();
+  },
+
+  students(){ return this.data.filter(r=>r.role==="student"); },
+  rowsForFilter(){
+    return this.students()
+      .filter(r=>this.classFilter==="all" || r.class===this.classFilter)
+      .sort((a,b)=> a.class===b.class ? (b.xp-a.xp) : a.class.localeCompare(b.class));
+  },
+  visible(){
+    return this.rowsForFilter().filter(r=>!this.search || (r.name+" "+r.username).toLowerCase().includes(this.search));
+  },
+
+  setFilter(f){ this.classFilter=f; this.draw(); },
+  onSearch(v){ this.search=(v||"").toLowerCase(); this.applySearch(); },
+  applySearch(){
+    document.querySelectorAll("#accounts-tbody tr[data-acc]").forEach(tr=>{
+      const hay = tr.getAttribute("data-acc");
+      tr.style.display = (!this.search || hay.includes(this.search)) ? "" : "none";
+    });
+  },
+
+  draw(){
+    const wrap = document.getElementById("accounts-body");
+    const students = this.students();
+    const l1n = students.filter(r=>r.class==="l1").length;
+    const l2n = students.filter(r=>r.class==="l2").length;
+    const missingPw = students.filter(r=>!r.password).length;
+    const rows = this.rowsForFilter();
+    const chip=(f,label)=>`<button class="btn btn-sm ${this.classFilter===f?'btn-primary':'btn-ghost'}" onclick="Accounts.setFilter('${f}')">${label}</button>`;
+    wrap.innerHTML = `
+      <div class="flex justify-between items-center gap-12" style="flex-wrap:wrap; margin-bottom:14px;">
+        <div class="flex gap-8" style="flex-wrap:wrap; align-items:center;">
+          ${chip("all","All · "+students.length)}
+          ${chip("l1","🤖 Level 1 · "+l1n)}
+          ${chip("l2","🔌 Level 2 · "+l2n)}
+        </div>
+        <div class="flex gap-8" style="flex-wrap:wrap; align-items:center;">
+          <input id="accounts-search" placeholder="Search name or username…" class="btn btn-ghost" style="padding:8px 14px;font-weight:400;" oninput="Accounts.onSearch(this.value)" value="${this.esc(this.search)}">
+          <button class="btn btn-teal btn-sm" onclick="Accounts.exportCSV()">⬇ Export CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="Accounts.render()">↻ Refresh</button>
+        </div>
+      </div>
+      ${missingPw ? `<p class="small muted" style="margin-bottom:10px;">🔒 ${missingPw} student(s) don't have a saved password yet — it appears automatically the next time they log in.</p>` : ""}
+      <div style="overflow:auto; max-height:560px;">
+        <table class="admin-table accounts-table">
+          <thead><tr>
+            <th>Name</th><th>Username</th><th>Password</th><th>Class</th>
+            <th>Level / XP</th><th>Progress</th><th>Last active</th><th>Manage</th>
+          </tr></thead>
+          <tbody id="accounts-tbody">
+            ${rows.map(r=>this.rowHtml(r)).join("") || `<tr><td colspan="8" class="muted small">No accounts yet.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted" style="margin-top:12px;">Need to change a password or fully delete an account? Do it in the Supabase dashboard → Authentication → Users (those need the secret service key and can't be done safely from the browser).</p>`;
+    this.applySearch();
+  },
+
+  rowHtml(r){
+    const pw = r.password
+      ? `<code class="acc-pw">${this.esc(r.password)}</code>`
+      : `<span class="small muted">— (next login)</span>`;
+    const other = r.class==="l1" ? "l2" : "l1";
+    const otherLabel = r.class==="l1" ? "→ L2" : "→ L1";
+    const last = r.lastActive
+      ? r.lastActive.toLocaleDateString() + " " + r.lastActive.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})
+      : "Never";
+    return `<tr data-acc="${this.esc((r.name+" "+r.username).toLowerCase())}">
+      <td><strong>${this.esc(r.name)}</strong></td>
+      <td>${r.username ? "@"+this.esc(r.username) : '<span class="small muted">—</span>'}</td>
+      <td>${pw}</td>
+      <td><span class="tag ${r.class}">${r.class.toUpperCase()}</span></td>
+      <td style="white-space:nowrap;">⚡ ${r.xp} · ${this.esc(r.level)}</td>
+      <td style="white-space:nowrap;">${r.correct}/${r.answered} · ${r.acc}%</td>
+      <td class="small muted" style="white-space:nowrap;">${last}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" title="Move to the other class" onclick="Accounts.changeClass('${r.id}','${other}')">${otherLabel}</button>
+        <button class="btn btn-ghost btn-sm" title="Reset all progress to zero" onclick="Accounts.resetProgress('${r.id}')">♻</button>
+      </td>
+    </tr>`;
+  },
+
+  async changeClass(id, cls){
+    const r = this.data.find(x=>x.id===id); if(!r) return;
+    if(!confirm(`Move ${r.name} to ${cls==="l1"?"Level 1 (Robotics & AI)":"Level 2 (Arduino)"}?`)) return;
+    const { error } = await sb.from("profiles").update({class:cls}).eq("id", id);
+    if(error){ alert(this.friendlyError(error)); return; }
+    sb.from("student_credentials").update({class:cls}).eq("user_id", id); // best effort
+    await this.render();
+  },
+
+  async resetProgress(id){
+    const r = this.data.find(x=>x.id===id); if(!r) return;
+    if(!confirm(`Reset ALL progress for ${r.name}?\nTheir XP, marks, streak and history go back to zero. This cannot be undone.`)) return;
+    const { error } = await sb.from("progress").delete().eq("user_id", id);
+    if(error){ alert(this.friendlyError(error)); return; }
+    await this.render();
+  },
+
+  exportCSV(){
+    const rows = this.visible();
+    const header = ["Name","Username","Password","Class","XP","Level","Correct","Answered","Accuracy%","LastActive"];
+    const body = rows.map(r=>[
+      r.name, r.username, r.password, r.class.toUpperCase(), r.xp, r.level, r.correct, r.answered, r.acc,
+      r.lastActive ? r.lastActive.toISOString() : ""
+    ]);
+    const csv = [header, ...body]
+      .map(cols=>cols.map(c=>`"${String(c==null?"":c).replace(/"/g,'""')}"`).join(","))
+      .join("\r\n");
+    const blob = new Blob(["﻿"+csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `accounts-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  },
+
+  friendlyError(e){
+    const m = (e && e.message) || "Something went wrong.";
+    if(/relation .*student_credentials.* does not exist|schema cache/i.test(m))
+      return "The account tables aren't set up yet. Run the master-admin SQL in Supabase first.";
+    if(/row-level security|not authorized|permission/i.test(m))
+      return "This action needs the master-admin account, and the account-management SQL must be run in Supabase first.";
+    return m;
   }
 };
 
@@ -1959,6 +2184,7 @@ const Router = {
     // "lesson-l1" is populated by HomeL1.openLesson() before navigation — no re-render needed.
     if(name==="achievements") App.renderAchievements();
     if(name==="admin") App.renderAdmin();
+    if(name==="accounts") Accounts.render();
     if(name==="students") App.renderStudents();
     if(name==="manage-l1") ManageL1.render();
   }

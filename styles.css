@@ -314,6 +314,90 @@ button{font-family:var(--font-body); cursor:pointer;}
 }
 .login-pin-input:focus{outline:none; border-color:var(--teal);}
 
+/* ---------------- Friendly auth screens (login / signup / class pick / admin) ---------------- */
+.auth-card{
+  width:100%; max-width:400px; margin:0 auto; text-align:center;
+  background:var(--card); border:1px solid var(--card-border); border-radius:24px;
+  padding:34px 28px 28px; box-shadow:0 18px 50px rgba(0,0,0,.35);
+}
+.auth-card-wide{max-width:660px;}
+.auth-badge{
+  width:66px; height:66px; margin:0 auto 16px; border-radius:20px;
+  display:flex; align-items:center; justify-content:center; font-size:2.1rem;
+  background:var(--grad-brand); box-shadow:0 10px 24px rgba(0,151,157,.4);
+}
+.auth-badge-teal{background:var(--grad-brand);}
+.auth-badge-green{background:linear-gradient(135deg,#00C853,#00834a); box-shadow:0 10px 24px rgba(0,200,83,.4);}
+.auth-badge-admin{background:linear-gradient(135deg,#FFB300,#FF7043); box-shadow:0 10px 24px rgba(255,152,0,.45);}
+.auth-title{font-size:1.5rem; margin:0 0 6px;}
+.auth-sub{color:var(--text-2); font-size:.92rem; margin:0 0 22px;}
+
+/* Class picker cards */
+.class-pick{display:grid; grid-template-columns:1fr 1fr; gap:16px; text-align:left;}
+.class-card{
+  cursor:pointer; color:var(--text-1); border-radius:20px; padding:22px 20px;
+  border:1.5px solid var(--card-border); background:rgba(255,255,255,.03);
+  transition:transform .15s, border-color .15s, box-shadow .15s;
+}
+.class-card:hover{transform:translateY(-5px); box-shadow:0 16px 34px rgba(0,0,0,.28);}
+.class-card.cc-green{background:linear-gradient(160deg,rgba(0,200,83,.14),rgba(0,200,83,.03));}
+.class-card.cc-green:hover{border-color:var(--green);}
+.class-card.cc-teal{background:linear-gradient(160deg,rgba(0,151,157,.16),rgba(0,151,157,.03));}
+.class-card.cc-teal:hover{border-color:var(--teal);}
+.class-emoji{font-size:2.5rem; line-height:1;}
+.class-name{font-weight:800; font-size:1.15rem; margin:12px 0 4px;}
+.class-desc{color:var(--text-2); font-size:.85rem; line-height:1.5; margin-bottom:12px;}
+.class-go{font-weight:800; font-size:.88rem; color:#fff;}
+.cc-green .class-go{color:#69f0a3;} .cc-teal .class-go{color:#4dd0e1;}
+.auth-teacher-link{
+  display:inline-block; margin-top:22px; background:none; border:none; cursor:pointer;
+  color:var(--text-3); font-size:.85rem; font-weight:600; padding:6px 10px; border-radius:8px;
+}
+.auth-teacher-link:hover{color:var(--orange);}
+
+/* Auth inputs + password reveal */
+.auth-input{
+  width:100%; margin-top:12px; padding:13px 16px; border-radius:13px;
+  border:1.5px solid var(--card-border); background:rgba(255,255,255,.04);
+  color:var(--text-1); font-size:1rem; font-family:inherit;
+}
+.auth-input::placeholder{color:var(--text-3);}
+.auth-input:focus{outline:none; border-color:var(--teal); background:rgba(0,151,157,.06);}
+.auth-pw{position:relative; margin-top:12px;}
+.auth-pw .auth-input{margin-top:0; padding-right:48px;}
+.pw-toggle{
+  position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  background:none; border:none; cursor:pointer; font-size:1.15rem; line-height:1;
+  padding:6px; opacity:.65; border-radius:8px;
+}
+.pw-toggle:hover{opacity:1;}
+.auth-error{color:#ff5252; min-height:18px; margin-top:10px; font-size:.85rem;}
+.auth-submit{width:100%; margin-top:14px; justify-content:center;}
+.auth-back{
+  display:block; margin:18px auto 0; background:none; border:none; cursor:pointer;
+  color:var(--text-3); font-size:.85rem; padding:6px;
+}
+.auth-back:hover{color:var(--teal);}
+
+/* Login / Signup tab switch */
+.auth-tabs{display:flex; gap:6px; background:var(--bg-2); padding:5px; border-radius:14px; margin:14px 0 6px;}
+.auth-tab{
+  flex:1; padding:10px; border:none; background:transparent; color:var(--text-2);
+  font-weight:700; font-size:.92rem; border-radius:10px; cursor:pointer; transition:.15s;
+}
+.auth-tab.active{background:var(--grad-brand); color:#fff; box-shadow:0 4px 14px rgba(0,151,157,.35);}
+
+/* Accounts (master admin) table */
+.accounts-table{white-space:nowrap;}
+.acc-pw{
+  font-family:var(--font-mono); background:rgba(255,197,61,.14); color:#ffd699;
+  padding:2px 8px; border-radius:6px; font-size:.85rem; user-select:all;
+}
+.tag.l1{background:rgba(0,200,83,.18); color:#69f0a3;}
+.tag.l2{background:rgba(0,151,157,.2); color:#4dd0e1;}
+
+@media (max-width:560px){ .class-pick{grid-template-columns:1fr;} }
+
 /* ---------------- Weekly quiz: matching / fill-blank ---------------- */
 .match-row{padding:10px 0; border-bottom:1px solid var(--card-border);}
 .match-row:last-child{border-bottom:none;}
