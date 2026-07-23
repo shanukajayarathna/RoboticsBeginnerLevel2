@@ -24,11 +24,93 @@ function topicMastered(state, topics){
   return topics.every(t => (state.topicStats[t] && state.topicStats[t].correct >= 3));
 }
 
+// Level 1 badges — every one is reachable and tied to the 8-lesson syllabus,
+// so kids always have a badge they can chase.
+function l1Mastered(state, topic){ return !!(state.topicStats[topic] && state.topicStats[topic].correct >= 3); }
+function l1LessonsDone(state){ return Object.keys(state.lessonQuizzes || {}).length; }
+
+const L1_ACHIEVEMENTS = [
+  {id:"l1_first",       name:"First Spark",       icon:"✨", desc:"Answer your first question correctly", check:s=>s.totalCorrect>=1},
+  {id:"l1_quick",       name:"Quick Thinker",     icon:"⚡", desc:"Answer correctly in under 8 seconds", check:s=>s.fastAnswers>=1},
+  {id:"l1_robotics",    name:"Robotics Rookie",   icon:"🤖", desc:"Master the Robotics & AI Basics lesson", check:s=>l1Mastered(s,"Robotics & AI Basics")},
+  {id:"l1_electronics", name:"Circuit Starter",   icon:"🔌", desc:"Master the Arduino & Electronics lesson", check:s=>l1Mastered(s,"Arduino & Electronics")},
+  {id:"l1_microbit",    name:"micro:bit Coder",   icon:"🟩", desc:"Master the micro:bit Coding lesson", check:s=>l1Mastered(s,"micro:bit Coding")},
+  {id:"l1_programming", name:"Code Wizard",       icon:"💻", desc:"Master the Arduino Programming lesson", check:s=>l1Mastered(s,"Arduino Programming")},
+  {id:"l1_sensors",     name:"Sensor Scout",      icon:"📡", desc:"Master the Sensors & Actuators lesson", check:s=>l1Mastered(s,"Sensors & Actuators")},
+  {id:"l1_ml",          name:"AI Explorer",       icon:"🧠", desc:"Master the AI & Machine Learning lesson", check:s=>l1Mastered(s,"AI & Machine Learning")},
+  {id:"l1_build",       name:"Robot Builder",     icon:"🚗", desc:"Master the Build a Robot lesson", check:s=>l1Mastered(s,"Build a Robot")},
+  {id:"l1_project",     name:"Project Star",      icon:"🏆", desc:"Master the Project & Future lesson", check:s=>l1Mastered(s,"Project & Future")},
+  {id:"l1_streak",      name:"On Fire",           icon:"🔥", desc:"Keep a 3-day learning streak", check:s=>s.streak>=3},
+  {id:"l1_graduate",    name:"Level 1 Graduate",  icon:"🎓", desc:"Finish the quiz for all 8 lessons", check:s=>l1LessonsDone(s)>=8},
+];
+
+// Collectible stickers awarded the first time each lesson quiz is finished.
+const L1_STICKERS = ["🤖","🦾","⚙️","🔋","💡","📡","🛰️","🚀","🧲","🔦","🌟","🏅"];
+
 const DEFAULT_STATE = {
   xp:0, coins:0, stars:0, streak:1, lastPlayDate: null,
   totalCorrect:0, totalAnswered:0, perfectExams:0, fastAnswers:0,
   topicStats:{}, unlockedAchievements:[], collection:[], examHistory:[],
-  weeklyCompleted:{}, lessonQuizzes:{}, l1SeenGuide:false
+  weeklyCompleted:{}, lessonQuizzes:{}, l1SeenGuide:false,
+  soundOn:true, avatar:"🤖", mistakes:[], project:null, graduated:false
+};
+
+/* ---------------- SOUND (tiny Web-Audio blips — no files, CSP-safe) ---------------- */
+const Sound = {
+  ctx:null,
+  ensure(){
+    if(!this.ctx){ try{ this.ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ this.ctx = null; } }
+    return this.ctx;
+  },
+  enabled(){ return !App.state || App.state.soundOn !== false; },
+  play(notes){
+    if(!this.enabled()) return;
+    const ctx = this.ensure(); if(!ctx) return;
+    if(ctx.state === "suspended"){ try{ ctx.resume(); }catch(e){} }
+    let t = ctx.currentTime;
+    notes.forEach(([freq, dur, type])=>{
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = type || "sine"; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.22, t + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t); osc.stop(t + dur);
+      t += dur * 0.85;
+    });
+  },
+  correct(){ this.play([[660,0.09],[880,0.13]]); },
+  wrong(){ this.play([[311,0.15,"square"]]); },
+  levelup(){ this.play([[523,0.1],[659,0.1],[784,0.16]]); },
+  badge(){ this.play([[784,0.09],[1047,0.15]]); },
+  win(){ this.play([[523,0.1],[659,0.1],[784,0.1],[1047,0.22]]); },
+  click(){ this.play([[520,0.05]]); },
+  toggle(){
+    if(!App.state) return true;
+    App.state.soundOn = !this.enabled();
+    Store.save(App.state);
+    if(App.state.soundOn) this.correct();
+    return App.state.soundOn;
+  }
+};
+
+/* ---------------- SPEECH (Read-to-me — free browser Text-to-Speech) ---------------- */
+const Speech = {
+  speaking:false,
+  supported(){ return typeof window !== "undefined" && "speechSynthesis" in window; },
+  read(text, btn){
+    if(!this.supported() || !text){ return; }
+    if(this.speaking){ this.stop(btn); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.95; u.pitch = 1.05;
+    u.onend = ()=>{ this.speaking = false; this._btn(btn, false); };
+    u.onerror = ()=>{ this.speaking = false; this._btn(btn, false); };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+    this.speaking = true; this._btn(btn, true);
+  },
+  stop(btn){ if(this.supported()) window.speechSynthesis.cancel(); this.speaking = false; this._btn(btn, false); },
+  _btn(btn, on){ if(btn) btn.textContent = on ? "⏹ Stop" : "🔊 Read to me"; }
 };
 
 /* ---------------- AUTH (Supabase) ---------------- */
@@ -206,6 +288,8 @@ const Auth = {
     this.pendingProfile = null;
     App.state = structuredClone(DEFAULT_STATE);
     document.getElementById("user-badge").style.display = "none";
+    const st = document.getElementById("sound-toggle");
+    if(st) st.style.display = "none";
     document.getElementById("nav-btns").style.display = "none";
     document.getElementById("nav-btns-l1").style.display = "none";
     document.getElementById("stat-pills").style.display = "none";
@@ -507,6 +591,16 @@ const BUDDY_LINES = {
   streak: ["Your streak is on fire! 🔥 Keep it up!"]
 };
 
+// Bolt the Robot — friendlier, robotics/AI-themed lines for Level 1 kids.
+const BUDDY_LINES_L1 = {
+  correct: ["Beep boop — correct! 🤖", "Whirr! You got it! ⚡", "High-five! 🖐️ Great answer!", "You're thinking like a real engineer!", "Sensors say: brilliant! 📡"],
+  wrong: ["Oops! Let's try again 🔧", "No worries — every robot learns by trying!", "Close! Let's figure it out together.", "Mistakes help our brains grow! 🧠"],
+  hint: ["Here's a clue from Bolt 💡", "Let me help you out! 🤖", "Psst… here's a hint!"],
+  idle: ["Hi, I'm Bolt! Ready to learn? 🤖", "Tip: read a lesson, then take its quiz for XP!", "Fun fact: robots explore Mars right now! 🚀", "Try the Robot Loop game — it's fun! 🎮", "Keep your streak going every day! 🔥"],
+  start_exam: ["You've got this! 🎯"],
+  streak: ["Your streak is on fire! 🔥 Amazing!"]
+};
+
 const CLASS_META = {
   l2: {brand:"Arduino Junior Academy", chipEmoji:"🔌", heroTitle:"Master Arduino, one spark at a time.",
     heroSub:"Learn electronics, sensors, motors and robotics through bite-sized animated challenges. Earn XP, collect components, and become an Arduino Master."},
@@ -561,12 +655,16 @@ const App = {
     this.state = await Store.load();
     this.bumpStreak();
     document.getElementById("user-badge").style.display = "flex";
+    const st = document.getElementById("sound-toggle");
+    if(st){ st.style.display = "inline-flex"; st.textContent = (this.state.soundOn !== false) ? "🔊" : "🔇"; }
     document.getElementById("pill-user").textContent = (Auth.profile.role==="admin" ? "🛠️ " : "🧑‍🎓 ") + Auth.profile.name;
     document.getElementById("nav-accounts-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
     document.getElementById("nav-students-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
     document.getElementById("nav-manage-l1-btn").style.display = Auth.profile.role==="admin" ? "inline-block" : "none";
 
-    if(Weekly.isPending()){
+    // Level 1 students go straight to their dashboard + welcome guide; the
+    // weekly quiz is a card on the dashboard, not a hard reading gate.
+    if(Weekly.isPending() && !this.isL1Student()){
       Weekly.begin();
       return;
     }
@@ -577,18 +675,36 @@ const App = {
   isL1Student(){
     return !!(Auth.profile && Auth.profile.role==="student" && Auth.profile.class==="l1");
   },
+  isAdmin(){
+    return !!(Auth.profile && Auth.profile.role==="admin");
+  },
+  // Use the Level 1 badge set for L1 students, the original set otherwise.
+  activeAchievements(){
+    return this.isL1Student() ? L1_ACHIEVEMENTS : ACHIEVEMENTS;
+  },
 
-  // Show the correct home screen + nav/topbar for the logged-in user's class.
+  // Show the correct home screen + nav/topbar for the logged-in user.
   enterHome(){
-    if(this.isL1Student()){
+    const navAdmin = document.getElementById("nav-btns-admin");
+    if(this.isAdmin()){
+      // Admins get a professional control panel — never the student quiz home.
+      document.getElementById("stat-pills").style.display = "none";
+      document.getElementById("nav-btns").style.display = "none";
+      document.getElementById("nav-btns-l1").style.display = "none";
+      navAdmin.style.display = "flex";
+      AdminHome.render();
+      Router.go("admin-home");
+    } else if(this.isL1Student()){
       document.getElementById("stat-pills").style.display = "none";
       document.getElementById("nav-btns").style.display = "none";
       document.getElementById("nav-btns-l1").style.display = "flex";
+      navAdmin.style.display = "none";
       HomeL1.render();
       Router.go("home-l1");
       Onboarding.maybeShow();
     } else {
       document.getElementById("nav-btns-l1").style.display = "none";
+      navAdmin.style.display = "none";
       document.getElementById("stat-pills").style.display = "flex";
       document.getElementById("nav-btns").style.display = "flex";
       this.renderHome();
@@ -719,13 +835,32 @@ const App = {
   renderAchievements(){
     const grid = document.getElementById("achv-grid");
     if(!grid) return;
-    grid.innerHTML = ACHIEVEMENTS.map(a=>{
+    const list = this.activeAchievements();
+    const earned = list.filter(a=>this.state.unlockedAchievements.includes(a.id)).length;
+    const heading = document.getElementById("achv-heading");
+    if(heading) heading.textContent = `🏅 Badges — ${earned} of ${list.length} earned`;
+    grid.innerHTML = list.map(a=>{
       const unlocked = this.state.unlockedAchievements.includes(a.id);
       return `<div class="card achv ${unlocked?'':'locked'}">
         <div class="badge">${a.icon}</div>
         <div class="meta"><div><strong>${a.name}</strong></div><small>${a.desc}</small></div>
       </div>`;
     }).join("");
+    // The "Collected Components" section is a Level 2 mechanic — hide it for L1.
+    const collWrap = document.getElementById("l2-collection-wrap");
+    if(collWrap) collWrap.style.display = this.isL1Student() ? "none" : "";
+    // Level 1 sticker collection (earned by finishing lesson quizzes).
+    const stickWrap = document.getElementById("l1-stickers-wrap");
+    if(stickWrap){
+      stickWrap.style.display = this.isL1Student() ? "" : "none";
+      if(this.isL1Student()){
+        const box = document.getElementById("l1-stickers-box");
+        const owned = this.state.collection || [];
+        if(box) box.innerHTML = owned.length
+          ? `<div class="l1-sticker-strip">${owned.map(s=>`<span class="l1-sticker">${s}</span>`).join("")}</div>`
+          : `<p class="muted small">No stickers yet — finish a lesson quiz to earn your first! 🎁</p>`;
+      }
+    }
     const coll = document.getElementById("collection-box");
     if(coll){
       if(!this.state.collection.length){
@@ -822,9 +957,13 @@ const App = {
   },
 
   /* ---------------- BUDDY ---------------- */
+  buddyLines(category){
+    const set = this.isL1Student() ? BUDDY_LINES_L1 : BUDDY_LINES;
+    return set[category] || set.idle;
+  },
   buddyTalk(force){
     const bubble = document.getElementById("buddy-bubble");
-    const lines = BUDDY_LINES.idle;
+    const lines = this.buddyLines("idle");
     bubble.textContent = lines[Math.floor(Math.random()*lines.length)];
     bubble.classList.add("show");
     clearTimeout(this._buddyTimeout);
@@ -832,12 +971,116 @@ const App = {
   },
   buddySay(category){
     const bubble = document.getElementById("buddy-bubble");
-    const lines = BUDDY_LINES[category] || BUDDY_LINES.idle;
+    const lines = this.buddyLines(category);
     bubble.textContent = lines[Math.floor(Math.random()*lines.length)];
     bubble.classList.add("show");
     clearTimeout(this._buddyTimeout);
     this._buddyTimeout = setTimeout(()=>bubble.classList.remove("show"), 4200);
   },
+  toggleSound(){
+    const on = Sound.toggle();
+    const btn = document.getElementById("sound-toggle");
+    if(btn) btn.textContent = on ? "🔊" : "🔇";
+  },
+
+  /* ---- Review Mistakes (resurface questions answered wrong) ---- */
+  addMistake(id){
+    if(id==null) return;
+    this.state.mistakes = this.state.mistakes || [];
+    if(!this.state.mistakes.includes(id)){ this.state.mistakes.push(id); Store.save(this.state); }
+  },
+  removeMistake(id){
+    if(id==null || !this.state.mistakes) return;
+    const i = this.state.mistakes.indexOf(id);
+    if(i>=0){ this.state.mistakes.splice(i,1); Store.save(this.state); }
+  },
+  startReview(){
+    const ids = new Set(this.state.mistakes||[]);
+    const pool = this.shuffled(this.activeQuestions().filter(q=>ids.has(q.id)));
+    if(!pool.length){
+      Modal.alert({icon:"🌟", title:"Nothing to review!", message:"You have no mistakes to fix right now — amazing work! Keep practising to stay sharp."});
+      return;
+    }
+    this.beginQuiz({mode:"review", pool, hints:true, retries:true, timer:false});
+  },
+
+  /* ---- Avatars ---- */
+  AVATARS: ["🤖","🦾","🧒","👧","👦","🦊","🐼","🐱","🦉","🐧","🚀","⚡","🌟","🦄"],
+  chooseAvatar(){
+    const grid = this.AVATARS.map(a=>`<button class="avatar-pick ${this.state.avatar===a?'on':''}" onclick="App.setAvatar('${a}')">${a}</button>`).join("");
+    Modal.show({ icon:this.state.avatar||"🤖", title:"Pick your avatar",
+      message:`<div class="avatar-grid">${grid}</div>`, confirmLabel:"Done", showCancel:false, onConfirm:()=>Modal.close() });
+  },
+  setAvatar(a){
+    this.state.avatar = a; Store.save(this.state);
+    document.querySelectorAll(".avatar-pick").forEach(b=>b.classList.toggle("on", b.textContent===a));
+    const ico = document.getElementById("ui-modal-ico"); if(ico) ico.textContent = a;
+    const m = document.getElementById("l1-mascot"); if(m) m.textContent = a;
+    Sound.click();
+  },
+
+  /* ---- My Robot Project (client-side; also printed on the certificate) ---- */
+  _projEmoji:"🤖",
+  designRobot(){
+    const p = this.state.project || {emoji:"🤖", name:"", desc:""};
+    this._projEmoji = p.emoji || "🤖";
+    const emojis = ["🤖","🚗","🦾","🐶","🦅","🚁","🛸","🐢"];
+    const row = emojis.map(e=>`<button class="avatar-pick ${p.emoji===e?'on':''}" onclick="App.pickProjectEmoji('${e}')">${e}</button>`).join("");
+    Modal.show({
+      icon:"🚀", title:"Design My Robot",
+      message:`<div class="avatar-grid" id="proj-emoji">${row}</div>
+        <input id="proj-name" class="auth-input" placeholder="Robot name (e.g. HelpBot)">
+        <textarea id="proj-desc" class="auth-input" rows="3" placeholder="What does it sense, think and do?"></textarea>`,
+      confirmLabel:"Save my robot",
+      onConfirm: ()=>{
+        const name = (document.getElementById("proj-name").value||"").trim();
+        const desc = (document.getElementById("proj-desc").value||"").trim();
+        if(!name){ Modal.setError("Give your robot a name!"); return; }
+        this.state.project = { emoji:this._projEmoji, name, desc };
+        Store.save(this.state); Sound.correct(); Modal.close();
+        if(this.isL1Student()) HomeL1.render();
+      }
+    });
+    setTimeout(()=>{
+      const n=document.getElementById("proj-name"); if(n) n.value=p.name||"";
+      const d=document.getElementById("proj-desc"); if(d) d.value=p.desc||"";
+    }, 50);
+  },
+  pickProjectEmoji(e){
+    this._projEmoji = e;
+    document.querySelectorAll("#proj-emoji .avatar-pick").forEach(b=>b.classList.toggle("on", b.textContent===e));
+  },
+
+  /* ---- Level 1 Graduate certificate ---- */
+  printL1Certificate(){
+    const name = (Auth.profile && Auth.profile.name) || "Robotics Explorer";
+    const badges = (this.state.unlockedAchievements||[]).filter(id=>String(id).startsWith("l1_")).length;
+    const p = this.state.project;
+    const w = window.open("", "_blank");
+    if(!w){ Modal.alert({icon:"⚠️", title:"Pop-up blocked", message:"Please allow pop-ups for this site, then try again."}); return; }
+    w.document.write(`<!doctype html><html><head><title>Level 1 Certificate</title><style>
+      body{font-family:Georgia,'Times New Roman',serif; text-align:center; padding:50px; background:#0f1420; color:#1a1a1a;}
+      .cert{max-width:760px; margin:0 auto; background:#fff; border:12px solid #7b2ff7; border-radius:18px; padding:46px 54px; box-shadow:0 20px 60px rgba(0,0,0,.4);}
+      .cert h1{color:#7b2ff7; font-size:2.3rem; margin:0 0 6px;} .cert .sub{color:#555; letter-spacing:.1em; text-transform:uppercase; font-size:.8rem;}
+      .name{font-size:2rem; margin:26px 0 6px; color:#111;} .rule{height:2px; background:#eee; margin:6px auto 22px; width:60%;}
+      .body{font-size:1.05rem; color:#333; line-height:1.6;} .meta{margin-top:26px; color:#777; font-size:.85rem;}
+      .robot{margin-top:20px; padding:14px; background:#f6f2ff; border-radius:12px; color:#4a2b8c; font-size:.95rem;}
+      .seal{font-size:3rem; margin-top:10px;}
+      @media print{ body{background:#fff; padding:0;} .cert{border-color:#7b2ff7; box-shadow:none;} }
+    </style></head><body><div class="cert">
+      <div class="sub">Robotics &amp; AI Academy</div>
+      <h1>Certificate of Completion</h1>
+      <div class="seal">🎓🤖</div>
+      <p class="body">This certifies that</p>
+      <div class="name">${this.escHtml(name)}</div>
+      <div class="rule"></div>
+      <p class="body">has successfully completed all 8 lessons of <b>Beginner Level 1 — Robotics &amp; AI</b>,<br>earning ${badges} badges along the way. Sense → Think → Act! 🚀</p>
+      ${p ? `<div class="robot">${p.emoji||"🤖"} <b>My robot project:</b> ${this.escHtml(p.name)}${p.desc?` — ${this.escHtml(p.desc)}`:""}</div>` : ""}
+      <p class="meta">Issued by the Robotics &amp; AI Academy · ${new Date().toLocaleDateString()}</p>
+    </div><script>window.onload=function(){window.print();}<\/script></body></html>`);
+    w.document.close();
+  },
+  escHtml(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
   buddyIdleLoop(){
     setInterval(()=>{ if(!this.quiz) this.buddyTalk(); }, 22000);
   },
@@ -875,7 +1118,7 @@ const App = {
   goHome(){
     if(!Auth.profile) return; // not logged in yet — logo shouldn't do anything on the login screen
     if(Weekly.isPending()) return; // still mid weekly reading/quiz gate — can't skip out via the logo
-    Router.go(this.isL1Student() ? "home-l1" : "home");
+    Router.go(this.isAdmin() ? "admin-home" : this.isL1Student() ? "home-l1" : "home");
   },
 
   quitQuiz(){
@@ -1017,15 +1260,20 @@ const App = {
       xpGain = Math.max(2, q.xp - quiz.qHintCount*3);
       coinGain = q.marks*2;
       if(timeTaken < 8) { this.state.fastAnswers++; }
+      const lvlBefore = this.currentLevel().index;
       this.state.xp += xpGain;
       this.state.coins += coinGain;
       this.state.stars += q.difficulty==="Hard"?3:(q.difficulty==="Medium"?2:1);
+      this.removeMistake(q.id);
       this.celebrate();
       this.flyCoin();
       this.buddySay("correct");
+      if(this.currentLevel().index > lvlBefore) Sound.levelup(); else Sound.correct();
     } else {
       quiz.wrongCount++;
+      this.addMistake(q.id);
       this.buddySay("wrong");
+      Sound.wrong();
     }
     quiz.perQuestion.push({id:q.id, topic:q.topic, correct:isCorrect});
     quiz.topicScores[q.topic] = quiz.topicScores[q.topic] || {correct:0,total:0};
@@ -1191,7 +1439,7 @@ const App = {
   },
 
   checkAchievements(){
-    ACHIEVEMENTS.forEach(a=>{
+    this.activeAchievements().forEach(a=>{
       if(!this.state.unlockedAchievements.includes(a.id) && a.check(this.state)){
         this.state.unlockedAchievements.push(a.id);
         Store.save(this.state);
@@ -1201,8 +1449,9 @@ const App = {
   },
 
   toastAchievement(a){
+    Sound.badge();
     const bubble = document.getElementById("buddy-bubble");
-    bubble.textContent = `🏅 Achievement unlocked: ${a.name}!`;
+    bubble.textContent = `🏅 Badge unlocked: ${a.name}!`;
     bubble.classList.add("show");
     clearTimeout(this._buddyTimeout);
     this._buddyTimeout = setTimeout(()=>bubble.classList.remove("show"), 5000);
@@ -1260,7 +1509,7 @@ const Leaderboard = {
       box.innerHTML = `
         <div class="l1-lb-row me">
           <div class="l1-lb-rank">1</div>
-          <div class="l1-lb-avatar">🙂</div>
+          <div class="l1-lb-avatar">${App.state.avatar||'🙂'}</div>
           <div style="flex:1;"><strong>You</strong></div>
           <div class="l1-lb-xp">${meXp} XP</div>
         </div>
@@ -1274,7 +1523,7 @@ const Leaderboard = {
       const rankBadge = i<3 ? medals[i] : (i+1);
       return `<div class="l1-lb-row ${me?'me':''}">
         <div class="l1-lb-rank">${rankBadge}</div>
-        <div class="l1-lb-avatar">${me?'🙂':'🧒'}</div>
+        <div class="l1-lb-avatar">${me?(App.state.avatar||'🙂'):'🧒'}</div>
         <div style="flex:1;">${me?`<strong>${r.name} (You)</strong>`:r.name}</div>
         <div class="l1-lb-xp">${r.xp||0} XP</div>
       </div>`;
@@ -1357,6 +1606,7 @@ const Accounts = {
         <div class="flex gap-8" style="flex-wrap:wrap; align-items:center;">
           <input id="accounts-search" placeholder="Search name or username…" class="btn btn-ghost" style="padding:8px 14px;font-weight:400;" oninput="Accounts.onSearch(this.value)" value="${this.esc(this.search)}">
           <button class="btn btn-teal btn-sm" onclick="Accounts.exportCSV()">⬇ Export CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="Accounts.printReport()">🖨️ Print report</button>
           <button class="btn btn-ghost btn-sm" onclick="Accounts.changeAdminPin()">🔑 My PIN</button>
           <button class="btn btn-ghost btn-sm" onclick="Accounts.render()">↻ Refresh</button>
         </div>
@@ -1403,57 +1653,98 @@ const Accounts = {
     </tr>`;
   },
 
-  async changeClass(id, cls){
+  changeClass(id, cls){
     const r = this.data.find(x=>x.id===id); if(!r) return;
-    if(!confirm(`Move ${r.name} to ${cls==="l1"?"Level 1 (Robotics & AI)":"Level 2 (Arduino)"}?`)) return;
-    const { error } = await sb.from("profiles").update({class:cls}).eq("id", id);
-    if(error){ alert(this.friendlyError(error)); return; }
-    sb.from("student_credentials").update({class:cls}).eq("user_id", id); // best effort
-    await this.render();
+    const label = cls==="l1" ? "Level 1 (Robotics & AI)" : "Level 2 (Arduino)";
+    Modal.show({
+      icon:"↔️", title:`Move ${r.name}?`,
+      message:`Move <b>${this.esc(r.name)}</b> to <b>${label}</b>?`,
+      confirmLabel:"Move",
+      onConfirm: async ()=>{
+        Modal.setBusy(true); Modal.setError("");
+        const { error } = await sb.from("profiles").update({class:cls}).eq("id", id);
+        Modal.setBusy(false);
+        if(error){ Modal.setError(this.friendlyError(error)); return; }
+        sb.from("student_credentials").update({class:cls}).eq("user_id", id); // best effort
+        Modal.close(); await this.render();
+      }
+    });
   },
 
-  async resetProgress(id){
+  resetProgress(id){
     const r = this.data.find(x=>x.id===id); if(!r) return;
-    if(!confirm(`Reset ALL progress for ${r.name}?\nTheir XP, marks, streak and history go back to zero. This cannot be undone.`)) return;
-    const { error } = await sb.from("progress").delete().eq("user_id", id);
-    if(error){ alert(this.friendlyError(error)); return; }
-    await this.render();
+    Modal.show({
+      icon:"♻️", title:`Reset ${r.name}'s progress?`, danger:true,
+      message:`<b>${this.esc(r.name)}</b>'s XP, marks, streak and history go back to zero. This cannot be undone.`,
+      confirmLabel:"Reset progress",
+      onConfirm: async ()=>{
+        Modal.setBusy(true); Modal.setError("");
+        const { error } = await sb.from("progress").delete().eq("user_id", id);
+        Modal.setBusy(false);
+        if(error){ Modal.setError(this.friendlyError(error)); return; }
+        Modal.close(); await this.render();
+      }
+    });
   },
 
   // Reset a student's login password (needs the admin-actions Edge Function).
-  async resetPassword(id){
+  resetPassword(id){
     const r = this.data.find(x=>x.id===id); if(!r) return;
-    const np = prompt(`Set a NEW password for ${r.name} (at least 6 characters).\nThey'll use this to log in from now on:`);
-    if(np==null) return;
-    if(np.trim().length < 6){ alert("Password must be at least 6 characters."); return; }
-    const { data, error } = await sb.functions.invoke("admin-actions", {
-      body:{ action:"reset_password", user_id:id, new_password:np.trim() }
+    Modal.show({
+      icon:"🔑", title:`Reset ${r.name}'s password`,
+      message:"Type a new password (at least 6 characters). They'll use it to log in from now on.",
+      input:{ placeholder:"New password", type:"text" },
+      confirmLabel:"Set password",
+      onConfirm: async (val)=>{
+        val = (val||"").trim();
+        if(val.length < 6){ Modal.setError("Password must be at least 6 characters."); return; }
+        Modal.setBusy(true); Modal.setError("");
+        const { data, error } = await sb.functions.invoke("admin-actions", { body:{ action:"reset_password", user_id:id, new_password:val } });
+        Modal.setBusy(false);
+        if(error || (data && data.error)){ Modal.setError(this.fnError(error, data)); return; }
+        Modal.close();
+        Modal.alert({ icon:"✅", title:"Password updated",
+          message:`${this.esc(r.name)}'s new password is:<br><b style="font-size:1.15rem;color:#ffd699;">${this.esc(val)}</b><br><span class="small muted">Write it down or tell them.</span>` });
+        await this.render();
+      }
     });
-    if(error || (data && data.error)){ alert(this.fnError(error, data)); return; }
-    alert(`✅ Done! ${r.name}'s password is now:\n\n${np.trim()}\n\nWrite it down or tell them.`);
-    await this.render();
   },
 
   // Permanently delete a student's whole account (needs the Edge Function).
-  async deleteUser(id){
+  deleteUser(id){
     const r = this.data.find(x=>x.id===id); if(!r) return;
-    if(!confirm(`Permanently DELETE ${r.name}'s account?\nThis removes their login, progress and saved password. It cannot be undone.`)) return;
-    if(!confirm(`Last check — really delete ${r.name}? There's no way back.`)) return;
-    const { data, error } = await sb.functions.invoke("admin-actions", {
-      body:{ action:"delete_user", user_id:id }
+    Modal.show({
+      icon:"🗑️", title:`Delete ${r.name}?`, danger:true,
+      message:`This permanently removes <b>${this.esc(r.name)}</b>'s login, progress and saved password. This cannot be undone.`,
+      confirmLabel:"Delete forever",
+      onConfirm: async ()=>{
+        Modal.setBusy(true); Modal.setError("");
+        const { data, error } = await sb.functions.invoke("admin-actions", { body:{ action:"delete_user", user_id:id } });
+        Modal.setBusy(false);
+        if(error || (data && data.error)){ Modal.setError(this.fnError(error, data)); return; }
+        Modal.close(); await this.render();
+      }
     });
-    if(error || (data && data.error)){ alert(this.fnError(error, data)); return; }
-    await this.render();
   },
 
   // Change the master admin's OWN PIN — done client-side (the admin is signed in).
-  async changeAdminPin(){
-    const np = prompt("Set a NEW Master Admin PIN (at least 4 characters).\nYou'll use it next time you log in:");
-    if(np==null) return;
-    if(np.trim().length < 4){ alert("PIN must be at least 4 characters."); return; }
-    const { error } = await sb.auth.updateUser({ password: np.trim() });
-    if(error){ alert(error.message || "Couldn't change the PIN."); return; }
-    alert("✅ Your Master Admin PIN has been changed. Use the new PIN next time you log in.");
+  changeAdminPin(){
+    Modal.show({
+      icon:"🔑", title:"Change your Admin PIN",
+      message:"Set a new Master Admin PIN (at least 4 characters). You'll use it next time you log in.",
+      input:{ placeholder:"New admin PIN", type:"text" },
+      confirmLabel:"Change PIN",
+      onConfirm: async (val)=>{
+        val = (val||"").trim();
+        if(val.length < 4){ Modal.setError("PIN must be at least 4 characters."); return; }
+        Modal.setBusy(true); Modal.setError("");
+        const { error } = await sb.auth.updateUser({ password: val });
+        Modal.setBusy(false);
+        if(error){ Modal.setError(error.message || "Couldn't change the PIN."); return; }
+        Modal.close();
+        Modal.alert({ icon:"✅", title:"PIN changed", message:"Use your new PIN next time you log in." });
+      }
+    });
   },
 
   fnError(error, data){
@@ -1480,6 +1771,32 @@ const Accounts = {
     a.href = url; a.download = `accounts-${new Date().toISOString().slice(0,10)}.csv`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  },
+
+  printReport(){
+    const w = window.open("", "_blank");
+    if(!w){ Modal.alert({icon:"⚠️", title:"Pop-up blocked", message:"Please allow pop-ups for this site to print the report."}); return; }
+    const section = (cls, label)=>{
+      const rows = this.students().filter(r=>r.class===cls).sort((a,b)=>b.xp-a.xp);
+      if(!rows.length) return `<h2>${label}</h2><p>No students yet.</p>`;
+      return `<h2>${label} — ${rows.length} students</h2>
+        <table><thead><tr><th>Name</th><th>Username</th><th>XP</th><th>Level</th><th>Correct/Answered</th><th>Accuracy</th><th>Last active</th></tr></thead>
+        <tbody>${rows.map(r=>`<tr><td>${this.esc(r.name)}</td><td>${this.esc(r.username||"")}</td><td>${r.xp}</td><td>${this.esc(r.level)}</td><td>${r.correct}/${r.answered}</td><td>${r.acc}%</td><td>${r.lastActive?r.lastActive.toLocaleDateString():"Never"}</td></tr>`).join("")}</tbody></table>`;
+    };
+    w.document.write(`<!doctype html><html><head><title>Class Report</title><style>
+      body{font-family:Arial,Helvetica,sans-serif; padding:30px; color:#111;}
+      h1{color:#7b2ff7; margin:0 0 4px;} h2{margin-top:26px; border-bottom:2px solid #eee; padding-bottom:6px; font-size:1.1rem;}
+      table{width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;}
+      th,td{border:1px solid #ddd; padding:6px 8px; text-align:left;} th{background:#f5f5f5;}
+      @media print{ body{padding:0;} }
+    </style></head><body>
+      <h1>Robotics &amp; AI Academy — Student Report</h1>
+      <p style="color:#666;font-size:12px;">Generated ${new Date().toLocaleString()}</p>
+      ${section("l1","🤖 Level 1")}
+      ${section("l2","🔌 Level 2")}
+      <script>window.onload=function(){window.print();}<\/script>
+    </body></html>`);
+    w.document.close();
   },
 
   friendlyError(e){
@@ -1513,6 +1830,8 @@ const HomeL1 = {
     document.getElementById("brand-chip").textContent = meta.chipEmoji;
     document.getElementById("brand-text").textContent = meta.brand;
     document.getElementById("l1-name").textContent = (Auth.profile && Auth.profile.name) || "Explorer";
+    const mascot = document.getElementById("l1-mascot");
+    if(mascot) mascot.textContent = s.avatar || "🤖";
 
     const lvl = App.currentLevel();
     document.getElementById("l1-level-title").textContent = `Level ${lvl.index} · ${lvl.name}`;
@@ -1528,6 +1847,8 @@ const HomeL1 = {
     this.animateCount("l1-streak", s.streak);
     this.animateCount("l1-stars", s.stars);
 
+    this.renderCourseProgress();
+    this.renderProject();
     this.renderActivities("l1-activity-grid");
     this.renderBadges();
     Leaderboard.render("l1-leaderboard", "l1");
@@ -1555,6 +1876,8 @@ const HomeL1 = {
       {icon:"🎯", title:"Daily Challenge", desc:"5 fun questions for a bonus reward!", action:"daily", color:"orange"},
       {icon:"📘", title:"Practice Mode", desc:"Unlimited questions with hints.", action:"practice", color:"teal"},
       {icon:"🗺️", title:"Explore Topics", desc:"Pick a topic and master it.", action:"topics", color:"green"},
+      {icon:"🎮", title:"Robot Loop Game", desc:"Order Sense → Think → Act to win!", action:"game", color:"blue"},
+      {icon:"🩹", title:"Review Mistakes", desc:"Fix the ones you missed.", action:"review", color:"pink"},
       {icon:"📖", title:"This Week's Quiz", desc:"Read the lesson, then quiz!", action:"weekly", color:"purple"}
     ];
   },
@@ -1563,9 +1886,11 @@ const HomeL1 = {
     if(action==="daily") App.startDaily();
     else if(action==="practice") App.startPractice();
     else if(action==="topics") Router.go("topics");
+    else if(action==="game") MiniGame.start();
+    else if(action==="review") App.startReview();
     else if(action==="weekly"){
       if(Weekly.current()){ Weekly.begin(); }
-      else { alert("No weekly quiz is available yet — check back soon!"); }
+      else { Modal.alert({icon:"📖", title:"Coming soon", message:"No weekly quiz is available yet — check back soon!"}); }
     }
   },
 
@@ -1583,7 +1908,13 @@ const HomeL1 = {
   renderBadges(){
     const box = document.getElementById("l1-badges");
     if(!box) return;
-    box.innerHTML = ACHIEVEMENTS.slice(0,6).map(a=>{
+    // Show earned badges first so the dashboard feels rewarding.
+    const sorted = [...L1_ACHIEVEMENTS].sort((a,b)=>{
+      const ua = App.state.unlockedAchievements.includes(a.id) ? 0 : 1;
+      const ub = App.state.unlockedAchievements.includes(b.id) ? 0 : 1;
+      return ua - ub;
+    });
+    box.innerHTML = sorted.slice(0,6).map(a=>{
       const unlocked = App.state.unlockedAchievements.includes(a.id);
       return `<div class="l1-badge ${unlocked?'':'locked'}" title="${a.desc}">
         <div class="l1-badge-ico">${a.icon}</div>
@@ -1591,6 +1922,74 @@ const HomeL1 = {
       </div>`;
     }).join("");
   },
+
+  // ---- Course progress (lessons whose quiz has been completed) ----
+  completedLessons(){
+    const lq = App.state.lessonQuizzes || {};
+    return this.lessons().filter(l=>lq[this.lessonKey(l)]);
+  },
+  nextIncompleteIndex(){
+    const lq = App.state.lessonQuizzes || {};
+    const ls = this.lessons();
+    for(let i=0;i<ls.length;i++){ if(!lq[this.lessonKey(ls[i])]) return i; }
+    return -1;
+  },
+  continueLearning(){
+    const i = this.nextIncompleteIndex();
+    if(i>=0) this.openLesson(i);
+    else Router.go("learn-l1");
+  },
+  renderCourseProgress(){
+    const ring = document.getElementById("l1-course-ring");
+    if(!ring) return;
+    const total = this.lessons().length || 8;
+    const done = this.completedLessons().length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    const r = 34, circ = 2*Math.PI*r, off = circ*(1 - pct/100);
+    ring.innerHTML = `
+      <svg viewBox="0 0 80 80" width="84" height="84" aria-hidden="true">
+        <circle cx="40" cy="40" r="${r}" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="8"/>
+        <circle cx="40" cy="40" r="${r}" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 40 40)"/>
+        <text x="40" y="46" text-anchor="middle" font-size="17" font-weight="800" fill="#fff">${pct}%</text>
+      </svg>`;
+    const allDone = done>=total;
+    document.getElementById("l1-course-text").textContent = allDone
+      ? `All ${total} lessons complete — you're a Level 1 Graduate! 🎓`
+      : `${done} of ${total} lessons complete — keep going!`;
+    const btn = document.getElementById("l1-course-btn");
+    if(btn){
+      if(allDone){ btn.textContent = "🎓 Get Certificate"; btn.onclick = ()=>App.printL1Certificate(); }
+      else { btn.textContent = done>0 ? "Continue Learning →" : "Start Lesson 1 →"; btn.onclick = ()=>this.continueLearning(); }
+    }
+  },
+
+  readLesson(btn){ Speech.read(this._lessonText, btn); },
+
+  // "My Robot" project card on the dashboard (client-side, printed on the certificate).
+  renderProject(){
+    const box = document.getElementById("l1-project-card");
+    if(!box) return;
+    const p = App.state.project;
+    if(p){
+      box.innerHTML = `
+        <div class="l1-project-emoji">${p.emoji||"🤖"}</div>
+        <div style="flex:1;">
+          <h3>${HomeL1.escText(p.name)}</h3>
+          <p>${p.desc ? HomeL1.escText(p.desc) : "Your robot idea — sense, think, act!"}</p>
+        </div>
+        <button class="l1-daily-btn" onclick="App.designRobot()">Edit ✏️</button>`;
+    } else {
+      box.innerHTML = `
+        <div class="l1-project-emoji">🚀</div>
+        <div style="flex:1;">
+          <h3>Design My Robot</h3>
+          <p>Dream up your own robot — give it a name and say what it does!</p>
+        </div>
+        <button class="l1-daily-btn" onclick="App.designRobot()">Create ✨</button>`;
+    }
+  },
+  escText(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
 
   lessons(){ return (this.learn && this.learn.lessons) || []; },
 
@@ -1604,17 +2003,40 @@ const HomeL1 = {
       return;
     }
     if(intro) intro.textContent = c.intro || "";
-    lessonGrid.innerHTML = this.lessons().map((lsn,i)=>`
-      <div class="l1-lesson" onclick="HomeL1.openLesson(${i})">
+
+    const lq = App.state.lessonQuizzes || {};
+    const nextIdx = this.nextIncompleteIndex();
+    const doneCount = this.completedLessons().length;
+    const total = this.lessons().length;
+    const progEl = document.getElementById("l1-learn-progress");
+    if(progEl){
+      const p = total ? Math.round(doneCount/total*100) : 0;
+      progEl.innerHTML = `
+        <div class="flex justify-between items-center" style="margin-bottom:6px;">
+          <strong>${doneCount} of ${total} lessons complete</strong><span class="small muted">${p}%</span>
+        </div>
+        <div class="l1-progress-track" style="background:rgba(255,255,255,.12);"><div class="l1-progress-fill" style="width:${p}%"></div></div>`;
+    }
+
+    lessonGrid.innerHTML = this.lessons().map((lsn,i)=>{
+      const rec = lq[this.lessonKey(lsn)];
+      const done = !!rec;
+      const isNext = i===nextIdx;
+      const tag = done
+        ? `<span class="l1-lesson-badge done">✓ Done${rec && rec.total ? ` · ${rec.score}/${rec.total}` : ""}</span>`
+        : isNext ? `<span class="l1-lesson-badge start">⭐ Start here</span>` : "";
+      return `
+      <div class="l1-lesson ${done?'is-done':''} ${isNext?'is-next':''}" onclick="HomeL1.openLesson(${i})">
         <div class="l1-lesson-head">
           <div class="l1-lesson-ico">${lsn.icon||"📖"}</div>
           <div style="flex:1;">
-            <h3>${lsn.title||""}</h3>
+            <h3>${lsn.title||""} ${tag}</h3>
             <p class="l1-lesson-summary">${lsn.summary||""}</p>
           </div>
-          <div class="l1-lesson-go">Open →</div>
+          <div class="l1-lesson-go">${done?'Review →':'Open →'}</div>
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
     // Activities row on the learn screen
     const learnActs = document.getElementById("l1-learn-activity-grid");
     if(learnActs){
@@ -1636,6 +2058,17 @@ const HomeL1 = {
     document.getElementById("l1-lesson-detail-title").textContent = lsn.title || "Lesson";
     const notesBox = document.getElementById("l1-lesson-notes");
     notesBox.innerHTML = (lsn.notes||[]).map(block=>this.renderNoteBlock(block)).join("");
+
+    // Build a plain-text version of the notes for the "Read to me" button.
+    const strip = s => String(s||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+    this._lessonText = ((lsn.title? lsn.title+". " : "") + (lsn.notes||[]).map(b=>
+      (["text","heading","tip","callout","activity"].includes(b.type)) ? strip(b.text) : ""
+    ).filter(Boolean).join(". "));
+    const readBtn = document.getElementById("l1-read-btn");
+    if(readBtn){
+      Speech.stop(readBtn);
+      readBtn.style.display = Speech.supported() ? "inline-flex" : "none";
+    }
 
     // Quiz call-to-action: prefer the lesson's own mixed-type quiz, fall back to the topic bank.
     const hasLessonQuiz = Array.isArray(lsn.quiz) && lsn.quiz.length > 0;
@@ -1851,6 +2284,9 @@ const LessonQuiz = {
       App.state.coins += 4;
       App.state.stars += 1;
       App.celebrate();
+      Sound.correct();
+    } else {
+      Sound.wrong();
     }
     Store.save(App.state);
     App.checkAchievements();
@@ -1879,21 +2315,38 @@ const LessonQuiz = {
     const key = HomeL1.lessonKey(this.lesson);
     App.state.lessonQuizzes = App.state.lessonQuizzes || {};
     const prev = App.state.lessonQuizzes[key];
-    // Bonus XP only the first time a lesson quiz is completed.
-    if(!prev){ App.state.xp += 20; App.state.coins += 10; }
+    let sticker = "";
+    if(!prev){
+      App.state.xp += 20; App.state.coins += 10;
+      App.state.collection = App.state.collection || [];
+      const fresh = L1_STICKERS.filter(s=>!App.state.collection.includes(s));
+      const src = fresh.length ? fresh : L1_STICKERS;
+      sticker = src[Math.floor(Math.random()*src.length)];
+      if(!App.state.collection.includes(sticker)) App.state.collection.push(sticker);
+    }
     if(!prev || this.correct > prev.score){
       App.state.lessonQuizzes[key] = { score:this.correct, total, completedAt:Date.now() };
     }
+    const justGraduated = l1LessonsDone(App.state) >= 8 && !App.state.graduated;
+    if(justGraduated) App.state.graduated = true;
     Store.save(App.state);
     App.checkAchievements();
+    Sound.win();
+    if(justGraduated){ App.celebrate(); setTimeout(()=>App.celebrate(), 400); }
 
     const pct = Math.round((this.correct/total)*100);
     const msg = pct>=80 ? "Amazing work! 🌟" : pct>=50 ? "Nice job! 💪" : "Good try — review the lesson and go again! 🔧";
+    const gradBlock = justGraduated ? `
+      <div class="lq-grad">🎓 You finished all 8 lessons — you're a <b>Level 1 Graduate!</b><br>
+        <button class="btn btn-primary btn-sm mt-10" onclick="App.printL1Certificate()">🎓 Get your certificate</button>
+      </div>` : "";
     document.getElementById("lq-root").innerHTML = `
       <div style="text-align:center; padding:10px 0;">
         <div style="font-size:3.4rem;">${pct>=80?"🎉":pct>=50?"👍":"📚"}</div>
         <h2 style="margin:8px 0;">${msg}</h2>
-        <p class="muted">You scored <strong>${this.correct}/${total}</strong> (${pct}%)${!prev?" — plus a 20 XP finishing bonus!":""}</p>
+        <p class="muted">You scored <strong>${this.correct}/${total}</strong> (${pct}%)${!prev?" — plus a 20 XP bonus!":""}</p>
+        ${sticker?`<div class="lq-sticker">🎁 New sticker earned: <span style="font-size:1.7rem;vertical-align:middle;">${sticker}</span></div>`:""}
+        ${gradBlock}
         <div class="flex justify-center gap-8 mt-20" style="flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="LessonQuiz.start(LessonQuiz.lesson)">🔁 Try Again</button>
           <button class="btn btn-teal" onclick="HomeL1.openLesson(HomeL1.currentLessonIndex)">← Back to Lesson</button>
@@ -1953,6 +2406,90 @@ const Onboarding = {
     this.close();
   },
   close(){ document.getElementById("l1-onboarding").classList.remove("show"); }
+};
+
+/* ---------------- ROBOT LOOP MINI-GAME (Sense → Think → Act, on-syllabus) ---------------- */
+const MiniGame = {
+  rounds: [
+    { sense:"Ultrasonic sensor sees a wall ahead", think:"Arduino decides to turn away", act:"Motors turn the wheels" },
+    { sense:"Light sensor feels it's dark", think:"Program decides: turn the light on", act:"LED lights up 💡" },
+    { sense:"Button A is pressed", think:"micro:bit checks which button", act:"Show a heart ❤️ on the LEDs" },
+    { sense:"Temperature sensor feels heat", think:"Decide it is too hot", act:"Buzzer beeps a warning 🔊" },
+    { sense:"Camera sees a photo of a cat", think:"AI model recognises 'cat'", act:"Show the word CAT" },
+  ],
+  order:["sense","think","act"],
+  labels:{sense:"👀 SENSE", think:"🧠 THINK", act:"🦿 ACT"},
+  index:0, correctCount:0, picked:[],
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); },
+
+  start(){
+    this.index = 0; this.correctCount = 0;
+    Router.go("minigame");
+    this.renderRound();
+  },
+
+  renderRound(){
+    const r = this.rounds[this.index];
+    this.picked = [];
+    const cards = this.order.map(k=>({k, text:r[k]}));
+    for(let i=cards.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [cards[i],cards[j]]=[cards[j],cards[i]]; }
+    document.getElementById("mg-progress").textContent = `Round ${this.index+1} of ${this.rounds.length}`;
+    document.getElementById("mg-root").innerHTML = `
+      <p class="mg-instruct">Tap the steps in the right order: <b>Sense → Think → Act</b></p>
+      <div class="mg-slots">
+        <div class="mg-slot" data-n="1">1</div>
+        <div class="mg-slot" data-n="2">2</div>
+        <div class="mg-slot" data-n="3">3</div>
+      </div>
+      <div class="mg-cards" id="mg-cards">
+        ${cards.map(c=>`<button class="mg-card" data-k="${c.k}" onclick="MiniGame.pick('${c.k}', this)">${this.esc(c.text)}</button>`).join("")}
+      </div>
+      <div class="feedback" id="mg-feedback"></div>`;
+  },
+
+  pick(k, el){
+    if(el.classList.contains("used")) return;
+    el.classList.add("used");
+    this.picked.push(k);
+    const slot = document.querySelector(`.mg-slot[data-n="${this.picked.length}"]`);
+    if(slot){ slot.textContent = this.labels[k]; slot.classList.add("filled"); }
+    Sound.click();
+    if(this.picked.length === 3) this.check();
+  },
+
+  check(){
+    const correct = this.picked.join(",") === this.order.join(",");
+    if(correct){ this.correctCount++; App.state.xp += 5; App.state.coins += 3; Store.save(App.state); App.celebrate(); Sound.correct(); }
+    else Sound.wrong();
+    document.querySelectorAll("#mg-cards .mg-card").forEach(b=>b.classList.add("used"));
+    const last = this.index >= this.rounds.length-1;
+    const fb = document.getElementById("mg-feedback");
+    fb.className = "feedback show " + (correct ? "correct-fb" : "wrong-fb");
+    fb.innerHTML = `<h4>${correct ? "✅ Perfect! Sense → Think → Act (+5 XP)" : "🤖 Not quite — it's always Sense → Think → Act."}</h4>
+      <div class="mt-20"><button class="btn btn-primary btn-sm" onclick="MiniGame.next()">${last?"Finish →":"Next →"}</button></div>`;
+  },
+
+  next(){
+    if(this.index < this.rounds.length-1){ this.index++; this.renderRound(); }
+    else this.finish();
+  },
+
+  finish(){
+    App.checkAchievements();
+    Sound.win();
+    document.getElementById("mg-progress").textContent = `Done — ${this.correctCount}/${this.rounds.length}`;
+    document.getElementById("mg-root").innerHTML = `
+      <div style="text-align:center; padding:14px 0;">
+        <div style="font-size:3.2rem;">🎮</div>
+        <h2 style="margin:8px 0;">Great playing!</h2>
+        <p class="muted">You got ${this.correctCount} of ${this.rounds.length} robot loops right.</p>
+        <div class="flex justify-center gap-8 mt-20" style="flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="MiniGame.start()">🔁 Play Again</button>
+          <button class="btn btn-green" onclick="App.enterHome()">🏠 Dashboard</button>
+        </div>
+      </div>`;
+  }
 };
 
 /* ---------------- MANAGE LEVEL 1 (admin live question editor, Supabase-backed) ---------------- */
@@ -2224,15 +2761,142 @@ const ManageL1 = {
   }
 };
 
+/* ---------------- ADMIN HOME (professional master-admin panel) ---------------- */
+const AdminHome = {
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
+
+  async render(){
+    // Brand the top bar for the admin.
+    document.getElementById("brand-chip").textContent = "👑";
+    document.getElementById("brand-text").textContent = "Master Admin";
+    document.getElementById("admin-hello").textContent = (Auth.profile && Auth.profile.name) || "Admin";
+
+    const [profRes, progRes] = await Promise.all([
+      sb.from("profiles").select("*"),
+      sb.from("progress").select("user_id,state,updated_at")
+    ]);
+    const profiles = (profRes && profRes.data) || [];
+    const progById = Object.fromEntries(((progRes && progRes.data)||[]).map(p=>[p.user_id, p]));
+    const students = profiles.filter(p=>p.role==="student");
+    const inClass = cls => students.filter(s=>(s.class||"l2")===cls);
+    const xpOf = s => { const pr=progById[s.id]; return (pr && pr.state && pr.state.xp) || 0; };
+    const today = new Date().toDateString();
+    const activeToday = ((progRes && progRes.data)||[]).filter(p=>p.updated_at && new Date(p.updated_at).toDateString()===today).length;
+    const l1q = (App.classData.l1.questions||[]).length;
+    const l2q = (App.classData.l2.questions||[]).length;
+
+    document.getElementById("admin-stat-grid").innerHTML = [
+      {ico:"👥", num:students.length, lbl:"Total Students", c:"purple"},
+      {ico:"🤖", num:inClass("l1").length, lbl:"Level 1", c:"green"},
+      {ico:"🔌", num:inClass("l2").length, lbl:"Level 2", c:"teal"},
+      {ico:"⚡", num:activeToday, lbl:"Active Today", c:"orange"},
+      {ico:"❓", num:l1q+l2q, lbl:"Questions", c:"blue"}
+    ].map(s=>`<div class="admin-stat c-${s.c}">
+        <div class="admin-stat-ico">${s.ico}</div>
+        <div class="admin-stat-num">${s.num}</div>
+        <div class="admin-stat-lbl">${s.lbl}</div>
+      </div>`).join("");
+
+    document.getElementById("admin-tools-grid").innerHTML = [
+      {ico:"👑", t:"Accounts", d:"Usernames, passwords, class. Reset or delete accounts.", nav:"accounts", c:"purple"},
+      {ico:"📊", t:"Student Progress", d:"XP, accuracy and weekly-quiz status per student.", nav:"students", c:"green"},
+      {ico:"🗃️", t:"Question Bank", d:"Browse every Level 1 & Level 2 question.", nav:"admin", c:"teal"},
+      {ico:"🛠️", t:"Manage L1 Questions", d:"Add, edit or delete Level 1 questions live.", nav:"manage-l1", c:"orange"}
+    ].map(x=>`<div class="admin-tool" onclick="Router.go('${x.nav}')">
+        <div class="admin-tool-ico c-${x.c}">${x.ico}</div>
+        <div style="flex:1;"><h3>${x.t}</h3><p>${x.d}</p></div>
+        <span class="admin-tool-go">Open →</span>
+      </div>`).join("");
+
+    this.summarize("l1", "admin-l1-summary", inClass, xpOf, progById);
+    this.summarize("l2", "admin-l2-summary", inClass, xpOf, progById);
+  },
+
+  summarize(cls, elId, inClass, xpOf, progById){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    const list = inClass(cls);
+    if(!list.length){ el.innerHTML = `<p class="small muted mt-10">No students in this class yet.</p>`; return; }
+    const totalXp = list.reduce((a,s)=>a+xpOf(s), 0);
+    const avg = Math.round(totalXp/list.length);
+    const top = list.map(s=>({name:s.name, xp:xpOf(s)})).sort((a,b)=>b.xp-a.xp).slice(0,3);
+    const medals = ["🥇","🥈","🥉"];
+    el.innerHTML = `
+      <div class="flex gap-8 mt-10" style="flex-wrap:wrap;">
+        <span class="pill">👥 ${list.length} students</span>
+        <span class="pill">⚡ ${avg} avg XP</span>
+      </div>
+      <div class="mt-10">
+        ${top.map((t,i)=>`<div class="small muted">${medals[i]} ${this.esc(t.name)} — ${t.xp} XP</div>`).join("")}
+      </div>`;
+  }
+};
+
+/* ---------------- REUSABLE MODAL (prompt / confirm / alert) ---------------- */
+const Modal = {
+  _opts: null,
+
+  show(opts){
+    this._opts = opts || {};
+    document.getElementById("ui-modal-ico").textContent = opts.icon || "❓";
+    document.getElementById("ui-modal-title").textContent = opts.title || "";
+    const msg = document.getElementById("ui-modal-msg");
+    msg.innerHTML = opts.message || "";
+    msg.style.display = opts.message ? "block" : "none";
+    const field = document.getElementById("ui-modal-field");
+    const input = document.getElementById("ui-modal-input");
+    if(opts.input){
+      field.style.display = "block";
+      input.type = opts.input.type || "text";
+      input.placeholder = opts.input.placeholder || "";
+      input.value = opts.input.value || "";
+      setTimeout(()=>{ input.focus(); input.select(); }, 40);
+    } else {
+      field.style.display = "none"; input.value = "";
+    }
+    this.setError("");
+    const confirmBtn = document.getElementById("ui-modal-confirm");
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = opts.confirmLabel || "Confirm";
+    confirmBtn.className = "btn btn-sm " + (opts.danger ? "btn-danger" : "btn-primary");
+    const cancelBtn = document.getElementById("ui-modal-cancel");
+    cancelBtn.disabled = false;
+    cancelBtn.style.display = opts.showCancel === false ? "none" : "inline-flex";
+    document.getElementById("ui-modal").classList.add("show");
+  },
+
+  close(){ document.getElementById("ui-modal").classList.remove("show"); this._opts = null; },
+  setError(m){ document.getElementById("ui-modal-error").textContent = m || ""; },
+  setBusy(b){
+    const c = document.getElementById("ui-modal-confirm");
+    const x = document.getElementById("ui-modal-cancel");
+    c.disabled = b; x.disabled = b;
+    c.textContent = b ? "Working…" : ((this._opts && this._opts.confirmLabel) || "Confirm");
+  },
+
+  async doConfirm(){
+    if(!this._opts) return;
+    const val = document.getElementById("ui-modal-input").value;
+    if(this._opts.onConfirm){ await this._opts.onConfirm(val); }
+    else this.close();
+  },
+
+  alert(opts){
+    this.show({ ...opts, input:null, showCancel:false, confirmLabel: opts.confirmLabel || "OK", onConfirm: ()=>this.close() });
+  }
+};
+
 /* ---------------- ROUTER ---------------- */
 const Router = {
   go(name){
+    if(typeof Speech !== "undefined" && Speech.speaking) Speech.stop();
     document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
     const el = document.getElementById("screen-"+name);
     if(el) el.classList.add("active");
     document.querySelectorAll(".nav-btns button").forEach(b=>b.classList.toggle("active", b.dataset.nav===name));
     window.scrollTo({top:0, behavior:"smooth"});
     if(name==="home") App.renderHome();
+    if(name==="admin-home") AdminHome.render();
     if(name==="home-l1") HomeL1.render();
     if(name==="learn-l1") HomeL1.renderLearn();
     // "lesson-l1" is populated by HomeL1.openLesson() before navigation — no re-render needed.

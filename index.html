@@ -36,7 +36,15 @@
     <button data-nav="learn-l1" onclick="Router.go('learn-l1')">📚 Learn</button>
     <button data-nav="achievements" onclick="Router.go('achievements')">🏅 Badges</button>
   </div>
+  <div class="nav-btns" id="nav-btns-admin" style="display:none;">
+    <button data-nav="admin-home" onclick="Router.go('admin-home')">🏠 Dashboard</button>
+    <button data-nav="accounts" onclick="Router.go('accounts')">👑 Accounts</button>
+    <button data-nav="students" onclick="Router.go('students')">📊 Progress</button>
+    <button data-nav="admin" onclick="Router.go('admin')">🗃️ Questions</button>
+    <button data-nav="manage-l1" onclick="Router.go('manage-l1')">🛠️ Manage L1</button>
+  </div>
   <div class="flex items-center gap-8" id="user-badge" style="display:none;">
+    <button class="btn btn-ghost btn-sm" id="sound-toggle" style="display:none;" title="Sound on / off" onclick="App.toggleSound()">🔊</button>
     <span class="pill" id="pill-user">👤</span>
     <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Log out</button>
   </div>
@@ -149,6 +157,27 @@
     </div>
   </section>
 
+  <!-- ============ MASTER ADMIN HOME PANEL ============ -->
+  <section id="screen-admin-home" class="screen">
+    <div class="admin-panel-head">
+      <div>
+        <h1 class="admin-panel-title">👑 Master Admin Panel</h1>
+        <p class="admin-panel-sub">Welcome, <span id="admin-hello">Admin</span> — full control across both classes.</p>
+      </div>
+    </div>
+
+    <div class="admin-stat-grid" id="admin-stat-grid"></div>
+
+    <h2 class="admin-section-title">Manage</h2>
+    <div class="admin-tools-grid" id="admin-tools-grid"></div>
+
+    <h2 class="admin-section-title">Class Overview</h2>
+    <div class="grid-2">
+      <div class="card"><h3 style="margin-top:6px;">🤖 Level 1 — Robotics &amp; AI</h3><div id="admin-l1-summary"></div></div>
+      <div class="card"><h3 style="margin-top:6px;">🔌 Level 2 — Arduino</h3><div id="admin-l2-summary"></div></div>
+    </div>
+  </section>
+
   <!-- ============ HOME SCREEN ============ -->
   <section id="screen-home" class="screen">
 
@@ -239,7 +268,7 @@
       <div class="l1-hero-blob b1"></div>
       <div class="l1-hero-blob b2"></div>
       <div class="l1-hero-content">
-        <div class="l1-mascot">🤖</div>
+        <div class="l1-mascot" id="l1-mascot" onclick="App.chooseAvatar()" title="Tap to change your avatar">🤖</div>
         <div style="flex:1;">
           <h1 class="l1-hello">Hi <span id="l1-name">Explorer</span>! 👋</h1>
           <p class="l1-hello-sub">Ready to learn something awesome today?</p>
@@ -263,6 +292,15 @@
       <div class="l1-stat tile-stars"><div class="l1-stat-ico">⭐</div><div class="l1-stat-num" id="l1-stars">0</div><div class="l1-stat-lbl">Stars</div></div>
     </div>
 
+    <div class="l1-course-card">
+      <div class="l1-course-ring" id="l1-course-ring"></div>
+      <div style="flex:1;">
+        <h3>🎓 Your Course Progress</h3>
+        <p id="l1-course-text">0 of 8 lessons complete</p>
+      </div>
+      <button class="l1-daily-btn" id="l1-course-btn" onclick="HomeL1.continueLearning()">Start Lesson 1 →</button>
+    </div>
+
     <div class="l1-daily" onclick="App.startDaily()">
       <div class="l1-daily-emoji">🎯</div>
       <div style="flex:1;">
@@ -274,6 +312,9 @@
 
     <h2 class="l1-section-title">🎮 Choose an Activity</h2>
     <div class="l1-activity-grid" id="l1-activity-grid"></div>
+
+    <h2 class="l1-section-title">🚀 My Robot Project</h2>
+    <div class="l1-project-card" id="l1-project-card"></div>
 
     <div class="l1-two-col">
       <div>
@@ -297,6 +338,7 @@
     <p class="l1-learn-intro" id="l1-learn-intro"></p>
 
     <h2 class="l1-section-title">📖 Lessons</h2>
+    <div class="l1-learn-progress" id="l1-learn-progress"></div>
     <div class="l1-lesson-grid" id="l1-lesson-grid"></div>
 
     <h2 class="l1-section-title">🎮 Fun Activities</h2>
@@ -307,7 +349,10 @@
   <section id="screen-lesson-l1" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:10px; gap:10px; flex-wrap:wrap;">
       <h1 class="l1-lesson-detail-title" id="l1-lesson-detail-title">Lesson</h1>
-      <button class="btn btn-ghost btn-sm" onclick="Router.go('learn-l1')">← All Lessons</button>
+      <div class="flex gap-8" style="flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" id="l1-read-btn" style="display:none;" onclick="HomeL1.readLesson(this)">🔊 Read to me</button>
+        <button class="btn btn-ghost btn-sm" onclick="Router.go('learn-l1')">← All Lessons</button>
+      </div>
     </div>
     <div class="l1-notes" id="l1-lesson-notes"></div>
     <div class="l1-lesson-quiz-cta">
@@ -335,6 +380,22 @@
     <div class="login-wrap" style="min-height:auto;padding:0;">
       <div class="card" style="max-width:640px;width:100%;">
         <div id="lq-root"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROBOT LOOP MINI-GAME ============ -->
+  <section id="screen-minigame" class="screen">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <span class="tag">🎮 ROBOT LOOP</span>
+        <span id="mg-progress">Round 1 of 5</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="App.enterHome()">✕ Exit</button>
+    </div>
+    <div class="login-wrap" style="min-height:auto;padding:10px 0;">
+      <div class="card" style="max-width:640px;width:100%;">
+        <div id="mg-root"></div>
       </div>
     </div>
   </section>
@@ -468,20 +529,27 @@
   <!-- ============ ACHIEVEMENTS SCREEN ============ -->
   <section id="screen-achievements" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
-      <h2>🏅 Achievements & Badges</h2>
+      <h2 id="achv-heading">🏅 Achievements & Badges</h2>
       <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
     </div>
     <div class="grid-3" id="achv-grid"></div>
 
-    <div class="section-title"><h2>🎒 Collected Components</h2></div>
-    <div class="card" id="collection-box"></div>
+    <div id="l1-stickers-wrap" style="display:none;">
+      <div class="section-title"><h2>🎁 My Stickers</h2></div>
+      <div class="card" id="l1-stickers-box"></div>
+    </div>
+
+    <div id="l2-collection-wrap">
+      <div class="section-title"><h2>🎒 Collected Components</h2></div>
+      <div class="card" id="collection-box"></div>
+    </div>
   </section>
 
   <!-- ============ ADMIN / QUESTION BANK SCREEN ============ -->
   <section id="screen-admin" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
       <h2>🗃️ Question Bank</h2>
-      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
     </div>
     <div class="card mt-10">
       <div class="flex justify-between items-center gap-12" style="flex-wrap:wrap; margin-bottom:14px;">
@@ -506,7 +574,7 @@
   <section id="screen-accounts" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:6px; flex-wrap:wrap; gap:10px;">
       <h2>👑 Accounts — Master Admin</h2>
-      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
     </div>
     <p class="small muted" style="margin-bottom:14px;">Every student across both classes — usernames, passwords, and progress. Move a student between classes or reset their progress. Passwords are saved automatically as students log in.</p>
     <div class="card" id="accounts-body"></div>
@@ -516,7 +584,7 @@
   <section id="screen-students" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
       <h2>👨‍👩‍👧‍👦 Student Progress</h2>
-      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
     </div>
     <div class="grid-3" id="students-grid"></div>
   </section>
@@ -525,7 +593,7 @@
   <section id="screen-manage-l1" class="screen">
     <div class="flex justify-between items-center mt-20" style="margin-bottom:6px; flex-wrap:wrap; gap:10px;">
       <h2>🛠️ Manage Level 1 Questions</h2>
-      <button class="btn btn-ghost btn-sm" onclick="Router.go('home')">← Back</button>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
     </div>
     <p class="small muted" style="margin-bottom:14px;">Add, edit, or remove the Level 1 practice questions. Changes save to the database and go live for students right away.</p>
 
@@ -558,6 +626,23 @@
     <div class="l1-ob-actions">
       <button class="btn btn-ghost btn-sm" id="l1-ob-back" onclick="Onboarding.prev()">← Back</button>
       <button class="btn btn-primary" id="l1-ob-next" onclick="Onboarding.next()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REUSABLE MODAL (prompt / confirm / alert) ============ -->
+<div class="ui-modal-overlay" id="ui-modal">
+  <div class="ui-modal-card">
+    <div class="ui-modal-ico" id="ui-modal-ico">❓</div>
+    <h3 class="ui-modal-title" id="ui-modal-title"></h3>
+    <p class="ui-modal-msg" id="ui-modal-msg"></p>
+    <div class="ui-modal-field" id="ui-modal-field" style="display:none;">
+      <input id="ui-modal-input" class="auth-input" style="margin-top:0;" onkeydown="if(event.key==='Enter') Modal.doConfirm()">
+    </div>
+    <div class="ui-modal-error" id="ui-modal-error"></div>
+    <div class="ui-modal-actions">
+      <button class="btn btn-ghost btn-sm" id="ui-modal-cancel" onclick="Modal.close()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="ui-modal-confirm" onclick="Modal.doConfirm()">Confirm</button>
     </div>
   </div>
 </div>
