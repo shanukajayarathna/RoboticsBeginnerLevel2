@@ -1,1 +1,11 @@
-..
+# Supabase CLI local cache (machine-specific, never commit)
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
