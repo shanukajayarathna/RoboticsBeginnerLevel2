@@ -804,3 +804,283 @@ textarea.auth-input{resize:vertical; min-height:74px; font-family:inherit; line-
   .l1-hello{font-size:1.5rem;}
   .l1-daily{flex-wrap:wrap;}
 }
+
+/* ============================================================
+   CLASS MODE  —  locked dashboard + Today's Lesson card
+   ============================================================ */
+
+/* Hide the free-play sections while the teacher runs a live class. */
+#screen-home-l1.class-mode .l1-lock-hide{ display:none !important; }
+
+.l1-today-card{
+  display:flex; align-items:center; gap:18px;
+  background:linear-gradient(135deg,#7b2ff7,#4a1fc0);
+  border-radius:var(--radius-lg); padding:20px 22px; margin:20px 0 6px;
+  box-shadow:0 16px 40px rgba(123,47,247,.35);
+  position:relative; overflow:hidden;
+  animation:l1pulse 2.4s ease-in-out infinite;
+}
+.l1-today-card::after{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(circle at 85% 20%, rgba(255,255,255,.18), transparent 45%);
+  pointer-events:none;
+}
+.l1-today-emoji{ font-size:3rem; line-height:1; }
+.l1-today-tag{
+  display:inline-block; font-size:.72rem; font-weight:800; letter-spacing:.08em;
+  text-transform:uppercase; background:rgba(255,255,255,.22); color:#fff;
+  padding:3px 10px; border-radius:999px; margin-bottom:6px;
+}
+.l1-today-card h3{ margin:2px 0 4px; font-size:1.45rem; color:#fff; }
+.l1-today-card p{ margin:0; font-size:.92rem; color:rgba(255,255,255,.92); }
+.l1-today-btn{
+  font-size:1.05rem !important; padding:14px 22px !important;
+  background:#fff !important; color:#4a1fc0 !important; font-weight:800 !important;
+  white-space:nowrap;
+}
+.l1-today-btn:hover{ transform:translateY(-2px) scale(1.04); }
+
+/* Locked activity tiles */
+.l1-activity.is-locked{
+  filter:grayscale(.65) brightness(.8); cursor:not-allowed; position:relative;
+}
+.l1-activity.is-locked:hover{ transform:none; box-shadow:none; }
+.l1-activity-lock{
+  position:absolute; top:10px; right:12px; font-size:1.3rem;
+  filter:none; opacity:.95;
+}
+
+@media(max-width:560px){
+  .l1-today-card{ flex-wrap:wrap; text-align:center; justify-content:center; }
+  .l1-today-btn{ width:100%; }
+}
+
+/* ============================================================
+   GUIDED LESSON  —  step-by-step player
+   ============================================================ */
+#screen-guided{ max-width:840px; margin:0 auto; }
+
+.gl-topbar{
+  display:flex; align-items:center; gap:14px; margin:18px 0 20px;
+}
+.gl-topbar-mid{ flex:1; display:flex; flex-direction:column; gap:6px; min-width:0; }
+.gl-lesson-title{
+  font-family:var(--font-display); font-weight:700; font-size:.95rem; color:var(--text-1);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.gl-progress-track{
+  height:10px; background:rgba(255,255,255,.1); border-radius:999px; overflow:hidden;
+}
+.gl-progress-fill{
+  height:100%; border-radius:999px;
+  background:linear-gradient(90deg,#00C853,#00e676); transition:width .4s ease;
+}
+.gl-step-count{ font-size:.8rem; color:var(--text-2); white-space:nowrap; font-weight:600; }
+
+.gl-stage{ animation:fadeIn .4s ease; }
+.gl-card{
+  background:var(--card); border:1px solid var(--card-border);
+  border-radius:var(--radius-lg); padding:26px; box-shadow:var(--shadow-card);
+  min-height:280px;
+}
+
+/* Intro & celebrate steps */
+.gl-intro{ text-align:center; padding:20px 6px; }
+.gl-big-emoji{ font-size:4.5rem; line-height:1; margin-bottom:14px; }
+.gl-bounce{ animation:l1pulse 1.4s ease-in-out infinite; }
+.gl-intro h2{ font-size:1.9rem; margin-bottom:10px; }
+.gl-lead{ font-size:1.1rem; color:var(--text-2); line-height:1.6; max-width:560px; margin:0 auto; }
+.gl-xp-pop{
+  display:inline-block; margin-top:18px; background:var(--grad-orange); color:#fff;
+  font-weight:800; padding:8px 18px; border-radius:999px; font-size:1.05rem;
+  box-shadow:0 8px 22px rgba(255,152,0,.4);
+}
+.gl-finish-actions{
+  margin-top:26px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+}
+
+/* Teach step */
+.gl-teach-title{ font-size:1.5rem; margin-bottom:12px; }
+.gl-notes{ max-width:none; }
+.gl-teach .l1-note-p{ font-size:1.05rem; line-height:1.7; }
+
+.gl-step-kicker{
+  display:inline-block; font-size:.78rem; font-weight:800; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--teal); margin-bottom:12px;
+}
+.gl-q{ font-size:1.35rem; margin-bottom:18px; line-height:1.4; }
+
+/* Activity step */
+.gl-activity-body{ font-size:1.08rem; line-height:1.7; color:var(--text-1); }
+.gl-activity-body b{ color:#b9f6ca; }
+.gl-done{ margin-top:20px; font-size:1.05rem; padding:12px 24px; }
+.gl-done.done{ opacity:.85; }
+
+/* Poll & check options */
+.gl-options{ display:flex; flex-direction:column; gap:12px; }
+.gl-opt{
+  display:flex; align-items:center; gap:12px; text-align:left; width:100%;
+  background:rgba(255,255,255,.05); border:2px solid var(--card-border);
+  color:var(--text-1); font-size:1.05rem; padding:16px 18px; border-radius:14px;
+  transition:transform .12s ease, border-color .12s ease, background .12s ease;
+}
+.gl-opt:hover:not(.locked){ transform:translateY(-2px); border-color:var(--teal); background:rgba(0,151,157,.12); }
+.gl-opt-k{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,.12);
+  font-weight:800; font-size:.95rem; flex:0 0 auto;
+}
+.gl-opt.chosen{ border-color:#7b2ff7; background:rgba(123,47,247,.18); }
+.gl-opt.correct{ border-color:var(--green); background:rgba(0,200,83,.18); }
+.gl-opt.wrong{ border-color:#ff5252; background:rgba(255,82,82,.16); }
+.gl-opt.locked{ cursor:default; }
+
+.gl-feedback{ margin-top:16px; }
+.gl-fb{ padding:14px 16px; border-radius:12px; font-size:1rem; line-height:1.55; }
+.gl-fb.ok{ background:rgba(0,200,83,.14); border:1px solid rgba(0,200,83,.4); color:#b9f6ca; }
+.gl-fb.no{ background:rgba(255,152,0,.12); border:1px solid rgba(255,152,0,.4); color:#ffe0b2; }
+.gl-fb b{ color:#fff; }
+
+/* Bottom nav */
+.gl-nav{
+  display:flex; justify-content:space-between; gap:14px; margin:20px 0 40px;
+}
+.gl-next-btn{ font-size:1.1rem; padding:14px 32px; min-width:150px; }
+
+@media(max-width:560px){
+  .gl-card{ padding:20px 16px; }
+  .gl-intro h2{ font-size:1.5rem; }
+  .gl-big-emoji{ font-size:3.5rem; }
+  .gl-q{ font-size:1.15rem; }
+  .gl-next-btn{ padding:14px 22px; min-width:120px; }
+}
+
+/* ============================================================
+   L298N  —  3D embed, code blocks, interactive SIM widgets
+   ============================================================ */
+
+/* 3D model (Sketchfab) */
+.l1-3d{ margin:18px 0; }
+.l1-3d-frame{
+  position:relative; width:100%; padding-top:62%; border-radius:16px; overflow:hidden;
+  background:#0d1013; box-shadow:var(--shadow-card);
+}
+.l1-3d-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+.l1-3d figcaption{ margin-top:8px; font-size:.85rem; color:var(--text-2); text-align:center; }
+
+/* Code blocks */
+.l1-code-wrap{ margin:16px 0; }
+.l1-code-title{ font-size:.8rem; color:var(--text-2); margin-bottom:4px; font-weight:600; }
+.l1-code{
+  background:#0d1013; border:1px solid var(--card-border); border-radius:12px;
+  padding:14px 16px; overflow-x:auto; font-family:var(--font-mono);
+  font-size:.82rem; line-height:1.6; color:#d7e0e6;
+}
+.l1-code code{ color:#b9f6ca; white-space:pre; }
+
+/* Motor visual + spin */
+@keyframes motorspin{ to{ transform:rotate(360deg); } }
+.motorviz{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.motor-cw{ animation:motorspin linear infinite; }
+.motor-ccw{ animation:motorspin linear infinite reverse; }
+@keyframes motorbrake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+.motor-brake{ animation:motorbrake .18s ease-in-out 3; }
+.motorviz-label{ font-weight:800; font-size:1.05rem; }
+.motorviz-speed{ font-size:.85rem; color:var(--text-2); }
+
+/* Sim shell */
+.sim-root{ min-height:120px; }
+.sim-loading{ text-align:center; color:var(--text-2); padding:30px; }
+.sim-label-top{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:14px; }
+.sim-pill{
+  background:rgba(255,255,255,.08); border:1px solid var(--card-border);
+  border-radius:999px; padding:4px 12px; font-size:.82rem; font-weight:700;
+}
+.sim-fb{ margin-top:14px; min-height:10px; }
+
+/* Traffic Cop */
+.sim-trafficcop{ display:flex; gap:22px; align-items:center; flex-wrap:wrap; justify-content:center; }
+.sim-controls{ display:flex; flex-direction:column; gap:14px; min-width:220px; flex:1; }
+.sim-toggle-row, .sim-slider-row{ display:flex; align-items:center; gap:12px; }
+.sim-pin{
+  font-family:var(--font-mono); font-weight:700; width:44px; color:var(--text-1);
+  background:rgba(255,255,255,.06); border-radius:8px; padding:6px 0; text-align:center;
+}
+.sim-switch{
+  flex:1; padding:12px; border-radius:12px; border:2px solid #3a424a;
+  background:#242a31; color:#a9b3ba; font-weight:800; font-size:1rem; letter-spacing:.05em;
+  transition:all .15s ease;
+}
+.sim-switch.on{ background:linear-gradient(135deg,#00C853,#00834a); color:#fff; border-color:#00C853; box-shadow:0 6px 18px rgba(0,200,83,.35); }
+.sim-slider-row input[type=range]{ flex:1; accent-color:var(--orange); }
+.sim-en-val{ font-family:var(--font-mono); width:38px; text-align:right; color:var(--text-2); }
+.sim-hint{ font-size:.85rem; color:var(--text-2); text-align:center; margin-top:4px; }
+
+/* Choice buttons (label / predict) */
+.sim-q{ text-align:center; font-size:1.1rem; margin:14px 0; font-weight:600; }
+.sim-choices{ display:flex; flex-direction:column; gap:10px; }
+.sim-choices-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.sim-choice{
+  padding:14px 16px; border-radius:12px; border:2px solid var(--card-border);
+  background:rgba(255,255,255,.05); color:var(--text-1); font-size:1rem; font-weight:600;
+  transition:all .12s ease;
+}
+.sim-choice:hover:not(:disabled){ transform:translateY(-2px); border-color:var(--teal); background:rgba(0,151,157,.14); }
+.sim-choice:disabled{ opacity:.55; cursor:default; }
+
+/* Board wrap + flag for Label game */
+.sim-board-wrap{ position:relative; max-width:420px; margin:0 auto; }
+.sim-board-wrap svg{ width:100%; height:auto; display:block; }
+.sim-flag{
+  position:absolute; transform:translate(-50%,-50%);
+  width:30px; height:30px; border-radius:50%; background:#FF5252; color:#fff;
+  display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.1rem;
+  box-shadow:0 0 0 4px rgba(255,82,82,.35); animation:l1pulse 1.2s ease-in-out infinite;
+}
+
+/* Predict-the-Motor */
+.sim-combo{ text-align:center; font-size:1.3rem; margin:10px 0 14px; font-family:var(--font-mono); }
+.sim-combo .hi{ color:#00E676; } .sim-combo .lo{ color:#ff8a80; }
+.sim-timer{ height:8px; background:rgba(255,255,255,.1); border-radius:999px; overflow:hidden; margin-bottom:16px; }
+.sim-timer-fill{ height:100%; width:100%; background:linear-gradient(90deg,#FF9800,#ff5252); transition:width .1s linear; }
+
+/* Build-a-Sequence */
+.sim-challenge{
+  background:rgba(123,47,247,.15); border:1px solid rgba(123,47,247,.4);
+  border-radius:12px; padding:10px 14px; font-weight:600; margin-bottom:14px; color:#e6d9ff;
+}
+.sim-road{
+  position:relative; height:70px; background:repeating-linear-gradient(90deg,#2a3038 0 30px,#242a31 30px 60px);
+  border-radius:12px; margin-bottom:14px; overflow:hidden; border:1px solid var(--card-border);
+}
+.sim-car{ position:absolute; top:16px; left:10px; font-size:2.2rem; transition:transform .5s ease; }
+.sim-car.flip{ transform:scaleX(-1); }
+.sim-car.turn-l{ transform:rotate(-18deg); } .sim-car.turn-r{ transform:rotate(18deg); }
+.sim-palette{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.sim-block{
+  padding:9px 13px; border-radius:10px; border:0; color:#fff; font-weight:700; font-size:.85rem;
+}
+.sim-block.c-green{background:linear-gradient(135deg,#00C853,#00834a);}
+.sim-block.c-blue{background:linear-gradient(135deg,#3AA0FF,#1666c9);}
+.sim-block.c-purple{background:linear-gradient(135deg,#9C4DFF,#6a1fd0);}
+.sim-block.c-orange{background:linear-gradient(135deg,#FF9800,#e65100);}
+.sim-block.c-pink{background:linear-gradient(135deg,#FF5FA2,#e0186f);}
+.sim-program{
+  display:flex; flex-wrap:wrap; gap:8px; min-height:48px; padding:10px; border-radius:12px;
+  background:rgba(0,0,0,.2); border:1px dashed var(--card-border); margin-bottom:12px;
+}
+.sim-chip{ padding:6px 10px; border-radius:8px; color:#fff; font-size:.8rem; font-weight:700; cursor:pointer; }
+.sim-chip.c-green{background:#00834a;} .sim-chip.c-blue{background:#1666c9;}
+.sim-chip.c-purple{background:#6a1fd0;} .sim-chip.c-orange{background:#e65100;} .sim-chip.c-pink{background:#e0186f;}
+.sim-empty{ color:var(--text-3); font-size:.88rem; align-self:center; }
+.sim-seq-btns{ display:flex; gap:10px; }
+
+/* Sim done screen */
+.sim-done{ text-align:center; padding:16px; }
+.sim-done h3{ font-size:1.4rem; margin:6px 0; }
+.sim-done p{ color:var(--text-2); margin-bottom:14px; }
+
+@media(max-width:560px){
+  .sim-trafficcop{ flex-direction:column; }
+  .sim-choices-grid{ grid-template-columns:1fr; }
+}

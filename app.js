@@ -608,6 +608,29 @@ const CLASS_META = {
     heroSub:"Learn the fundamentals of robotics and AI through bite-sized animated challenges. Earn XP, collect components, and level up your skills."}
 };
 
+/* ============================================================
+   CLASS MODE  —  in-person class focus for Level 1
+   ------------------------------------------------------------
+   Flip `enabled` to true to lock the Level 1 dashboard down to a
+   single guided, step-by-step lesson for a live class. Every other
+   activity (Practice, Daily, Topics, Game, Review, Weekly) shows as
+   a friendly 🔒 tile until class is over. Set `enabled:false` again
+   afterwards to hand the full dashboard back to the students.
+
+   `lessonId` must match a lesson `id` in data/l1/learn.json.
+   ============================================================ */
+const CLASS_MODE = {
+  enabled: true,
+  lessonId: "l298n",                 // which lesson auto-launches in class
+  title: "Today's Lesson",           // label on the dashboard card
+  subtitle: "Meet the L298N motor driver — tap to begin! 🚗"
+};
+
+// True only when we should lock an L1 student's dashboard for class.
+function classModeActive(){
+  return !!(CLASS_MODE.enabled && App.isL1Student());
+}
+
 const App = {
   state: structuredClone(DEFAULT_STATE),
   classData: { l1:{questions:[]}, l2:{questions:[]} },
@@ -1847,11 +1870,39 @@ const HomeL1 = {
     this.animateCount("l1-streak", s.streak);
     this.animateCount("l1-stars", s.stars);
 
+    this.applyClassMode();
     this.renderCourseProgress();
     this.renderProject();
     this.renderActivities("l1-activity-grid");
     this.renderBadges();
     Leaderboard.render("l1-leaderboard", "l1");
+  },
+
+  // Find the lesson the teacher has pinned for today's class.
+  todaysLesson(){
+    return this.lessons().find(l => this.lessonKey(l) === CLASS_MODE.lessonId) || this.lessons()[0] || null;
+  },
+
+  // Lock the dashboard down to a single guided lesson during a live class.
+  applyClassMode(){
+    const screen = document.getElementById("screen-home-l1");
+    const on = classModeActive();
+    if(screen) screen.classList.toggle("class-mode", on);
+    const card = document.getElementById("l1-today-card");
+    if(card){
+      card.style.display = on ? "" : "none";
+      if(on){
+        const lsn = this.todaysLesson();
+        card.innerHTML = `
+          <div class="l1-today-emoji">${(lsn && lsn.icon) || "📚"}</div>
+          <div style="flex:1;">
+            <span class="l1-today-tag">${CLASS_MODE.title}</span>
+            <h3>${this.escText((lsn && lsn.title) || "Today's Lesson")}</h3>
+            <p>${this.escText(CLASS_MODE.subtitle)}</p>
+          </div>
+          <button class="l1-daily-btn l1-today-btn" onclick="GuidedLesson.startToday()">▶ Start Lesson</button>`;
+      }
+    }
   },
 
   // Count a stat number up from 0 so the dashboard feels alive on each visit.
@@ -1897,12 +1948,27 @@ const HomeL1 = {
   renderActivities(containerId){
     const box = document.getElementById(containerId);
     if(!box) return;
-    box.innerHTML = this.activityDefs().map(a=>`
+    // During a live class, every free activity is locked so students stay
+    // with the guided lesson. They still see the tiles (greyed with a 🔒)
+    // so they know what unlocks afterwards.
+    const locked = classModeActive() && containerId === "l1-activity-grid";
+    box.innerHTML = this.activityDefs().map(a=> locked ? `
+      <div class="l1-activity c-${a.color} is-locked" onclick="HomeL1.lockedTap()" title="Unlocks after class">
+        <div class="l1-activity-lock">🔒</div>
+        <div class="l1-activity-ico">${a.icon}</div>
+        <h3>${a.title}</h3>
+        <p>Unlocks after class</p>
+      </div>` : `
       <div class="l1-activity c-${a.color}" onclick="HomeL1.runActivity('${a.action}')">
         <div class="l1-activity-ico">${a.icon}</div>
         <h3>${a.title}</h3>
         <p>${a.desc}</p>
       </div>`).join("");
+  },
+
+  lockedTap(){
+    Sound.click && Sound.click();
+    Modal.alert({icon:"🔒", title:"Locked for now", message:"Let's finish today's lesson first! These unlock after class. 🚀"});
   },
 
   renderBadges(){
@@ -2106,6 +2172,10 @@ const HomeL1 = {
         return this.videoBlockHtml(block);
       case "image":
         return this.imageBlockHtml(block);
+      case "sketchfab":
+        return this.sketchfabHtml(block);
+      case "code":
+        return `<div class="l1-code-wrap">${block.title?`<div class="l1-code-title">${block.title}</div>`:""}<pre class="l1-code"><code>${this.escAttr(block.code||"")}</code></pre></div>`;
       case "tip":
       case "callout":
         return `<div class="l1-tip"><span class="l1-tip-ico">${block.icon||"💡"}</span><div>${block.text||""}</div></div>`;
@@ -2158,7 +2228,251 @@ const HomeL1 = {
     </figure>`;
   },
 
+  // Embed a rotatable Sketchfab 3D model. CC-BY models require attribution.
+  sketchfabHtml(block){
+    if(!block.id){
+      return `<div class="l1-video-empty"><div class="l1-video-empty-ico">🧊</div>
+        <div><strong>${block.title||"3D model"}</strong><br><span class="small muted">3D model coming soon.</span></div></div>`;
+    }
+    const title = this.escAttr(block.title || "3D model");
+    return `<figure class="l1-3d">
+      <div class="l1-3d-frame">
+        <iframe title="${title}" loading="lazy" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true"
+          allow="autoplay; fullscreen; xr-spatial-tracking"
+          src="https://sketchfab.com/models/${this.escAttr(block.id)}/embed?ui_theme=dark&autospin=0.3&ui_infos=0&ui_controls=1"></iframe>
+      </div>
+      <figcaption>🧊 ${block.caption || "Drag to spin the 3D model!"}${block.credit?` <span class="small muted">— ${block.credit}</span>`:""}</figcaption>
+    </figure>`;
+  },
+
   escAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+};
+
+/* ============================================================
+   GUIDED LESSON  —  step-by-step "class mode" lesson player
+   ------------------------------------------------------------
+   Shows ONE bite-sized step at a time (teach → picture/animation →
+   fun activity → quick check → celebrate) with a progress bar and
+   Back/Next, instead of one long scroll. Great for a live class.
+
+   A lesson can define its own `steps:[...]` array in learn.json for
+   a fully hand-crafted flow; if it doesn't, we auto-build a friendly
+   sequence from the lesson's existing note blocks so every lesson
+   works in guided mode out of the box.
+
+   Step kinds:
+     intro      { emoji, title, text }
+     teach      { title?, text?, blocks:[ ...note blocks... ] }
+     activity   { emoji, title, html|text, hint? }        (tap "Done")
+     poll       { title, question, options:[str|{label,emoji}] }  (no wrong answer)
+     check      { title?, question, options:[...], answer, explain? }
+     celebrate  { emoji, title, text }
+   ============================================================ */
+const GuidedLesson = {
+  lesson:null, steps:[], index:0, answered:{}, awarded:false,
+
+  startToday(){
+    const lsn = HomeL1.todaysLesson();
+    if(!lsn){ Modal.alert({icon:"📚", title:"No lesson yet", message:"Today's lesson isn't ready yet. Please tell your teacher! 🙂"}); return; }
+    this.open(lsn);
+  },
+
+  open(lesson){
+    this.lesson = lesson;
+    this.steps = this.buildSteps(lesson);
+    this.index = 0;
+    this.answered = {};
+    this.awarded = false;
+    document.getElementById("gl-lesson-title").textContent = lesson.title || "Lesson";
+    Router.go("guided");
+    this.render();
+  },
+
+  // Hand-authored steps win; otherwise generate a step per note block.
+  buildSteps(lesson){
+    if(Array.isArray(lesson.steps) && lesson.steps.length) return lesson.steps.slice();
+    const steps = [{kind:"intro", emoji:lesson.icon||"📚", title:lesson.title||"Let's learn!",
+      text:lesson.summary||"Ready for something awesome? We'll go one step at a time. 🚀"}];
+    (lesson.notes||[]).forEach(block=>{
+      if(block.type==="activity") steps.push({kind:"activity", emoji:"🎯", title:"Your turn!", html:block.text});
+      else steps.push({kind:"teach", blocks:[block]});
+    });
+    steps.push({kind:"celebrate", emoji:"🎉", title:"You did it!",
+      text:`You finished ${lesson.title||"the lesson"} — amazing work! 🌟`});
+    return steps;
+  },
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); },
+
+  render(){
+    // Stop any running sim timer from a previous step (e.g. Predict-the-Motor).
+    if(typeof SIMS!=="undefined" && SIMS.predictMotor && SIMS.predictMotor._t){ clearInterval(SIMS.predictMotor._t); }
+    const step = this.steps[this.index] || {};
+    const total = this.steps.length;
+    document.getElementById("gl-step-count").textContent = `Step ${this.index+1} of ${total}`;
+    const pct = total>1 ? (this.index/(total-1))*100 : 100;
+    document.getElementById("gl-progress-fill").style.width = pct+"%";
+    const stage = document.getElementById("gl-stage");
+    stage.innerHTML = `<div class="gl-card gl-${step.kind||'teach'}">${this.renderStep(step)}</div>`;
+    // Interactive sim steps mount themselves into #gl-sim-root after render.
+    if(step.kind==="sim" && typeof SIMS!=="undefined" && SIMS[step.sim]){
+      try{ SIMS[step.sim].start("gl-sim-root", step); }catch(e){ if(window.GuidedLesson) GuidedLesson.allowNext(); }
+    }
+    window.scrollTo({top:0, behavior:"smooth"});
+    const isFinish = step.kind==="celebrate";
+    // On the final celebrate step we swap the Back/Next bar for clear
+    // "quiz or dashboard" choices rendered inside the card.
+    document.getElementById("gl-nav").style.display = isFinish ? "none" : "flex";
+    document.getElementById("gl-back").style.visibility = this.index>0 ? "visible" : "hidden";
+    this.updateNext();
+    if(isFinish){
+      if(!this.awarded){ App.state.xp += 20; Store.save(App.state); this.awarded = true; }
+      App.celebrate();
+      if(Sound.levelup) Sound.levelup();
+    }
+  },
+
+  renderStep(step){
+    switch(step.kind){
+      case "intro":
+        return `<div class="gl-intro">
+          <div class="gl-big-emoji">${step.emoji||"📚"}</div>
+          <h2>${this.esc(step.title||"Let's learn!")}</h2>
+          <p class="gl-lead">${this.esc(step.text||"")}</p>
+        </div>`;
+      case "celebrate": {
+        const hasQuiz = this.lesson && Array.isArray(this.lesson.quiz) && this.lesson.quiz.length;
+        return `<div class="gl-intro">
+          <div class="gl-big-emoji gl-bounce">${step.emoji||"🎉"}</div>
+          <h2>${this.esc(step.title||"You did it!")}</h2>
+          <p class="gl-lead">${this.esc(step.text||"")}</p>
+          <div class="gl-xp-pop">+20 XP 🌟</div>
+          <div class="gl-finish-actions">
+            ${hasQuiz ? `<button class="btn btn-primary" onclick="GuidedLesson.goQuiz()">📝 Take the Quiz</button>` : ""}
+            <button class="btn ${hasQuiz?'btn-ghost':'btn-primary'}" onclick="GuidedLesson.goHome()">🏠 Back to Dashboard</button>
+          </div>
+        </div>`;
+      }
+      case "activity":
+        return `<div class="gl-activity">
+          <div class="gl-step-kicker">🎯 ${this.esc(step.title||"Your turn!")}</div>
+          <div class="gl-activity-body">${step.html || this.esc(step.text||"")}</div>
+          ${step.hint ? `<div class="l1-tip"><span class="l1-tip-ico">💡</span><div>${step.hint}</div></div>` : ""}
+          <button class="btn btn-green gl-done" id="gl-done" onclick="GuidedLesson.markDone()">✋ We did it!</button>
+        </div>`;
+      case "poll":
+        return `<div class="gl-poll">
+          ${step.title ? `<div class="gl-step-kicker">🙋 ${this.esc(step.title)}</div>` : ""}
+          <h3 class="gl-q">${this.esc(step.question||"")}</h3>
+          <div class="gl-options">${(step.options||[]).map((o,i)=>{
+            const label = typeof o==="string" ? o : o.label;
+            const emoji = (typeof o==="object" && o.emoji) ? o.emoji+" " : "";
+            return `<button class="gl-opt" data-i="${i}" onclick="GuidedLesson.selectPoll(${i})">${emoji}${this.esc(label)}</button>`;
+          }).join("")}</div>
+          <div class="gl-feedback" id="gl-feedback"></div>
+        </div>`;
+      case "check":
+        return `<div class="gl-check">
+          <div class="gl-step-kicker">✅ ${this.esc(step.title||"Quick check")}</div>
+          <h3 class="gl-q">${this.esc(step.question||"")}</h3>
+          <div class="gl-options">${(step.options||[]).map((o,i)=>
+            `<button class="gl-opt" data-i="${i}" onclick="GuidedLesson.selectCheck(${i})"><span class="gl-opt-k">${String.fromCharCode(65+i)}</span> ${this.esc(o)}</button>`
+          ).join("")}</div>
+          <div class="gl-feedback" id="gl-feedback"></div>
+        </div>`;
+      case "sim":
+        return `<div class="gl-sim">
+          <div class="gl-step-kicker">🎮 ${this.esc(step.title||"Try it!")}</div>
+          ${step.text ? `<p class="gl-lead" style="margin-bottom:16px;">${this.esc(step.text)}</p>` : ""}
+          <div class="sim-root" id="gl-sim-root"><div class="sim-loading">Loading… 🎮</div></div>
+        </div>`;
+      case "teach":
+      default:
+        return `<div class="gl-teach">
+          ${step.title ? `<h2 class="gl-teach-title">${this.esc(step.title)}</h2>` : ""}
+          ${step.text ? `<p class="gl-lead">${this.esc(step.text)}</p>` : ""}
+          <div class="l1-notes gl-notes">${(step.blocks||[]).map(b=>HomeL1.renderNoteBlock(b)).join("")}</div>
+        </div>`;
+    }
+  },
+
+  // Called by a sim widget when the student has interacted enough to move on.
+  allowNext(){
+    this.answered[this.index] = true;
+    const b = document.getElementById("gl-next");
+    if(b) b.disabled = false;
+  },
+
+  updateNext(){
+    const step = this.steps[this.index] || {};
+    const btn = document.getElementById("gl-next");
+    const gate = (step.kind==="check" || step.kind==="activity" || step.kind==="sim") && !this.answered[this.index];
+    btn.disabled = gate;
+    btn.textContent = "Next →";
+  },
+
+  selectPoll(i){
+    const step = this.steps[this.index];
+    document.querySelectorAll("#gl-stage .gl-opt").forEach(b=>b.classList.remove("chosen"));
+    const el = document.querySelector(`#gl-stage .gl-opt[data-i="${i}"]`);
+    if(el) el.classList.add("chosen");
+    if(Sound.correct) Sound.correct();
+    const fb = document.getElementById("gl-feedback");
+    if(fb) fb.innerHTML = `<div class="gl-fb ok">${this.esc(step.reaction||"Great choice! There's no wrong answer here 🌈")}</div>`;
+    this.answered[this.index] = true;
+    this.updateNext();
+  },
+
+  selectCheck(i){
+    if(this.answered[this.index]) return;
+    const step = this.steps[this.index];
+    const opts = step.options||[];
+    const chosen = opts[i];
+    const correct = String(chosen) === String(step.answer);
+    document.querySelectorAll("#gl-stage .gl-opt").forEach((b,bi)=>{
+      b.classList.add("locked");
+      if(String(opts[bi])===String(step.answer)) b.classList.add("correct");
+      else if(bi===i) b.classList.add("wrong");
+    });
+    const fb = document.getElementById("gl-feedback");
+    if(correct){
+      if(Sound.correct) Sound.correct();
+      if(fb) fb.innerHTML = `<div class="gl-fb ok">🎉 Correct! ${this.esc(step.explain||"")}</div>`;
+      App.state.xp += 5; App.state.stars += 1; Store.save(App.state);
+    } else {
+      if(Sound.wrong) Sound.wrong();
+      if(fb) fb.innerHTML = `<div class="gl-fb no">Good try! The answer is <b>${this.esc(step.answer)}</b>. ${this.esc(step.explain||"")}</div>`;
+    }
+    this.answered[this.index] = true;
+    this.updateNext();
+  },
+
+  markDone(){
+    this.answered[this.index] = true;
+    const btn = document.getElementById("gl-done");
+    if(btn){ btn.textContent = "✅ Nice work!"; btn.disabled = true; btn.classList.add("done"); }
+    if(Sound.correct) Sound.correct();
+    this.updateNext();
+  },
+
+  next(){
+    if(this.index >= this.steps.length-1) return;   // last step handles its own actions
+    if(Sound.click) Sound.click();
+    this.index++; this.render();
+  },
+  back(){ if(this.index>0){ if(Sound.click) Sound.click(); this.index--; this.render(); } },
+
+  exit(){
+    Modal.show({icon:"🚪", title:"Leave the lesson?", message:"No problem — you can come back and pick up where you left off.",
+      confirmLabel:"Leave", onConfirm:()=>{ Modal.close(); App.enterHome(); }});
+  },
+
+  goQuiz(){
+    const lsn = this.lesson;
+    if(lsn && Array.isArray(lsn.quiz) && lsn.quiz.length) LessonQuiz.start(lsn);
+    else App.enterHome();
+  },
+  goHome(){ App.enterHome(); }
 };
 
 /* ---------------- LESSON QUIZ (per-lesson mixed quiz: MCQ / fill-blank / matching) ---------------- */

@@ -292,7 +292,10 @@
       <div class="l1-stat tile-stars"><div class="l1-stat-ico">⭐</div><div class="l1-stat-num" id="l1-stars">0</div><div class="l1-stat-lbl">Stars</div></div>
     </div>
 
-    <div class="l1-course-card">
+    <!-- Class-mode: today's guided lesson (shown only when CLASS_MODE is on) -->
+    <div class="l1-today-card" id="l1-today-card" style="display:none;"></div>
+
+    <div class="l1-course-card l1-lock-hide">
       <div class="l1-course-ring" id="l1-course-ring"></div>
       <div style="flex:1;">
         <h3>🎓 Your Course Progress</h3>
@@ -301,7 +304,7 @@
       <button class="l1-daily-btn" id="l1-course-btn" onclick="HomeL1.continueLearning()">Start Lesson 1 →</button>
     </div>
 
-    <div class="l1-daily" onclick="App.startDaily()">
+    <div class="l1-daily l1-lock-hide" onclick="App.startDaily()">
       <div class="l1-daily-emoji">🎯</div>
       <div style="flex:1;">
         <h3>Daily Challenge</h3>
@@ -313,10 +316,12 @@
     <h2 class="l1-section-title">🎮 Choose an Activity</h2>
     <div class="l1-activity-grid" id="l1-activity-grid"></div>
 
-    <h2 class="l1-section-title">🚀 My Robot Project</h2>
-    <div class="l1-project-card" id="l1-project-card"></div>
+    <div class="l1-lock-hide">
+      <h2 class="l1-section-title">🚀 My Robot Project</h2>
+      <div class="l1-project-card" id="l1-project-card"></div>
+    </div>
 
-    <div class="l1-two-col">
+    <div class="l1-two-col l1-lock-hide">
       <div>
         <h2 class="l1-section-title">🏆 Class Leaderboard</h2>
         <div class="l1-card" id="l1-leaderboard"></div>
@@ -381,6 +386,23 @@
       <div class="card" style="max-width:640px;width:100%;">
         <div id="lq-root"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ GUIDED LESSON (step-by-step class mode) ============ -->
+  <section id="screen-guided" class="screen">
+    <div class="gl-topbar">
+      <button class="btn btn-ghost btn-sm" onclick="GuidedLesson.exit()">✕ Exit</button>
+      <div class="gl-topbar-mid">
+        <span class="gl-lesson-title" id="gl-lesson-title">Lesson</span>
+        <div class="gl-progress-track"><div class="gl-progress-fill" id="gl-progress-fill" style="width:0%"></div></div>
+      </div>
+      <span class="gl-step-count" id="gl-step-count">Step 1</span>
+    </div>
+    <div class="gl-stage" id="gl-stage"></div>
+    <div class="gl-nav" id="gl-nav">
+      <button class="btn btn-ghost" id="gl-back" onclick="GuidedLesson.back()">← Back</button>
+      <button class="btn btn-primary gl-next-btn" id="gl-next" onclick="GuidedLesson.next()">Next →</button>
     </div>
   </section>
 
@@ -655,6 +677,7 @@
 
 <script src="animations.js"></script>
 <script src="l1-content.js"></script>
+<script src="l298n-content.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
