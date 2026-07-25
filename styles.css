@@ -1075,9 +1075,12 @@ textarea.auth-input{resize:vertical; min-height:74px; font-family:inherit; line-
   position:relative; height:70px; background:repeating-linear-gradient(90deg,#2a3038 0 30px,#242a31 30px 60px);
   border-radius:12px; margin-bottom:14px; overflow:hidden; border:1px solid var(--card-border);
 }
-.sim-car{ position:absolute; top:16px; left:10px; font-size:2.2rem; transition:transform .5s ease; }
-.sim-car.flip{ transform:scaleX(-1); }
-.sim-car.turn-l{ transform:rotate(-18deg); } .sim-car.turn-r{ transform:rotate(18deg); }
+.sim-car{ position:absolute; top:14px; left:10px; font-size:2.2rem; transition:left .5s ease; }
+/* 🚗 faces LEFT by default — flip it so "forward" points right. */
+.sim-car-img{ display:inline-block; transition:transform .3s ease; transform:scaleX(-1); }
+.sim-car-img.rev{ transform:scaleX(1); }           /* reversing → face left */
+.sim-car-img.tilt-l{ transform:scaleX(-1) rotate(-16deg); }
+.sim-car-img.tilt-r{ transform:scaleX(-1) rotate(16deg); }
 .sim-palette{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
 .sim-block{
   padding:9px 13px; border-radius:10px; border:0; color:#fff; font-weight:700; font-size:.85rem;

@@ -2303,11 +2303,14 @@ const GuidedLesson = {
   },
 
   esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); },
+  shuffle(a){ return [...a].sort(()=>Math.random()-0.5); },
 
   render(){
     // Stop any running sim timer from a previous step (e.g. Predict-the-Motor).
     if(typeof SIMS!=="undefined" && SIMS.predictMotor && SIMS.predictMotor._t){ clearInterval(SIMS.predictMotor._t); }
     const step = this.steps[this.index] || {};
+    // Shuffle quick-check options so the answer isn't always in the same spot.
+    if(step.kind==="check" && Array.isArray(step.options)){ step.options = this.shuffle(step.options); }
     const total = this.steps.length;
     document.getElementById("gl-step-count").textContent = `Step ${this.index+1} of ${total}`;
     const pct = total>1 ? (this.index/(total-1))*100 : 100;
@@ -2484,7 +2487,9 @@ const LessonQuiz = {
   start(lesson){
     if(!lesson || !Array.isArray(lesson.quiz) || !lesson.quiz.length){ return; }
     this.lesson = lesson;
-    this.pool = lesson.quiz.slice();
+    // Shuffle MCQ options so the correct answer isn't always first.
+    this.pool = lesson.quiz.map(q =>
+      (q.type==="mcq" && Array.isArray(q.options)) ? {...q, options:this.shuffle(q.options)} : q);
     this.index = 0; this.correct = 0;
     document.getElementById("lq-title").textContent = `${lesson.icon||"📝"} ${lesson.title||"Lesson"} — Quiz`;
     Router.go("lesson-quiz");

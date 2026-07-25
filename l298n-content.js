@@ -55,50 +55,50 @@ function l298nBoardSVG(labels){
   const T = (x,y,t,size,fill,anchor) =>
     labels ? `<text x="${x}" y="${y}" font-size="${size||8}" fill="${fill||'#e8eef4'}" text-anchor="${anchor||'middle'}" font-weight="600">${t}</text>` : "";
   return `
-    <svg viewBox="0 0 400 260" role="img" aria-label="L298N motor driver module, top view">
-      <!-- PCB -->
-      <rect x="18" y="44" width="364" height="198" rx="12" fill="#15559e"/>
-      <rect x="18" y="44" width="364" height="198" rx="12" fill="none" stroke="#0d3c78" stroke-width="3"/>
-      <circle cx="36" cy="60" r="5" fill="#0d3c78"/><circle cx="364" cy="60" r="5" fill="#0d3c78"/>
-      <circle cx="36" cy="226" r="5" fill="#0d3c78"/><circle cx="364" cy="226" r="5" fill="#0d3c78"/>
+    <svg viewBox="0 0 340 340" role="img" aria-label="L298N motor driver module, top view">
+      <!-- red PCB -->
+      <rect x="12" y="12" width="316" height="316" rx="16" fill="#d32f2f"/>
+      <rect x="12" y="12" width="316" height="316" rx="16" fill="none" stroke="#9a1c1c" stroke-width="3"/>
+      ${[[30,30],[310,30],[30,310],[310,310]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7" fill="#4a0d0d"/><circle cx="${x}" cy="${y}" r="3" fill="#2a0707"/>`).join("")}
 
-      <!-- top edge: 3 screw terminals -->
-      <!-- Motor A (OUT1/OUT2) left -->
-      <rect x="40" y="20" width="66" height="34" rx="4" fill="#0a2e5c"/>
-      <circle cx="58" cy="37" r="8" fill="#c9d6e5"/><circle cx="58" cy="37" r="3.4" fill="#0a2e5c"/>
-      <circle cx="88" cy="37" r="8" fill="#c9d6e5"/><circle cx="88" cy="37" r="3.4" fill="#0a2e5c"/>
-      ${T(73,14,"OUT1  OUT2 · Motor A",7.5,"#8fd6ff")}
-      <!-- Power (12V/GND/5V) center -->
-      <rect x="150" y="20" width="100" height="34" rx="4" fill="#0a2e5c"/>
-      ${[170,200,230].map(cx=>`<circle cx="${cx}" cy="37" r="8" fill="#c9d6e5"/><circle cx="${cx}" cy="37" r="3.4" fill="#0a2e5c"/>`).join("")}
-      ${T(170,14,"12V",7,"#ffd54f")}${T(200,14,"GND",7,"#ffd54f")}${T(230,14,"5V",7,"#ffd54f")}
-      <!-- Motor B (OUT3/OUT4) right -->
-      <rect x="294" y="20" width="66" height="34" rx="4" fill="#0a2e5c"/>
-      <circle cx="312" cy="37" r="8" fill="#c9d6e5"/><circle cx="312" cy="37" r="3.4" fill="#0a2e5c"/>
-      <circle cx="342" cy="37" r="8" fill="#c9d6e5"/><circle cx="342" cy="37" r="3.4" fill="#0a2e5c"/>
-      ${T(327,14,"OUT3  OUT4 · Motor B",7.5,"#8fd6ff")}
+      <!-- heatsink (black, top) + L298N IC in front -->
+      <rect x="104" y="20" width="172" height="50" rx="3" fill="#15181c"/>
+      ${Array.from({length:9}).map((_,i)=>`<rect x="${112+i*18}" y="24" width="10" height="42" rx="2" fill="#2c333a"/>`).join("")}
+      <rect x="150" y="72" width="86" height="46" rx="3" fill="#0c0f12"/>
+      <circle cx="193" cy="79" r="5" fill="#8892a0"/>
+      ${T(193,103,"L298N",8,"#e6e6e6")}
+      ${Array.from({length:16}).map((_,i)=>`<rect x="${152+i*5.4}" y="118" width="2.4" height="12" fill="#c9c9c9"/>`).join("")}
+      ${T(283,44,"Heatsink",8,"#ffe0e0","start")}
 
-      <!-- 5V enable jumper -->
-      <rect x="252" y="64" width="22" height="12" rx="3" fill="#ffca28"/>
-      ${T(305,74,"5V jumper",8,"#ffe082","start")}
+      <!-- Motor A terminal (blue 2-pin) top-left -->
+      <rect x="34" y="70" width="48" height="56" rx="4" fill="#1565c0"/>
+      <circle cx="58" cy="87" r="8.5" fill="#bcd3ea"/><circle cx="58" cy="87" r="3.2" fill="#0d3c78"/>
+      <circle cx="58" cy="110" r="8.5" fill="#bcd3ea"/><circle cx="58" cy="110" r="3.2" fill="#0d3c78"/>
+      ${T(58,63,"OUT1 · OUT2",7.5,"#fff")}${T(58,140,"Motor A",7,"#ffd7d7")}
 
-      <!-- electrolytic cap (realism) -->
-      <circle cx="118" cy="120" r="16" fill="#1b1f24" stroke="#3a424a" stroke-width="2"/>
-      <circle cx="118" cy="120" r="6" fill="#2a3038"/>
+      <!-- Power terminal (blue 3-pin) bottom-left -->
+      <rect x="32" y="232" width="98" height="40" rx="4" fill="#1565c0"/>
+      ${[54,81,108].map(cx=>`<circle cx="${cx}" cy="252" r="8.5" fill="#bcd3ea"/><circle cx="${cx}" cy="252" r="3.2" fill="#0d3c78"/>`).join("")}
+      ${T(54,287,"12V",7,"#fff")}${T(81,287,"GND",7,"#fff")}${T(108,287,"5V",7,"#fff")}
 
-      <!-- heatsink over the IC -->
-      <rect x="150" y="90" width="100" height="80" rx="4" fill="#1b1f24"/>
-      ${[0,1,2,3,4,5].map(i=>`<rect x="${158+i*15}" y="94" width="8" height="72" rx="2" fill="#3a424a"/>`).join("")}
-      <rect x="160" y="170" width="80" height="18" rx="2" fill="#0c0f12"/>
-      ${T(290,118,"Heatsink",8,"#c9d6e5","start")}
-      ${T(200,183,"L298N chip",7.5,"#00E676")}
+      <!-- Motor B terminal (blue 2-pin) right -->
+      <rect x="264" y="238" width="48" height="56" rx="4" fill="#1565c0"/>
+      <circle cx="288" cy="255" r="8.5" fill="#bcd3ea"/><circle cx="288" cy="255" r="3.2" fill="#0d3c78"/>
+      <circle cx="288" cy="278" r="8.5" fill="#bcd3ea"/><circle cx="288" cy="278" r="3.2" fill="#0d3c78"/>
+      ${T(288,232,"OUT3 · OUT4",7.5,"#fff")}${T(288,308,"Motor B",7,"#ffd7d7")}
 
-      <!-- bottom header: ENA IN1 IN2 IN3 IN4 ENB -->
-      <rect x="96" y="208" width="208" height="18" rx="3" fill="#0c0f12"/>
-      ${["ENA","IN1","IN2","IN3","IN4","ENB"].map((p,i)=>{const x=112+i*35;return `<rect x="${x-5}" y="211" width="10" height="12" rx="1.5" fill="#caa64a"/>${T(x,240,p,7,"#e8eef4")}`;}).join("")}
-      <rect x="105" y="209" width="14" height="8" rx="2" fill="#ffca28"/>
-      <rect x="281" y="209" width="14" height="8" rx="2" fill="#ffca28"/>
-      ${T(200,256,"IN1–IN4 = direction   ·   ENA / ENB = speed",8,"#a9b3ba")}
+      <!-- electrolytic capacitors -->
+      <circle cx="150" cy="178" r="24" fill="#1b1f24" stroke="#3a424a" stroke-width="2"/><circle cx="150" cy="178" r="9" fill="#2c333a"/>
+      <circle cx="206" cy="210" r="24" fill="#1b1f24" stroke="#3a424a" stroke-width="2"/><circle cx="206" cy="210" r="9" fill="#2c333a"/>
+
+      <!-- IN header (bottom-center): ENA IN1 IN2 IN3 IN4 ENB -->
+      <rect x="148" y="286" width="96" height="16" rx="3" fill="#0c0f12"/>
+      ${["ENA","IN1","IN2","IN3","IN4","ENB"].map((p,i)=>{const x=157+i*15;return `<rect x="${x-4}" y="289" width="8" height="10" rx="1" fill="#caa64a"/>`;}).join("")}
+      ${T(196,316,"IN1–IN4 = direction · ENA/ENB = speed",7.5,"#ffdada")}
+
+      <!-- 5V enable jumper near power terminal -->
+      <rect x="140" y="238" width="12" height="9" rx="2" fill="#42a5f5"/>
+      ${T(150,232,"5V jmp",6.5,"#e3f2fd")}
     </svg>`;
 }
 
@@ -191,16 +191,16 @@ function l298nBoardSVG(labels){
 
 /* ---------- L298N board parts (for the Label game) ---------- */
 // cx/cy are in the board diagram's 400×300 viewBox coordinate space.
-// cx/cy are in the board's 400×260 viewBox — must match l298nBoardSVG() above.
+// cx/cy are in the board's 340×340 viewBox — must match l298nBoardSVG() above.
 const L298N_PARTS = [
-  {key:"power",    name:"12V / GND / 5V power terminal", cx:200, cy:37},
-  {key:"outA",     name:"OUT1 / OUT2 — Motor A",         cx:73,  cy:37},
-  {key:"outB",     name:"OUT3 / OUT4 — Motor B",         cx:327, cy:37},
-  {key:"jumper",   name:"5V enable jumper",              cx:263, cy:70},
-  {key:"heatsink", name:"Heatsink (cools the chip)",     cx:200, cy:120},
-  {key:"ic",       name:"L298N chip (IC)",               cx:200, cy:179},
-  {key:"in",       name:"IN1–IN4 — direction pins",      cx:200, cy:217},
-  {key:"ena",      name:"ENA / ENB — speed pins",        cx:112, cy:217}
+  {key:"heatsink", name:"Heatsink (cools the chip)",     cx:190, cy:44},
+  {key:"ic",       name:"L298N chip (IC)",               cx:193, cy:95},
+  {key:"outA",     name:"OUT1 / OUT2 — Motor A",         cx:58,  cy:98},
+  {key:"power",    name:"12V / GND / 5V power terminal", cx:81,  cy:252},
+  {key:"outB",     name:"OUT3 / OUT4 — Motor B",         cx:288, cy:266},
+  {key:"in",       name:"IN1–IN4 — direction pins",      cx:194, cy:294},
+  {key:"ena",      name:"ENA / ENB — speed pins",        cx:232, cy:294},
+  {key:"jumper",   name:"5V enable jumper",              cx:146, cy:242}
 ];
 
 /* ============================================================
@@ -262,7 +262,7 @@ const SIMS = {
       // 4 choices incl. the correct one
       const others = L298N_PARTS.filter(p=>p.key!==part.key).sort(()=>Math.random()-0.5).slice(0,3);
       const choices = [part, ...others].sort(()=>Math.random()-0.5);
-      const fx = (part.cx/400*100).toFixed(1), fy = (part.cy/260*100).toFixed(1);
+      const fx = (part.cx/340*100).toFixed(1), fy = (part.cy/340*100).toFixed(1);
       this.root.innerHTML = `
         <div class="sim-label">
           <div class="sim-label-top">
@@ -412,7 +412,7 @@ const SIMS = {
       this.root.innerHTML = `
         <div class="sim-seq">
           <div class="sim-challenge">🎯 Challenge: ${_esc(this.challenge)}</div>
-          <div class="sim-road"><div class="sim-car" id="sim-car">🚗</div></div>
+          <div class="sim-road"><div class="sim-car" id="sim-car"><span class="sim-car-img" id="sim-car-img">🚗</span></div></div>
           <div class="sim-palette">
             ${this.blocks().map(b=>`<button class="sim-block c-${b.c}" onclick="SIMS.buildSequence.add('${b.k}')">${b.label}</button>`).join("")}
           </div>
@@ -432,8 +432,11 @@ const SIMS = {
     run(){
       if(!this.seq.length) return;
       const car = document.getElementById("sim-car");
+      const img = document.getElementById("sim-car-img");
+      const road = car ? car.parentElement : null;
       const fb = document.getElementById("sim-seq-fb");
-      let step=0, speed=1;
+      let step=0, speed=1, pos=10;
+      const maxPos = road ? Math.max(80, road.clientWidth-52) : 260;
       const play = ()=>{
         if(step>=this.seq.length){
           if(fb) fb.innerHTML = `<div class="gl-fb ok">✅ Program finished! Great sequencing. 🎉</div>`;
@@ -442,19 +445,20 @@ const SIMS = {
           return;
         }
         const s = this.seq[step];
-        if(car){
-          car.className = "sim-car";
-          if(s==="forward"){ car.style.transform = `translateX(${40+step*4}px)`; car.textContent="🚗"; }
-          else if(s==="backward"){ car.style.transform = `translateX(-10px)`; car.classList.add("flip"); }
-          else if(s==="left"){ car.classList.add("turn-l"); }
-          else if(s==="right"){ car.classList.add("turn-r"); }
-          else if(s==="fast"){ speed=0.5; car.classList.add("zoom"); }
-          else if(s==="slow"){ speed=1.6; }
-          else if(s==="stop"){ car.textContent="🅿️"; }
-        }
+        if(img){ img.classList.remove("tilt-l","tilt-r"); }
+        if(s==="forward"){ pos = Math.min(maxPos, pos+70); if(img) img.classList.remove("rev"); }
+        else if(s==="backward"){ pos = Math.max(10, pos-70); if(img) img.classList.add("rev"); }
+        else if(s==="left"){ if(img) img.classList.add("tilt-l"); }
+        else if(s==="right"){ if(img) img.classList.add("tilt-r"); }
+        else if(s==="fast"){ speed=0.5; }
+        else if(s==="slow"){ speed=1.6; }
+        // "stop" simply holds position for a beat
+        if(car) car.style.left = pos+"px";
         step++;
-        setTimeout(play, 600*speed);
+        setTimeout(play, 620*speed);
       };
+      if(car) car.style.left = "10px";
+      if(img) img.className = "sim-car-img";   // reset to facing forward (right)
       if(fb) fb.innerHTML = `<div class="gl-fb">🏁 Running your program…</div>`;
       play();
     }
