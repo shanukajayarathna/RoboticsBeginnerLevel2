@@ -47,6 +47,61 @@ function motorLogic(in1, in2, en){
   return "stop";
 }
 
+/* ---------- accurate top-down L298N board (shared by 2 diagram keys) ----------
+   viewBox 0 0 400 260. Coordinates here MUST match L298N_PARTS cx/cy below so
+   the Label-the-Board flags land exactly on each part. */
+function l298nBoardSVG(labels){
+  // tiny label helper — emits text only when `labels` is true (blank for the game)
+  const T = (x,y,t,size,fill,anchor) =>
+    labels ? `<text x="${x}" y="${y}" font-size="${size||8}" fill="${fill||'#e8eef4'}" text-anchor="${anchor||'middle'}" font-weight="600">${t}</text>` : "";
+  return `
+    <svg viewBox="0 0 400 260" role="img" aria-label="L298N motor driver module, top view">
+      <!-- PCB -->
+      <rect x="18" y="44" width="364" height="198" rx="12" fill="#15559e"/>
+      <rect x="18" y="44" width="364" height="198" rx="12" fill="none" stroke="#0d3c78" stroke-width="3"/>
+      <circle cx="36" cy="60" r="5" fill="#0d3c78"/><circle cx="364" cy="60" r="5" fill="#0d3c78"/>
+      <circle cx="36" cy="226" r="5" fill="#0d3c78"/><circle cx="364" cy="226" r="5" fill="#0d3c78"/>
+
+      <!-- top edge: 3 screw terminals -->
+      <!-- Motor A (OUT1/OUT2) left -->
+      <rect x="40" y="20" width="66" height="34" rx="4" fill="#0a2e5c"/>
+      <circle cx="58" cy="37" r="8" fill="#c9d6e5"/><circle cx="58" cy="37" r="3.4" fill="#0a2e5c"/>
+      <circle cx="88" cy="37" r="8" fill="#c9d6e5"/><circle cx="88" cy="37" r="3.4" fill="#0a2e5c"/>
+      ${T(73,14,"OUT1  OUT2 · Motor A",7.5,"#8fd6ff")}
+      <!-- Power (12V/GND/5V) center -->
+      <rect x="150" y="20" width="100" height="34" rx="4" fill="#0a2e5c"/>
+      ${[170,200,230].map(cx=>`<circle cx="${cx}" cy="37" r="8" fill="#c9d6e5"/><circle cx="${cx}" cy="37" r="3.4" fill="#0a2e5c"/>`).join("")}
+      ${T(170,14,"12V",7,"#ffd54f")}${T(200,14,"GND",7,"#ffd54f")}${T(230,14,"5V",7,"#ffd54f")}
+      <!-- Motor B (OUT3/OUT4) right -->
+      <rect x="294" y="20" width="66" height="34" rx="4" fill="#0a2e5c"/>
+      <circle cx="312" cy="37" r="8" fill="#c9d6e5"/><circle cx="312" cy="37" r="3.4" fill="#0a2e5c"/>
+      <circle cx="342" cy="37" r="8" fill="#c9d6e5"/><circle cx="342" cy="37" r="3.4" fill="#0a2e5c"/>
+      ${T(327,14,"OUT3  OUT4 · Motor B",7.5,"#8fd6ff")}
+
+      <!-- 5V enable jumper -->
+      <rect x="252" y="64" width="22" height="12" rx="3" fill="#ffca28"/>
+      ${T(305,74,"5V jumper",8,"#ffe082","start")}
+
+      <!-- electrolytic cap (realism) -->
+      <circle cx="118" cy="120" r="16" fill="#1b1f24" stroke="#3a424a" stroke-width="2"/>
+      <circle cx="118" cy="120" r="6" fill="#2a3038"/>
+
+      <!-- heatsink over the IC -->
+      <rect x="150" y="90" width="100" height="80" rx="4" fill="#1b1f24"/>
+      ${[0,1,2,3,4,5].map(i=>`<rect x="${158+i*15}" y="94" width="8" height="72" rx="2" fill="#3a424a"/>`).join("")}
+      <rect x="160" y="170" width="80" height="18" rx="2" fill="#0c0f12"/>
+      ${T(290,118,"Heatsink",8,"#c9d6e5","start")}
+      ${T(200,183,"L298N chip",7.5,"#00E676")}
+
+      <!-- bottom header: ENA IN1 IN2 IN3 IN4 ENB -->
+      <rect x="96" y="208" width="208" height="18" rx="3" fill="#0c0f12"/>
+      ${["ENA","IN1","IN2","IN3","IN4","ENB"].map((p,i)=>{const x=112+i*35;return `<rect x="${x-5}" y="211" width="10" height="12" rx="1.5" fill="#caa64a"/>${T(x,240,p,7,"#e8eef4")}`;}).join("")}
+      <rect x="105" y="209" width="14" height="8" rx="2" fill="#ffca28"/>
+      <rect x="281" y="209" width="14" height="8" rx="2" fill="#ffca28"/>
+      ${T(200,256,"IN1–IN4 = direction   ·   ENA / ENB = speed",8,"#a9b3ba")}
+    </svg>`;
+}
+
 /* ---------- DIAGRAMS (merged into L1_DIAGRAMS) ---------- */
 (function(){
   if(typeof L1_DIAGRAMS === "undefined") return;
@@ -75,39 +130,10 @@ function motorLogic(in1, in2, en){
       <defs><marker id="l2a" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#FFC53D"/></marker></defs>
     </svg>`,
 
-  // Top-down labelled board
-  "l298n-board": () => `
-    <svg viewBox="0 0 400 300" role="img" aria-label="L298N module with labelled parts">
-      <rect x="30" y="30" width="340" height="240" rx="12" fill="#1666c9"/>
-      <rect x="30" y="30" width="340" height="240" rx="12" fill="none" stroke="#0d47a1" stroke-width="3"/>
-      <!-- power terminal (top) -->
-      <rect x="150" y="20" width="100" height="26" rx="4" fill="#0a3d91"/>
-      ${[0,1,2].map(i=>`<circle cx="${172+i*28}" cy="33" r="7" fill="#c9d6e5"/><circle cx="${172+i*28}" cy="33" r="3" fill="#0a3d91"/>`).join("")}
-      <text x="172" y="14" font-size="9" fill="#ffd54f" text-anchor="middle">12V</text>
-      <text x="200" y="14" font-size="9" fill="#ffd54f" text-anchor="middle">GND</text>
-      <text x="228" y="14" font-size="9" fill="#ffd54f" text-anchor="middle">5V</text>
-      <!-- heatsink + IC -->
-      <rect x="165" y="95" width="70" height="70" rx="4" fill="#0c0f12"/>
-      ${[0,1,2,3,4].map(i=>`<rect x="${170+i*13}" y="80" width="7" height="20" rx="2" fill="#b0bec5"/>`).join("")}
-      <text x="200" y="135" font-size="9" fill="#00E676" text-anchor="middle" font-weight="700">L298N</text>
-      <!-- Motor A out (left) -->
-      <rect x="18" y="120" width="26" height="50" rx="4" fill="#0a3d91"/>
-      <circle cx="31" cy="134" r="6" fill="#c9d6e5"/><circle cx="31" cy="156" r="6" fill="#c9d6e5"/>
-      <!-- Motor B out (right) -->
-      <rect x="356" y="120" width="26" height="50" rx="4" fill="#0a3d91"/>
-      <circle cx="369" cy="134" r="6" fill="#c9d6e5"/><circle cx="369" cy="156" r="6" fill="#c9d6e5"/>
-      <!-- logic header (bottom) -->
-      ${["ENA","IN1","IN2","IN3","IN4","ENB"].map((p,i)=>`
-        <rect x="${118+i*30}" y="250" width="12" height="12" rx="2" fill="#111"/>
-        <text x="${124+i*30}" y="282" font-size="9" fill="#e0f2f1" text-anchor="middle">${p}</text>`).join("")}
-      <!-- 5V enable jumper -->
-      <rect x="270" y="60" width="18" height="12" rx="3" fill="#ffca28"/>
-      <text x="303" y="70" font-size="8.5" fill="#ffe082">5V jumper</text>
-      <!-- labels -->
-      <text x="70" y="112" font-size="9" fill="#fff">OUT1/2 · Motor A</text>
-      <text x="330" y="112" font-size="9" fill="#fff" text-anchor="end">OUT3/4 · Motor B</text>
-      <text x="245" y="118" font-size="8.5" fill="#b0bec5">heatsink + chip</text>
-    </svg>`,
+  // Top-down board — accurate layout. Labelled + blank (for the game) share
+  // one renderer so the flag hotspots always line up with the real parts.
+  "l298n-board":       () => l298nBoardSVG(true),
+  "l298n-board-blank": () => l298nBoardSVG(false),
 
   // The H-bridge: 4 switches in an H around the motor
   "h-bridge": () => `
@@ -165,15 +191,16 @@ function motorLogic(in1, in2, en){
 
 /* ---------- L298N board parts (for the Label game) ---------- */
 // cx/cy are in the board diagram's 400×300 viewBox coordinate space.
+// cx/cy are in the board's 400×260 viewBox — must match l298nBoardSVG() above.
 const L298N_PARTS = [
-  {key:"power",    name:"12V / GND / 5V power terminal", cx:200, cy:33},
-  {key:"jumper",   name:"5V enable jumper",              cx:279, cy:66},
-  {key:"heatsink", name:"Heatsink (cools the chip)",     cx:200, cy:88},
-  {key:"ic",       name:"L298N IC (the chip)",           cx:200, cy:150},
-  {key:"outA",     name:"OUT1 / OUT2 — Motor A",         cx:31,  cy:145},
-  {key:"outB",     name:"OUT3 / OUT4 — Motor B",         cx:369, cy:145},
-  {key:"in",       name:"IN1–IN4 — direction pins",      cx:214, cy:256},
-  {key:"ena",      name:"ENA / ENB — speed pins",        cx:124, cy:256}
+  {key:"power",    name:"12V / GND / 5V power terminal", cx:200, cy:37},
+  {key:"outA",     name:"OUT1 / OUT2 — Motor A",         cx:73,  cy:37},
+  {key:"outB",     name:"OUT3 / OUT4 — Motor B",         cx:327, cy:37},
+  {key:"jumper",   name:"5V enable jumper",              cx:263, cy:70},
+  {key:"heatsink", name:"Heatsink (cools the chip)",     cx:200, cy:120},
+  {key:"ic",       name:"L298N chip (IC)",               cx:200, cy:179},
+  {key:"in",       name:"IN1–IN4 — direction pins",      cx:200, cy:217},
+  {key:"ena",      name:"ENA / ENB — speed pins",        cx:112, cy:217}
 ];
 
 /* ============================================================
@@ -235,7 +262,7 @@ const SIMS = {
       // 4 choices incl. the correct one
       const others = L298N_PARTS.filter(p=>p.key!==part.key).sort(()=>Math.random()-0.5).slice(0,3);
       const choices = [part, ...others].sort(()=>Math.random()-0.5);
-      const fx = (part.cx/400*100).toFixed(1), fy = (part.cy/300*100).toFixed(1);
+      const fx = (part.cx/400*100).toFixed(1), fy = (part.cy/260*100).toFixed(1);
       this.root.innerHTML = `
         <div class="sim-label">
           <div class="sim-label-top">
@@ -244,7 +271,7 @@ const SIMS = {
             <span class="sim-pill">⭐ ${this.score}</span>
           </div>
           <div class="sim-board-wrap">
-            ${renderL1Diagram("l298n-board")}
+            ${renderL1Diagram("l298n-board-blank")}
             <div class="sim-flag" style="left:${fx}%;top:${fy}%;">?</div>
           </div>
           <p class="sim-q">What is the highlighted part?</p>

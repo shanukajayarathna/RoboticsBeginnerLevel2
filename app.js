@@ -2406,7 +2406,9 @@ const GuidedLesson = {
   updateNext(){
     const step = this.steps[this.index] || {};
     const btn = document.getElementById("gl-next");
-    const gate = (step.kind==="check" || step.kind==="activity" || step.kind==="sim") && !this.answered[this.index];
+    // Games (sim) never block progress — students can always move on. Only a
+    // pending quick-check or "we did it" activity briefly holds the Next button.
+    const gate = (step.kind==="check" || step.kind==="activity") && !this.answered[this.index];
     btn.disabled = gate;
     btn.textContent = "Next →";
   },
