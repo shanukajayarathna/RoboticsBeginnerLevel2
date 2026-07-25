@@ -796,13 +796,13 @@
         {
           "kind": "teach",
           "title": "The real board — up close 📸",
-          "text": "Here's an actual L298N module. Look for the black heatsink on top, the two tall capacitors, and the blue screw terminals on the sides.",
+          "text": "Here's an actual L298N module, seen from the top. Look for the black heatsink on top, the two tall capacitors, the blue motor terminals on the left & right, and the power terminal + IN pins along the bottom.",
           "blocks": [
             {
               "type": "image",
-              "src": "images/l1/l298n-real.jpg",
-              "alt": "A real L298N motor driver module",
-              "caption": "A real L298N module — the parts you'll name next. (photo: duino.lk)"
+              "src": "images/l1/l298n-real2.jpg",
+              "alt": "A real L298N motor driver module, top view",
+              "caption": "A real L298N module — the parts you'll name next."
             }
           ]
         },

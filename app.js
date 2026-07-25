@@ -698,6 +698,9 @@ const App = {
   isL1Student(){
     return !!(Auth.profile && Auth.profile.role==="student" && Auth.profile.class==="l1");
   },
+  isL2Student(){
+    return !!(Auth.profile && Auth.profile.role==="student" && (Auth.profile.class||"l2")==="l2");
+  },
   isAdmin(){
     return !!(Auth.profile && Auth.profile.role==="admin");
   },
@@ -834,6 +837,9 @@ const App = {
     this.renderTopics();
     this.renderAchievements();
     this.renderAdmin();
+
+    // Level 2 "class mode": lock the dashboard to today's certification MCQ.
+    if(typeof CertExam !== "undefined") CertExam.applyClassMode();
   },
 
   renderTopics(){

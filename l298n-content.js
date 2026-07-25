@@ -70,22 +70,22 @@ function l298nBoardSVG(labels){
       ${Array.from({length:16}).map((_,i)=>`<rect x="${152+i*5.4}" y="118" width="2.4" height="12" fill="#c9c9c9"/>`).join("")}
       ${T(283,44,"Heatsink",8,"#ffe0e0","start")}
 
-      <!-- Motor A terminal (blue 2-pin) top-left -->
-      <rect x="34" y="70" width="48" height="56" rx="4" fill="#1565c0"/>
-      <circle cx="58" cy="87" r="8.5" fill="#bcd3ea"/><circle cx="58" cy="87" r="3.2" fill="#0d3c78"/>
-      <circle cx="58" cy="110" r="8.5" fill="#bcd3ea"/><circle cx="58" cy="110" r="3.2" fill="#0d3c78"/>
-      ${T(58,63,"OUT1 · OUT2",7.5,"#fff")}${T(58,140,"Motor A",7,"#ffd7d7")}
+      <!-- Motor A terminal (blue 2-pin) left side, mid height -->
+      <rect x="26" y="120" width="46" height="56" rx="4" fill="#1565c0"/>
+      <circle cx="49" cy="137" r="8.5" fill="#bcd3ea"/><circle cx="49" cy="137" r="3.2" fill="#0d3c78"/>
+      <circle cx="49" cy="160" r="8.5" fill="#bcd3ea"/><circle cx="49" cy="160" r="3.2" fill="#0d3c78"/>
+      ${T(49,113,"OUT1 · OUT2",7,"#fff")}${T(49,190,"Motor A",7,"#ffd7d7")}
+
+      <!-- Motor B terminal (blue 2-pin) right side, mid height -->
+      <rect x="268" y="120" width="46" height="56" rx="4" fill="#1565c0"/>
+      <circle cx="291" cy="137" r="8.5" fill="#bcd3ea"/><circle cx="291" cy="137" r="3.2" fill="#0d3c78"/>
+      <circle cx="291" cy="160" r="8.5" fill="#bcd3ea"/><circle cx="291" cy="160" r="3.2" fill="#0d3c78"/>
+      ${T(291,113,"OUT3 · OUT4",7,"#fff")}${T(291,190,"Motor B",7,"#ffd7d7")}
 
       <!-- Power terminal (blue 3-pin) bottom-left -->
-      <rect x="32" y="232" width="98" height="40" rx="4" fill="#1565c0"/>
-      ${[54,81,108].map(cx=>`<circle cx="${cx}" cy="252" r="8.5" fill="#bcd3ea"/><circle cx="${cx}" cy="252" r="3.2" fill="#0d3c78"/>`).join("")}
-      ${T(54,287,"12V",7,"#fff")}${T(81,287,"GND",7,"#fff")}${T(108,287,"5V",7,"#fff")}
-
-      <!-- Motor B terminal (blue 2-pin) right -->
-      <rect x="264" y="238" width="48" height="56" rx="4" fill="#1565c0"/>
-      <circle cx="288" cy="255" r="8.5" fill="#bcd3ea"/><circle cx="288" cy="255" r="3.2" fill="#0d3c78"/>
-      <circle cx="288" cy="278" r="8.5" fill="#bcd3ea"/><circle cx="288" cy="278" r="3.2" fill="#0d3c78"/>
-      ${T(288,232,"OUT3 · OUT4",7.5,"#fff")}${T(288,308,"Motor B",7,"#ffd7d7")}
+      <rect x="30" y="232" width="98" height="40" rx="4" fill="#1565c0"/>
+      ${[52,79,106].map(cx=>`<circle cx="${cx}" cy="252" r="8.5" fill="#bcd3ea"/><circle cx="${cx}" cy="252" r="3.2" fill="#0d3c78"/>`).join("")}
+      ${T(52,287,"12V",7,"#fff")}${T(79,287,"GND",7,"#fff")}${T(106,287,"5V",7,"#fff")}
 
       <!-- electrolytic capacitors -->
       <circle cx="150" cy="178" r="24" fill="#1b1f24" stroke="#3a424a" stroke-width="2"/><circle cx="150" cy="178" r="9" fill="#2c333a"/>
@@ -195,9 +195,9 @@ function l298nBoardSVG(labels){
 const L298N_PARTS = [
   {key:"heatsink", name:"Heatsink (cools the chip)",     cx:190, cy:44},
   {key:"ic",       name:"L298N chip (IC)",               cx:193, cy:95},
-  {key:"outA",     name:"OUT1 / OUT2 — Motor A",         cx:58,  cy:98},
-  {key:"power",    name:"12V / GND / 5V power terminal", cx:81,  cy:252},
-  {key:"outB",     name:"OUT3 / OUT4 — Motor B",         cx:288, cy:266},
+  {key:"outA",     name:"OUT1 / OUT2 — Motor A",         cx:49,  cy:148},
+  {key:"outB",     name:"OUT3 / OUT4 — Motor B",         cx:291, cy:148},
+  {key:"power",    name:"12V / GND / 5V power terminal", cx:79,  cy:252},
   {key:"in",       name:"IN1–IN4 — direction pins",      cx:194, cy:294},
   {key:"ena",      name:"ENA / ENB — speed pins",        cx:232, cy:294},
   {key:"jumper",   name:"5V enable jumper",              cx:146, cy:242}
