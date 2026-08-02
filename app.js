@@ -1895,11 +1895,53 @@ const HomeL1 = {
     this.animateCount("l1-stars", s.stars);
 
     this.applyClassMode();
+    this.renderGroup();
     this.renderCourseProgress();
     this.renderProject();
     this.renderActivities("l1-activity-grid");
     this.renderBadges();
     Leaderboard.render("l1-leaderboard", "l1");
+  },
+
+  /* ---- Class groups (A/B/C) — self-select, saved to profiles.group_name via RPC ---- */
+  GROUP_NAMES: { A:"Group A", B:"Group B", C:"Group C" },
+  renderGroup(){
+    const box = document.getElementById("l1-group-card");
+    if(!box) return;
+    const g = Auth.profile && Auth.profile.group_name;
+    const picks = ["A","B","C"].map(k=>
+      `<button class="l1-group-pick ${g===k?'mine':''}" onclick="HomeL1.pickGroup('${k}')">${this.GROUP_NAMES[k]}</button>`
+    ).join("");
+    if(g){
+      box.innerHTML = `
+        <div class="l1-group-ico">🧑‍🤝‍🧑</div>
+        <div class="l1-group-text"><h3>You're in ${this.GROUP_NAMES[g]}!</h3><p>Sit with your teammates for today's activities.</p></div>
+        <button class="l1-group-change-btn" onclick="HomeL1.toggleGroupPicker()">Change group</button>
+        <div class="l1-group-picks" id="l1-group-picks" style="display:none;">${picks}</div>`;
+    } else {
+      box.innerHTML = `
+        <div class="l1-group-ico">🧑‍🤝‍🧑</div>
+        <div class="l1-group-text"><h3>Pick your group!</h3><p>Choose which group you're sitting with today.</p></div>
+        <div class="l1-group-picks">${picks}</div>`;
+    }
+  },
+  toggleGroupPicker(){
+    const el = document.getElementById("l1-group-picks");
+    if(el) el.style.display = (el.style.display==="none") ? "flex" : "none";
+  },
+  async pickGroup(g){
+    if(!Auth.profile || this._groupSaving) return;
+    this._groupSaving = true;
+    const { error } = await sb.rpc("set_my_group", { p_group:g });
+    this._groupSaving = false;
+    if(error){
+      Modal.alert({icon:"⚠️", title:"Couldn't save your group", message:"Please check your connection and try again."});
+      console.error("set_my_group failed:", error.message);
+      return;
+    }
+    Auth.profile.group_name = g;
+    Sound.click();
+    this.renderGroup();
   },
 
   // Find the lesson the teacher has pinned for today's class. Never silently

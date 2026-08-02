@@ -178,3 +178,32 @@ create policy "game_blocks read" on public.game_blocks for select using (true);
 create policy "game_blocks insert" on public.game_blocks for insert to authenticated with check (true);
 create policy "game_blocks update" on public.game_blocks for update to authenticated using (true);
 create policy "game_blocks delete" on public.game_blocks for delete to authenticated using (true);
+
+-- ---------------------------------------------------------------------
+-- LEVEL 1 CLASS GROUPS (self-select A/B/C).
+-- Run once in the Supabase SQL Editor. Safe to re-run.
+--
+-- Students set ONLY their own group_name via the set_my_group() RPC below
+-- — never through a general "update your own profile" RLS policy, which
+-- (profiles has no such policy today) would otherwise let a student's
+-- browser console rewrite their own role/class/username too.
+-- ---------------------------------------------------------------------
+alter table public.profiles add column if not exists group_name text check (group_name in ('A','B','C'));
+
+create or replace function public.set_my_group(p_group text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_group not in ('A','B','C') then
+    raise exception 'invalid group: %', p_group;
+  end if;
+  update public.profiles
+    set group_name = p_group
+    where id = auth.uid() and role = 'student' and class = 'l1';
+end;
+$$;
+
+grant execute on function public.set_my_group(text) to authenticated;
