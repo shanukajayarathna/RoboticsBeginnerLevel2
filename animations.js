@@ -88,7 +88,7 @@ function renderAnimation(key, stageEl, ctx){
 const BUILDERS = {
   circuit(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="20" width="260" height="140" rx="16" fill="none" stroke="#3a424a" stroke-width="3"/>
       <rect x="120" y="10" width="60" height="24" rx="4" fill="#FF9800"/>
       <text x="150" y="27" font-size="11" fill="#212121" text-anchor="middle" font-weight="700">BATTERY</text>
@@ -106,7 +106,7 @@ const BUILDERS = {
   },
   "circuit-switch"(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="70" width="260" height="10" fill="none"/>
       <line x1="30" y1="75" x2="120" y2="75" stroke="#3a424a" stroke-width="4"/>
       <line x1="180" y1="75" x2="270" y2="75" stroke="#3a424a" stroke-width="4"/>
@@ -125,7 +125,7 @@ const BUILDERS = {
   },
   pressure(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="40" y="20" width="60" height="140" rx="10" fill="#1a2226" stroke="#3a424a" stroke-width="2"/>
       <rect x="46" y="60" width="48" height="94" rx="6" fill="#00979D">
         <animate attributeName="height" values="94;60;94" dur="2.4s" repeatCount="indefinite"/>
@@ -142,7 +142,7 @@ const BUILDERS = {
   },
   seesaw(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <polygon points="150,60 130,150 170,150" fill="#3a424a"/>
       <g>
         <animateTransform attributeName="transform" type="rotate" values="8 150 70;-8 150 70;8 150 70" dur="2.6s" repeatCount="indefinite" additive="sum"/>
@@ -156,7 +156,7 @@ const BUILDERS = {
   },
   wave(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="20" y1="90" x2="280" y2="90" stroke="#3a424a" stroke-width="2"/>
       <path d="M20,90 Q45,30 70,90 T120,90 T170,90 T220,90 T270,90" fill="none" stroke="#00979D" stroke-width="4">
         <animate attributeName="d"
@@ -173,7 +173,7 @@ const BUILDERS = {
   },
   calc(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="30" y="35" width="240" height="110" rx="18" fill="#0e1113" stroke="#3a424a" stroke-width="2"/>
       <text x="150" y="80" font-size="28" fill="#FF9800" text-anchor="middle" font-family="monospace" font-weight="700">I = V / R</text>
       <text x="150" y="112" font-size="13" fill="#7fe8ff" text-anchor="middle" font-family="monospace">
@@ -186,7 +186,7 @@ const BUILDERS = {
   },
   diode(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="20" y1="90" x2="120" y2="90" stroke="#3a424a" stroke-width="4"/>
       <polygon points="120,65 120,115 175,90" fill="#FF9800"/>
       <line x1="175" y1="65" x2="175" y2="115" stroke="#FF9800" stroke-width="6"/>
@@ -200,7 +200,7 @@ const BUILDERS = {
   },
   capacitor(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="130" y1="40" x2="130" y2="140" stroke="#00979D" stroke-width="6"/>
       <line x1="170" y1="40" x2="170" y2="140" stroke="#00979D" stroke-width="6"/>
       <line x1="20" y1="90" x2="130" y2="90" stroke="#3a424a" stroke-width="4"/>
@@ -214,7 +214,7 @@ const BUILDERS = {
   },
   resistor(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="10" y1="90" x2="70" y2="90" stroke="#c9ced1" stroke-width="4"/>
       <line x1="230" y1="90" x2="290" y2="90" stroke="#c9ced1" stroke-width="4"/>
       <rect x="70" y="65" width="160" height="50" rx="10" fill="#d9c9a3"/>
@@ -230,7 +230,7 @@ const BUILDERS = {
   },
   transistor(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="150" cy="90" r="45" fill="none" stroke="#3a424a" stroke-width="2"/>
       <line x1="150" y1="55" x2="150" y2="125" stroke="#FF9800" stroke-width="5"/>
       <line x1="105" y1="90" x2="150" y2="90" stroke="#00979D" stroke-width="4"/>
@@ -245,7 +245,7 @@ const BUILDERS = {
   },
   loop(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="30" y="25" width="100" height="50" rx="10" fill="#00979D"/>
       <text x="80" y="55" font-size="13" fill="#fff" text-anchor="middle" font-weight="700">setup()</text>
       <rect x="170" y="105" width="100" height="50" rx="10" fill="#FF9800">
@@ -260,7 +260,7 @@ const BUILDERS = {
   },
   pin(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="60" y="60" width="180" height="60" rx="10" fill="#212121" stroke="#3a424a" stroke-width="2"/>
       <text x="150" y="95" font-size="13" fill="#00C853" text-anchor="middle" font-family="monospace">pinMode(13, OUTPUT)</text>
       <circle cx="255" cy="90" r="14" fill="#FF9800">
@@ -272,7 +272,7 @@ const BUILDERS = {
   },
   led(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="150" y1="120" x2="150" y2="160" stroke="#6f7a82" stroke-width="4"/>
       <path d="M120,120 Q150,50 180,120 Z" fill="#FF9800">
         <animate attributeName="opacity" values="1;1;0.15;0.15" dur="2s" repeatCount="indefinite"/>
@@ -286,7 +286,7 @@ const BUILDERS = {
   },
   ide(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="20" width="260" height="140" rx="10" fill="#0e1113" stroke="#3a424a" stroke-width="2"/>
       <circle cx="35" cy="34" r="4" fill="#ff5f56"/><circle cx="48" cy="34" r="4" fill="#ffbd2e"/><circle cx="61" cy="34" r="4" fill="#27c93f"/>
       <text x="30" y="65" font-size="10" fill="#7fe8ff" font-family="monospace">void setup() {</text>
@@ -300,7 +300,7 @@ const BUILDERS = {
   },
   code(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="30" width="260" height="120" rx="10" fill="#0e1113" stroke="#3a424a" stroke-width="2"/>
       <text x="35" y="60" font-size="10" fill="#7fe8ff" font-family="monospace">digitalWrite(9, OUTPUT);</text>
       <rect x="30" y="48" width="200" height="16" fill="#ff5252" opacity="0.25">
@@ -315,7 +315,7 @@ const BUILDERS = {
   },
   digital(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="20" y1="140" x2="280" y2="140" stroke="#3a424a" stroke-width="1"/>
       <path d="M20,140 L20,60 L90,60 L90,140 L160,140 L160,60 L230,60 L230,140 L280,140"
         fill="none" stroke="#00C853" stroke-width="4">
@@ -329,7 +329,7 @@ const BUILDERS = {
   },
   button(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="110" y="100" width="80" height="24" rx="4" fill="#3a424a"/>
       <circle cx="150" cy="90" r="26" fill="#FF9800">
         <animate attributeName="cy" values="90;100;90" dur="1.6s" repeatCount="indefinite"/>
@@ -343,7 +343,7 @@ const BUILDERS = {
   },
   gauge(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <path d="M50,140 A100,100 0 0 1 250,140" fill="none" stroke="#3a424a" stroke-width="14"/>
       <path d="M50,140 A100,100 0 0 1 250,140" fill="none" stroke="#FF9800" stroke-width="14" stroke-dasharray="314" >
         <animate attributeName="stroke-dashoffset" values="314;80;314" dur="2.6s" repeatCount="indefinite"/>
@@ -357,7 +357,7 @@ const BUILDERS = {
   },
   dial(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="150" cy="90" r="55" fill="none" stroke="#3a424a" stroke-width="10"/>
       <line x1="150" y1="90" x2="150" y2="45" stroke="#00979D" stroke-width="6">
         <animateTransform attributeName="transform" type="rotate" values="0 150 90;300 150 90;0 150 90" dur="3s" repeatCount="indefinite"/>
@@ -368,7 +368,7 @@ const BUILDERS = {
   },
   terminal(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="20" width="260" height="140" rx="10" fill="#0b0e0f" stroke="#3a424a" stroke-width="2"/>
       <text x="34" y="45" font-size="10" fill="#00C853" font-family="monospace">Hello Arduino!</text>
       <text x="34" y="65" font-size="10" fill="#00C853" font-family="monospace">Temp: 24.5 C</text>
@@ -384,7 +384,7 @@ const BUILDERS = {
   },
   "terminal-error"(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="20" width="260" height="140" rx="10" fill="#0b0e0f" stroke="#3a424a" stroke-width="2"/>
       <text x="34" y="60" font-size="10" fill="#ff5252" font-family="monospace">%&amp;#@!!??%%$#garbled</text>
       <text x="34" y="80" font-size="10" fill="#ff5252" font-family="monospace">##@%!!&amp;*text*&amp;^%</text>
@@ -393,7 +393,7 @@ const BUILDERS = {
   },
   dht(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="110" y="30" width="80" height="50" rx="8" fill="#00979D"/>
       <text x="150" y="60" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">DHT22</text>
       <text x="80" y="130" font-size="20" fill="#FF9800" text-anchor="middle" font-weight="700">
@@ -410,7 +410,7 @@ const BUILDERS = {
   },
   dashboard(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="20" width="120" height="60" rx="10" fill="#1a2226" stroke="#3a424a"/>
       <text x="80" y="45" font-size="10" fill="#a9b3ba" text-anchor="middle">Temp</text>
       <text x="80" y="68" font-size="16" fill="#FF9800" text-anchor="middle" font-weight="700">26°C</text>
@@ -427,7 +427,7 @@ const BUILDERS = {
   },
   motor(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="150" cy="90" r="45" fill="#212121" stroke="#3a424a" stroke-width="4"/>
       <g>
         <animateTransform attributeName="transform" type="rotate" from="0 150 90" to="360 150 90" dur="1.2s" repeatCount="indefinite"/>
@@ -440,7 +440,7 @@ const BUILDERS = {
   },
   "motor-diode"(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="90" cy="90" r="35" fill="#212121" stroke="#3a424a" stroke-width="3"/>
       <g><animateTransform attributeName="transform" type="rotate" from="0 90 90" to="360 90 90" dur="1s" repeatCount="indefinite"/>
         <rect x="86" y="60" width="8" height="60" fill="#FF9800"/></g>
@@ -452,7 +452,7 @@ const BUILDERS = {
   },
   hbridge(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="40" y="30" width="20" height="120" fill="#3a424a"/>
       <rect x="240" y="30" width="20" height="120" fill="#3a424a"/>
       <rect x="60" y="30" width="180" height="12" fill="#00979D"/>
@@ -465,7 +465,7 @@ const BUILDERS = {
   },
   servo(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <path d="M60,140 A100,100 0 0 1 240,140" fill="none" stroke="#3a424a" stroke-width="4"/>
       <line x1="150" y1="140" x2="150" y2="55" stroke="#FF9800" stroke-width="6" stroke-linecap="round">
         <animateTransform attributeName="transform" type="rotate" values="0 150 140;80 150 140;0 150 140;-80 150 140;0 150 140" dur="4s" repeatCount="indefinite"/>
@@ -476,7 +476,7 @@ const BUILDERS = {
   },
   "servo-pulse"(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="20" y1="140" x2="280" y2="140" stroke="#3a424a"/>
       <path d="M20,140 L20,60 L45,60 L45,140 L200,140 L200,60 L225,60 L225,140 L280,140" fill="none" stroke="#00C853" stroke-width="3"/>
       <text x="32" y="55" font-size="9" fill="#a9b3ba" text-anchor="middle">1.5ms</text>
@@ -485,7 +485,7 @@ const BUILDERS = {
   },
   pwm(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <line x1="20" y1="150" x2="280" y2="150" stroke="#3a424a"/>
       <path d="M20,150 L20,60 L60,60 L60,150 L100,150 L100,60 L140,60 L140,150 L180,150 L180,60 L220,60 L220,150 L260,150 L260,60 L280,60"
         fill="none" stroke="#FF9800" stroke-width="3"/>
@@ -497,7 +497,7 @@ const BUILDERS = {
   },
   buzzer(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="150" cy="90" r="20" fill="#FF9800"/>
       <circle cx="150" cy="90" r="35" fill="none" stroke="#FF9800" stroke-width="2">
         <animate attributeName="r" values="30;70" dur="1.4s" repeatCount="indefinite"/>
@@ -512,7 +512,7 @@ const BUILDERS = {
   },
   lcd(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="30" y="40" width="240" height="100" rx="8" fill="#0d3b2e" stroke="#3a424a" stroke-width="4"/>
       <text x="45" y="80" font-size="13" fill="#8ef7c1" font-family="monospace">
         <animate attributeName="opacity" values="0;1" dur="1.5s" begin="0s" fill="freeze"/>
@@ -526,7 +526,7 @@ const BUILDERS = {
   },
   ultrasonic(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="30" y="75" width="40" height="30" rx="4" fill="#212121"/>
       <circle cx="50" cy="90" r="18" fill="none" stroke="#00979D" stroke-width="2">
         <animate attributeName="r" values="10;90" dur="1.8s" repeatCount="indefinite"/>
@@ -538,7 +538,7 @@ const BUILDERS = {
   },
   ir(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="30" y="70" width="60" height="24" rx="6" fill="#212121"/>
       <circle cx="90" cy="82" r="6" fill="#ff5252"/>
       <line x1="100" y1="82" x2="240" y2="82" stroke="#ff5252" stroke-width="3" stroke-dasharray="8 6">
@@ -550,7 +550,7 @@ const BUILDERS = {
   },
   irline(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="20" y="120" width="260" height="10" fill="#111"/>
       <rect x="120" y="118" width="14" height="14" fill="#111"/>
       <rect x="20" y="60" width="60" height="30" rx="6" fill="#FF9800">
@@ -561,7 +561,7 @@ const BUILDERS = {
   },
   robot(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="0" y="150" width="300" height="4" fill="#3a424a"/>
       <g>
         <animateTransform attributeName="transform" type="translate" values="0,0;180,0;0,0" dur="4s" repeatCount="indefinite"/>
@@ -574,7 +574,7 @@ const BUILDERS = {
   },
   "robot-loop"(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="80" cy="90" r="30" fill="#00979D"/><text x="80" y="94" font-size="10" fill="#fff" text-anchor="middle">Sense</text>
       <circle cx="150" cy="40" r="30" fill="#FF9800"/><text x="150" y="44" font-size="10" fill="#fff" text-anchor="middle">Decide</text>
       <circle cx="220" cy="90" r="30" fill="#00C853"/><text x="220" y="94" font-size="10" fill="#04240f" text-anchor="middle">Act</text>
@@ -586,7 +586,7 @@ const BUILDERS = {
   },
   wheel(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="150" cy="90" r="50" fill="none" stroke="#3a424a" stroke-width="10"/>
       <g>
         <animateTransform attributeName="transform" type="rotate" from="0 150 90" to="360 150 90" dur="1.4s" repeatCount="indefinite"/>
@@ -599,7 +599,7 @@ const BUILDERS = {
   },
   obstacle(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <rect x="0" y="150" width="300" height="4" fill="#3a424a"/>
       <rect x="220" y="90" width="20" height="60" fill="#ff5252"/>
       <g>
@@ -612,7 +612,7 @@ const BUILDERS = {
   },
   arm(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="60" cy="150" r="10" fill="#3a424a"/>
       <line x1="60" y1="150" x2="150" y2="150" stroke="#FF9800" stroke-width="10" stroke-linecap="round">
         <animateTransform attributeName="transform" type="rotate" values="0 60 150;-40 60 150;0 60 150" dur="3.2s" repeatCount="indefinite"/>
@@ -626,7 +626,7 @@ const BUILDERS = {
   },
   "arm-target"(){
     return { svg:`
-    <svg viewBox="0 0 300 180">
+    <svg viewBox="0 0 300 180" width="300" height="180">
       <circle cx="60" cy="150" r="10" fill="#3a424a"/>
       <line x1="60" y1="150" x2="140" y2="110" stroke="#FF9800" stroke-width="10" stroke-linecap="round"/>
       <line x1="140" y1="110" x2="210" y2="70" stroke="#00979D" stroke-width="10" stroke-linecap="round"/>

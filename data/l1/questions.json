@@ -20,11 +20,11 @@
   {
     "id": 3, "topic": "Robotics & AI Basics", "difficulty": "Easy", "type": "MCQ",
     "question": "What does AI stand for?",
-    "options": ["Automatic Internet", "Artificial Intelligence", "Amazing Invention", "Auto Input"],
+    "options": ["Automatic Internet", "Artificial Intelligence", "Amazing Invention", "Automated Instructions"],
     "answer": "Artificial Intelligence",
     "explanation": "AI means Artificial Intelligence — computers doing clever things like recognising faces or understanding speech.",
     "hint1": "The first word means 'made by people'.", "hint2": "The second word means 'being smart'.", "hint3": "Artificial... I...?",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "ai-teachable", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 4, "topic": "Robotics & AI Basics", "difficulty": "Easy", "type": "TrueFalse",
@@ -32,12 +32,12 @@
     "options": ["True", "False"], "answer": "True",
     "explanation": "Yes! A robot vacuum senses walls and dirt, decides where to go, and moves — it senses, thinks, and acts.",
     "hint1": "Does it sense and move on its own?", "hint2": "Think about what it does when it meets a wall.", "hint3": "It's a helpful home robot.",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "robot-parts", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 5, "topic": "Robotics & AI Basics", "difficulty": "Medium", "type": "MCQ",
     "question": "How does AI mainly get 'smart'?",
-    "options": ["By learning from lots of examples", "By eating batteries", "By being switched off", "By moving quickly"],
+    "options": ["By eating lots of batteries and wires", "By learning from lots of examples", "By staying switched off all day long", "By moving around very quickly"],
     "answer": "By learning from lots of examples",
     "explanation": "Just like you get better with practice, AI learns from lots of examples. More good examples means smarter AI.",
     "hint1": "How do YOU get better at something?", "hint2": "It needs lots of practice data.", "hint3": "It learns from ex______.",
@@ -47,7 +47,7 @@
   {
     "id": 6, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
     "question": "What is an Arduino?",
-    "options": ["A tiny computer board that controls electronics", "A type of battery", "A kind of wheel", "A drawing app"],
+    "options": ["A rechargeable battery pack used to power gadgets", "A tiny computer board that controls electronics", "A type of wheel used on remote-control cars", "A free app used only for drawing pictures"],
     "answer": "A tiny computer board that controls electronics",
     "explanation": "Arduino is a small programmable board that acts as a robot's brain, controlling lights, motors and sensors.",
     "hint1": "It's the 'brain' of many projects.", "hint2": "You give it a program to run.", "hint3": "It's a small computer board.",
@@ -56,7 +56,7 @@
   {
     "id": 7, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
     "question": "What does an LED do?",
-    "options": ["Makes sound", "Gives out light", "Stores water", "Measures time"],
+    "options": ["Makes a loud sound", "Gives out light", "Stores rainwater", "Measures the time"],
     "answer": "Gives out light",
     "explanation": "An LED is a small light. We use it to show that a circuit is working or as an output in projects.",
     "hint1": "The 'L' stands for Light.", "hint2": "You see it, you don't hear it.", "hint3": "💡",
@@ -65,7 +65,7 @@
   {
     "id": 8, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
     "question": "Why do we use a resistor with an LED?",
-    "options": ["To make it brighter forever", "To protect the LED from too much electricity", "To make sound", "To store power"],
+    "options": ["To make the LED glow brighter forever", "To protect the LED from too much electricity", "To make a beeping sound come out", "To store extra power for later"],
     "answer": "To protect the LED from too much electricity",
     "explanation": "A resistor slows down the electricity so the LED doesn't get too much current and burn out.",
     "hint1": "It keeps the LED safe.", "hint2": "It slows the electricity down.", "hint3": "Without it, the LED could break!",
@@ -82,7 +82,7 @@
   {
     "id": 10, "topic": "Arduino & Electronics", "difficulty": "Easy", "type": "MCQ",
     "question": "What is a breadboard used for?",
-    "options": ["Cutting bread", "Building circuits without soldering", "Charging phones", "Playing music"],
+    "options": ["Cutting slices of bread for lunch", "Building circuits without soldering", "Charging your phone battery", "Playing your favourite music"],
     "answer": "Building circuits without soldering",
     "explanation": "A breadboard lets you push parts into holes to build and change circuits quickly — perfect for testing ideas.",
     "hint1": "It's for making circuits.", "hint2": "No glue or soldering needed.", "hint3": "You push wires into holes.",
@@ -92,7 +92,7 @@
   {
     "id": 11, "topic": "micro:bit Coding", "difficulty": "Easy", "type": "MCQ",
     "question": "How many buttons does a micro:bit have on the front?",
-    "options": ["None", "One", "Two (A and B)", "Ten"],
+    "options": ["None at all", "Two (A and B)", "Just one", "Ten or more"],
     "answer": "Two (A and B)",
     "explanation": "The micro:bit has two buttons, A and B, that you can use as inputs in your programs.",
     "hint1": "They are labelled with letters.", "hint2": "A and ...?", "hint3": "It's more than one, less than three.",
@@ -101,7 +101,7 @@
   {
     "id": 12, "topic": "micro:bit Coding", "difficulty": "Easy", "type": "MCQ",
     "question": "How do you usually start coding a micro:bit?",
-    "options": ["With drag-and-drop blocks", "By soldering wires", "By painting it", "By shaking it hard"],
+    "options": ["By soldering all the wires", "With drag-and-drop blocks", "By painting it a new colour", "By shaking it really hard"],
     "answer": "With drag-and-drop blocks",
     "explanation": "You start with colourful blocks you drag together — no typing needed. Later you can switch to text code.",
     "hint1": "It's beginner-friendly.", "hint2": "You drag puzzle-like pieces.", "hint3": "Blocks, not typing.",
@@ -159,25 +159,25 @@
     "answer": "Make a decision",
     "explanation": "An 'if' statement checks something and decides what to do — for example: IF it's dark, turn the light ON.",
     "hint1": "It's about choosing.", "hint2": "IF something is true, THEN do this.", "hint3": "It makes a de______.",
-    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+    "animation": "arduino-board", "image": null, "formula": null, "xp": 15, "marks": 2
   },
   {
     "id": 19, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
     "question": "What is a variable in code?",
-    "options": ["A labelled box that stores information", "A type of motor", "A kind of wire", "A drawing tool"],
-    "answer": "A labelled box that stores information",
+    "options": ["A type of motor used in robots", "A box that stores information for later", "A kind of wire used for wiring", "A tool used for drawing shapes"],
+    "answer": "A box that stores information for later",
     "explanation": "A variable is like a labelled box where you keep a piece of information, such as a number or a sensor reading.",
     "hint1": "It holds something for later.", "hint2": "Think of a box with a name on it.", "hint3": "It stores in________.",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "arduino-board", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 20, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
     "question": "What is the Serial Monitor useful for?",
-    "options": ["Seeing messages from the Arduino to fix bugs", "Charging the Arduino", "Painting the board", "Making the robot heavier"],
+    "options": ["Charging the Arduino's battery pack", "Seeing messages from the Arduino to fix bugs", "Painting the circuit board a new colour", "Making the robot heavier and slower"],
     "answer": "Seeing messages from the Arduino to fix bugs",
     "explanation": "The Serial Monitor prints messages from the Arduino to your screen, so you can check what's happening and fix problems.",
     "hint1": "It shows words on your screen.", "hint2": "Great for finding bugs 🐞.", "hint3": "It helps you debug.",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "arduino-board", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 21, "topic": "Arduino Programming", "difficulty": "Easy", "type": "MCQ",
@@ -186,7 +186,7 @@
     "answer": "Tinkercad",
     "explanation": "Tinkercad is a free website where you can build and simulate Arduino circuits in your browser — no risk of breaking real parts.",
     "hint1": "It's an online simulator.", "hint2": "By Autodesk, used in class.", "hint3": "Tinker...?",
-    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+    "animation": "simple-circuit", "image": null, "formula": null, "xp": 15, "marks": 2
   },
 
   {
@@ -205,7 +205,7 @@
     "answer": "Light",
     "explanation": "An LDR (Light Dependent Resistor) senses how bright or dark it is. Great for automatic night lights!",
     "hint1": "The 'L' stands for Light.", "hint2": "It knows if it's bright or dark.", "hint3": "Think of a street lamp at night.",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "sensor-flow", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 24, "topic": "Sensors & Actuators", "difficulty": "Easy", "type": "MCQ",
@@ -219,7 +219,7 @@
   {
     "id": 25, "topic": "Sensors & Actuators", "difficulty": "Medium", "type": "MCQ",
     "question": "A servo motor is special because it can...",
-    "options": ["Turn to an exact angle", "Only spin very fast", "Make loud sounds", "Sense temperature"],
+    "options": ["Only spin around very fast", "Turn to an exact angle", "Make very loud beeping sounds", "Sense the room temperature"],
     "answer": "Turn to an exact angle",
     "explanation": "A servo motor turns to an exact position (like 90°), which is perfect for robot arms and steering.",
     "hint1": "Think about precise positions.", "hint2": "Great for a robot arm.", "hint3": "It moves to an exact ang__.",
@@ -237,7 +237,7 @@
   {
     "id": 27, "topic": "AI & Machine Learning", "difficulty": "Easy", "type": "MCQ",
     "question": "In Machine Learning, how does a computer learn?",
-    "options": ["From lots of examples", "By sleeping", "By spinning wheels", "By turning off"],
+    "options": ["By sleeping for a while", "From lots of examples", "By spinning its wheels", "By turning itself off"],
     "answer": "From lots of examples",
     "explanation": "Machine Learning means the computer learns patterns from many examples, instead of being given every rule.",
     "hint1": "Same way you learn — practice!", "hint2": "It needs lots of data.", "hint3": "From ex______.",
@@ -246,8 +246,8 @@
   {
     "id": 28, "topic": "AI & Machine Learning", "difficulty": "Easy", "type": "MCQ",
     "question": "What can Google Teachable Machine help you make?",
-    "options": ["Your own AI model that recognises images, sounds or poses", "A real robot arm", "A new battery", "A paper plane"],
-    "answer": "Your own AI model that recognises images, sounds or poses",
+    "options": ["A real, fully working robotic arm for your desk", "Your own AI that recognises images or sounds", "A brand-new rechargeable battery pack for gadgets", "A paper plane that flies really far and fast"],
+    "answer": "Your own AI that recognises images or sounds",
     "explanation": "Teachable Machine is a free website where you can train your own AI to recognise images, sounds, or body poses.",
     "hint1": "It's about training AI.", "hint2": "Images, sounds, and poses.", "hint3": "You teach it in your browser.",
     "animation": "ai-teachable", "image": null, "formula": null, "xp": 10, "marks": 1
@@ -255,7 +255,7 @@
   {
     "id": 29, "topic": "AI & Machine Learning", "difficulty": "Medium", "type": "MCQ",
     "question": "What are the three main steps to make an AI model?",
-    "options": ["Collect examples, Train, Predict", "Eat, Sleep, Repeat", "Cut, Glue, Paint", "Run, Jump, Stop"],
+    "options": ["Eat, Sleep, Play, Repeat", "Collect examples, Train, Predict", "Cut, Glue, Paint, Decorate", "Run, Jump, Spin, Stop"],
     "answer": "Collect examples, Train, Predict",
     "explanation": "First you collect examples, then you train the model on them, then it can predict answers for new things.",
     "hint1": "It starts by gathering data.", "hint2": "Collect → Train → ?", "hint3": "The last step is guessing new answers.",
@@ -267,7 +267,7 @@
     "options": ["True", "False"], "answer": "True",
     "explanation": "True! AI is only as good as its examples. Good, fair examples make smarter and fairer AI.",
     "hint1": "Good examples = smart AI.", "hint2": "Bad examples cause bad guesses.", "hint3": "This one is true.",
-    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+    "animation": "ai-teachable", "image": null, "formula": null, "xp": 15, "marks": 2
   },
 
   {
@@ -282,7 +282,7 @@
   {
     "id": 32, "topic": "Build a Robot", "difficulty": "Easy", "type": "MCQ",
     "question": "What is the chassis of a robot?",
-    "options": ["Its body/frame that holds the parts", "Its software", "Its Wi-Fi", "Its password"],
+    "options": ["Its software that runs the code", "Its body/frame that holds the parts", "Its Wi-Fi connection to the internet", "Its password for logging in"],
     "answer": "Its body/frame that holds the parts",
     "explanation": "The chassis is the robot's body or frame — it holds the wheels, motors, board and battery together.",
     "hint1": "It's a physical part.", "hint2": "Everything is attached to it.", "hint3": "It's the frame/body.",
@@ -291,7 +291,7 @@
   {
     "id": 33, "topic": "Build a Robot", "difficulty": "Medium", "type": "MCQ",
     "question": "What is the robot's rule for avoiding obstacles?",
-    "options": ["IF something is close in front → stop and turn", "Always drive backwards", "Never move at all", "Spin forever"],
+    "options": ["Always drive backwards no matter what", "IF something is close in front → stop and turn", "Never move at all, even when it's clear", "Spin around in circles forever"],
     "answer": "IF something is close in front → stop and turn",
     "explanation": "The code checks the distance: if something is close, the robot stops and turns; otherwise it drives forward. This repeats in loop().",
     "hint1": "It uses an 'if' decision.", "hint2": "What should it do when a wall is close?", "hint3": "Stop and t___.",
@@ -303,12 +303,12 @@
     "options": ["True", "False"], "answer": "True",
     "explanation": "Absolutely true! Real engineers test, find problems, and improve — that's how great robots are made.",
     "hint1": "Do engineers get it perfect first try?", "hint2": "Trying and fixing is normal.", "hint3": "This one is true.",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "robot-car", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 35, "topic": "Build a Robot", "difficulty": "Easy", "type": "MCQ",
     "question": "What gives the robot the power to move?",
-    "options": ["The battery and motors", "The stickers", "The paint", "The name"],
+    "options": ["The stickers on its body", "The battery and motors", "The paint on its shell", "The name written on it"],
     "answer": "The battery and motors",
     "explanation": "The battery supplies power and the motors turn the wheels, so the robot can drive around.",
     "hint1": "One stores power, one spins wheels.", "hint2": "Battery and ...?", "hint3": "Think power + movement.",
@@ -318,20 +318,20 @@
   {
     "id": 36, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
     "question": "What is a project logbook used for?",
-    "options": ["Recording your ideas, progress and problems you fixed", "Playing games", "Charging the robot", "Storing snacks"],
-    "answer": "Recording your ideas, progress and problems you fixed",
+    "options": ["Playing games during your free time", "Recording your ideas, progress and fixes", "Charging the robot's battery pack", "Storing snacks for the whole class"],
+    "answer": "Recording your ideas, progress and fixes",
     "explanation": "A logbook is where you write your plans, progress, and how you solved problems — just like real engineers do.",
     "hint1": "It's a kind of diary for your project.", "hint2": "You write down what you did.", "hint3": "Ideas, progress, fixes.",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "robot-car", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 37, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
     "question": "Which of these is a real future use of robots and AI?",
-    "options": ["Helping doctors and farmers", "Making the sky purple", "Stopping time", "Turning water into gold"],
+    "options": ["Making the whole sky turn purple", "Helping doctors and farmers", "Stopping time completely forever", "Turning ordinary water into gold"],
     "answer": "Helping doctors and farmers",
     "explanation": "Robots and AI already help in hospitals, farms, factories and space — and they'll help even more in the future.",
     "hint1": "Pick the realistic one.", "hint2": "Think helpful, everyday jobs.", "hint3": "Doctors and f______.",
-    "animation": null, "image": null, "formula": null, "xp": 10, "marks": 1
+    "animation": "ai-teachable", "image": null, "formula": null, "xp": 10, "marks": 1
   },
   {
     "id": 38, "topic": "Project & Future", "difficulty": "Easy", "type": "TrueFalse",
@@ -344,17 +344,17 @@
   {
     "id": 39, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
     "question": "What should a good project report include?",
-    "options": ["Your design, code, challenges and what you learned", "Only your name", "A shopping list", "Nothing at all"],
-    "answer": "Your design, code, challenges and what you learned",
+    "options": ["Only your full name and the date", "Your design, code, challenges and learnings", "A list of snacks to buy for the team", "Nothing at all, just a blank page"],
+    "answer": "Your design, code, challenges and learnings",
     "explanation": "A project report tells the whole story: your design idea, how you coded it, the challenges, and your key learnings.",
     "hint1": "It tells the story of your project.", "hint2": "Design, code, problems, learnings.", "hint3": "More than just a name!",
-    "animation": null, "image": null, "formula": null, "xp": 15, "marks": 2
+    "animation": "robot-parts", "image": null, "formula": null, "xp": 15, "marks": 2
   },
   {
     "id": 40, "topic": "Project & Future", "difficulty": "Easy", "type": "MCQ",
     "question": "Why is it great to take your robot home at the end of the course?",
-    "options": ["To keep learning and exploring your creation", "To throw it away", "To hide it", "To never touch it again"],
-    "answer": "To keep learning and exploring your creation",
+    "options": ["To throw it straight in the bin", "To keep exploring and learning more", "To hide it under your bed forever", "To never touch it or use it again"],
+    "answer": "To keep exploring and learning more",
     "explanation": "Taking your robot home keeps your excitement alive so you can keep tinkering, improving, and learning even more!",
     "hint1": "It keeps you excited to learn.", "hint2": "You can keep exploring it.", "hint3": "Learning doesn't stop!",
     "animation": "robot-car", "image": null, "formula": null, "xp": 10, "marks": 1

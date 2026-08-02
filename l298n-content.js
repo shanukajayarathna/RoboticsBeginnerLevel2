@@ -23,7 +23,7 @@ function motorViz(status, speed){
   const glow = {forward:"#00C853", backward:"#3AA0FF", brake:"#ff5252", stop:"#9e9e9e", off:"#555"}[status] || "#9e9e9e";
   return `
     <div class="motorviz">
-      <svg viewBox="0 0 160 160" width="150" height="150" aria-label="motor">
+      <svg viewBox="0 0 160 160" width="160" height="160" width="150" height="150" aria-label="motor">
         <circle cx="80" cy="80" r="60" fill="#1c2126" stroke="${glow}" stroke-width="4"/>
         <g class="${cls} ${shake}" style="${dur?`animation-duration:${dur}s;`:''}transform-origin:80px 80px;">
           <circle cx="80" cy="80" r="46" fill="#242a31"/>
@@ -55,7 +55,7 @@ function l298nBoardSVG(labels){
   const T = (x,y,t,size,fill,anchor) =>
     labels ? `<text x="${x}" y="${y}" font-size="${size||8}" fill="${fill||'#e8eef4'}" text-anchor="${anchor||'middle'}" font-weight="600">${t}</text>` : "";
   return `
-    <svg viewBox="0 0 340 340" role="img" aria-label="L298N motor driver module, top view">
+    <svg viewBox="0 0 340 340" width="340" height="340" role="img" aria-label="L298N motor driver module, top view">
       <!-- red PCB -->
       <rect x="12" y="12" width="316" height="316" rx="16" fill="#d32f2f"/>
       <rect x="12" y="12" width="316" height="316" rx="16" fill="none" stroke="#9a1c1c" stroke-width="3"/>
@@ -109,7 +109,7 @@ function l298nBoardSVG(labels){
 
   // The bodyguard analogy: Arduino (brain) → L298N (muscle) → motors
   "l298n-bodyguard": () => `
-    <svg viewBox="0 0 360 170" role="img" aria-label="Arduino gives orders, L298N supplies the muscle">
+    <svg viewBox="0 0 360 170" width="360" height="170" role="img" aria-label="Arduino gives orders, L298N supplies the muscle">
       <rect x="12" y="55" width="80" height="60" rx="10" fill="#00979D"/>
       <text x="52" y="80" font-size="11" fill="#fff" text-anchor="middle" font-weight="700">ARDUINO</text>
       <text x="52" y="96" font-size="9" fill="#e0f2f1" text-anchor="middle">brain 🧠</text>
@@ -137,7 +137,7 @@ function l298nBoardSVG(labels){
 
   // The H-bridge: 4 switches in an H around the motor
   "h-bridge": () => `
-    <svg viewBox="0 0 300 220" role="img" aria-label="H-Bridge of four switches around a motor">
+    <svg viewBox="0 0 300 220" width="300" height="220" role="img" aria-label="H-Bridge of four switches around a motor">
       <text x="150" y="18" font-size="11" fill="#a9b3ba" text-anchor="middle" font-weight="700">The H-Bridge — 4 switches, 1 motor</text>
       <line x1="60" y1="40" x2="60" y2="180" stroke="#3a424a" stroke-width="3"/>
       <line x1="240" y1="40" x2="240" y2="180" stroke="#3a424a" stroke-width="3"/>
@@ -157,7 +157,7 @@ function l298nBoardSVG(labels){
 
   // PWM speed bars
   "pwm-speed": () => `
-    <svg viewBox="0 0 320 140" role="img" aria-label="PWM controls motor speed">
+    <svg viewBox="0 0 320 140" width="320" height="140" role="img" aria-label="PWM controls motor speed">
       <text x="160" y="16" font-size="10" fill="#a9b3ba" text-anchor="middle" font-weight="700">ENA / ENB = speed (PWM 0–255)</text>
       ${[["0","OFF",30,"#555"],["128","half",120,"#FF9800"],["255","full",250,"#00C853"]].map(([v,l,,c],i)=>`
         <rect x="${30+i*95}" y="${110-(i*0+ (i===0?6: i===1?42:80))}" width="60" height="${i===0?6:i===1?42:80}" rx="4" fill="${c}"/>
@@ -166,7 +166,7 @@ function l298nBoardSVG(labels){
 
   // Full wiring map
   "wiring-map": () => `
-    <svg viewBox="0 0 400 260" role="img" aria-label="Wiring Arduino to L298N to motors and battery">
+    <svg viewBox="0 0 400 260" width="400" height="260" role="img" aria-label="Wiring Arduino to L298N to motors and battery">
       <rect x="20" y="90" width="90" height="80" rx="8" fill="#00979D"/>
       <text x="65" y="126" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">ARDUINO</text>
       <rect x="160" y="80" width="90" height="100" rx="8" fill="#1666c9"/>

@@ -32,8 +32,15 @@ alter table public.progress enable row level security;
 -- ---------- profiles policies ----------
 drop policy if exists "own profile select" on public.profiles;
 create policy "own profile select" on public.profiles for select using (auth.uid() = id);
+-- SECURITY: a signup can only insert its own row, and can only claim
+-- role='admin' if it's actually the fixed master-admin email — otherwise
+-- any self-signup (Level 1 is open registration) could set role='admin'
+-- on their own profile.
 drop policy if exists "own profile insert" on public.profiles;
-create policy "own profile insert" on public.profiles for insert with check (auth.uid() = id);
+create policy "own profile insert" on public.profiles for insert with check (
+  auth.uid() = id
+  and (role = 'student' or ((role = 'admin') and (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'))
+);
 drop policy if exists "admin profile select" on public.profiles;
 create policy "admin profile select" on public.profiles for select using (
   (auth.jwt() ->> 'email') = 'admin@arduino-academy.local');
@@ -116,3 +123,27 @@ create policy "admin cred select" on public.student_credentials for select using
 drop policy if exists "admin cred update" on public.student_credentials;
 create policy "admin cred update" on public.student_credentials for update using (
   (auth.jwt() ->> 'email') = 'admin@arduino-academy.local');
+
+-- ---------- BuildQuest: shared multiplayer voxel world (Level 2) ----------
+-- Stores only block EDITS (diffs from the procedurally-generated base
+-- terrain, which every client regenerates locally from a fixed seed).
+-- Any authenticated student can read/build/break anywhere — it's a shared
+-- classroom world, so there's no per-row ownership check (matches how the
+-- game itself has no server authority / anti-cheat, by design).
+create table if not exists public.game_blocks (
+  world_id text not null default 'l2-main',
+  x int not null, y int not null, z int not null,
+  block text not null,
+  placed_by uuid references auth.users(id) on delete set null,
+  updated_at timestamptz not null default now(),
+  primary key (world_id, x, y, z)
+);
+alter table public.game_blocks enable row level security;
+drop policy if exists "game_blocks read" on public.game_blocks;
+create policy "game_blocks read" on public.game_blocks for select using (true);
+drop policy if exists "game_blocks insert" on public.game_blocks;
+create policy "game_blocks insert" on public.game_blocks for insert to authenticated with check (true);
+drop policy if exists "game_blocks update" on public.game_blocks;
+create policy "game_blocks update" on public.game_blocks for update to authenticated using (true);
+drop policy if exists "game_blocks delete" on public.game_blocks;
+create policy "game_blocks delete" on public.game_blocks for delete to authenticated using (true);

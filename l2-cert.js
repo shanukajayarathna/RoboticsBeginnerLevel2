@@ -12,7 +12,7 @@
    ============================================================ */
 
 const CLASS_MODE_L2 = {
-  enabled: true,
+  enabled: false,
   title: "Today's Certification Challenge",
   subtitle: "Pick a module and prove your Arduino skills! 🏆"
 };

@@ -19,7 +19,14 @@ alter table public.progress enable row level security;
 
 -- Everyone can read/insert their own profile row.
 create policy "own profile select" on public.profiles for select using (auth.uid() = id);
-create policy "own profile insert" on public.profiles for insert with check (auth.uid() = id);
+-- SECURITY: a signup can only insert its own row, and can only claim
+-- role='admin' if it's actually the fixed master-admin email — otherwise
+-- any self-signup (Level 1 is open registration) could set role='admin'
+-- on their own profile.
+create policy "own profile insert" on public.profiles for insert with check (
+  auth.uid() = id
+  and (role = 'student' or ((role = 'admin') and (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'))
+);
 
 -- The fixed admin account can read every profile (for the dashboard).
 create policy "admin profile select" on public.profiles for select using (
@@ -144,3 +151,30 @@ create policy "admin progress delete" on public.progress for delete using (
 create policy "admin cred update" on public.student_credentials for update using (
   (auth.jwt() ->> 'email') = 'admin@arduino-academy.local'
 );
+
+-- ---------------------------------------------------------------------
+-- BUILDQUEST: shared multiplayer voxel world (Level 2).
+-- Run once in the Supabase SQL Editor. Safe to re-run.
+--
+-- Stores only block EDITS (diffs from the procedurally-generated base
+-- terrain — every client regenerates the same base island locally from a
+-- fixed seed, so only what students actually build/break needs to be
+-- persisted here). Any authenticated student can read/write anywhere —
+-- it's a shared classroom world with no per-row ownership, matching the
+-- game's client-authoritative design (no dedicated server, no anti-cheat).
+-- ---------------------------------------------------------------------
+create table if not exists public.game_blocks (
+  world_id text not null default 'l2-main',
+  x int not null, y int not null, z int not null,
+  block text not null,
+  placed_by uuid references auth.users(id) on delete set null,
+  updated_at timestamptz not null default now(),
+  primary key (world_id, x, y, z)
+);
+
+alter table public.game_blocks enable row level security;
+
+create policy "game_blocks read" on public.game_blocks for select using (true);
+create policy "game_blocks insert" on public.game_blocks for insert to authenticated with check (true);
+create policy "game_blocks update" on public.game_blocks for update to authenticated using (true);
+create policy "game_blocks delete" on public.game_blocks for delete to authenticated using (true);

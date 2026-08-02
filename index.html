@@ -222,6 +222,17 @@
     <!-- Class-mode: today's certification MCQ (shown only when CLASS_MODE_L2 is on) -->
     <div class="l1-today-card" id="l2-today-card" style="display:none;"></div>
 
+    <!-- BuildQuest: multiplayer voxel learning world -->
+    <div class="bq-launch-card">
+      <div class="bq-launch-ico">🧱</div>
+      <div class="bq-launch-text">
+        <span class="bq-launch-tag">🟢 Live shared world</span>
+        <h3>BuildQuest — Arduino Engineering World</h3>
+        <p>Explore a shared 3D island with your classmates. Mine resources, craft tools, and pass Arduino challenges to unlock Circuit, Sensor, Motor, Display, Robot & Arm blocks.</p>
+      </div>
+      <button class="btn btn-green bq-launch-btn" onclick="Router.go('game-l2')">▶ Enter World</button>
+    </div>
+
     <div class="section-title cert-lock-hide"><h2>🎯 Daily Challenge</h2></div>
     <div class="card card-hover flex justify-between items-center cert-lock-hide" style="flex-wrap:wrap; gap:14px;">
       <div>
@@ -395,6 +406,11 @@
   <!-- ============ LEVEL 2 CERTIFICATION MCQ (class mode) ============ -->
   <section id="screen-cert" class="screen">
     <div id="cert-root"></div>
+  </section>
+
+  <!-- ============ BUILDQUEST — multiplayer voxel world (Level 2) ============ -->
+  <section id="screen-game-l2" class="screen">
+    <div id="bq-root"></div>
   </section>
 
   <!-- ============ GUIDED LESSON (step-by-step class mode) ============ -->
@@ -688,5 +704,6 @@
 <script src="l298n-content.js"></script>
 <script src="app.js"></script>
 <script src="l2-cert.js"></script>
+<script src="game-l2.js"></script>
 </body>
 </html>

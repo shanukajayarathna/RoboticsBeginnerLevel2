@@ -113,6 +113,8 @@ const Speech = {
   _btn(btn, on){ if(btn) btn.textContent = on ? "⏹ Stop" : "🔊 Read to me"; }
 };
 
+function escHtml(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
 /* ---------------- AUTH (Supabase) ---------------- */
 const SUPABASE_URL = "https://skiydsovftoqvdgvdmsr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNraXlkc292ZnRvcXZkZ3ZkbXNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4Mjg1MTMsImV4cCI6MjA5OTQwNDUxM30.yPhd7c70soxYAG7i7yQy9ll_uDn6O-0mDYwMrr8jifQ";
@@ -448,7 +450,11 @@ const Weekly = {
   },
 
   startQuiz(){
-    this.quiz = { index:0, correct:0, pool:this.current().questions };
+    // Shuffle each MCQ's options once per attempt so the correct answer
+    // isn't always in the same position.
+    const pool = this.current().questions.map(q =>
+      (q.type==="mcq" && Array.isArray(q.options)) ? {...q, options:[...q.options].sort(()=>Math.random()-0.5)} : q);
+    this.quiz = { index:0, correct:0, pool };
     Router.go("weekly-quiz");
     this.renderQuestion();
   },
@@ -621,9 +627,9 @@ const CLASS_META = {
    ============================================================ */
 const CLASS_MODE = {
   enabled: true,
-  lessonId: "l298n",                 // which lesson auto-launches in class
-  title: "Today's Lesson",           // label on the dashboard card
-  subtitle: "Meet the L298N motor driver — tap to begin! 🚗"
+  lessonId: "obstacle-day1",         // which lesson auto-launches in class
+  title: "Today's Build",            // label on the dashboard card
+  subtitle: "Day 1: Assemble your robot's chassis! 🔧🚗"
 };
 
 // True only when we should lock an L1 student's dashboard for class.
@@ -947,7 +953,7 @@ const App = {
         : `⏳ ${weekData.title}: not completed yet`)
       : `No weekly quiz published yet`;
     return `<div class="card">
-      <h3>🧑‍🎓 ${p.name}${p.username ? ` <span class="small muted">(@${p.username})</span>` : ""}</h3>
+      <h3>🧑‍🎓 ${escHtml(p.name)}${p.username ? ` <span class="small muted">(@${escHtml(p.username)})</span>` : ""}</h3>
       <div class="flex gap-12 mt-10" style="flex-wrap:wrap;">
         <span class="pill">⚡ ${s.xp} XP</span>
         <span class="pill">🏆 ${lvl.name}</span>
@@ -1135,8 +1141,11 @@ const App = {
 
   beginQuiz(cfg){
     if(!cfg.pool.length){ alert("No questions available yet."); return; }
+    // Shuffle each question's own answer options once per quiz so the
+    // correct answer isn't always in the same position.
+    const pool = cfg.pool.map(q => Array.isArray(q.options) ? {...q, options:this.shuffled(q.options)} : q);
     this.quiz = {
-      ...cfg, index:0, correctCount:0, wrongCount:0, startTime:Date.now(),
+      ...cfg, pool, index:0, correctCount:0, wrongCount:0, startTime:Date.now(),
       perQuestion:[], hintUsed:0, answered:false, selectedIndex:null,
       topicScores:{}
     };
@@ -1178,12 +1187,21 @@ const App = {
     qTextEl.className = "q-text" + (q.type==="CodeReading" ? " code" : "");
 
     const stageEl = document.getElementById("stage");
-    if(this.activeClass()==="l1"){
-      // Level 1 uses its own simple diagrams (or a friendly placeholder) — not the L2 animation engine.
-      const dia = (q.animation && typeof renderL1Diagram==="function") ? renderL1Diagram(q.animation) : "";
-      stageEl.innerHTML = dia || `<div class="l1-stage-placeholder">🤖<div>You've got this!</div></div>`;
-    } else {
-      renderAnimation(q.animation, stageEl, {});
+    const stagePlaceholder = `<div class="l1-stage-placeholder">🤖<div>You've got this!</div></div>`;
+    try{
+      if(this.activeClass()==="l1"){
+        // Level 1 uses its own simple diagrams (or a friendly placeholder) — not the L2 animation engine.
+        const dia = (q.animation && typeof renderL1Diagram==="function") ? renderL1Diagram(q.animation) : "";
+        stageEl.innerHTML = dia || stagePlaceholder;
+      } else {
+        renderAnimation(q.animation, stageEl, {});
+      }
+      if(!stageEl.innerHTML.trim()) stageEl.innerHTML = stagePlaceholder;
+    }catch(e){
+      // Never leave the stage box blank — fall back to a friendly placeholder
+      // if a diagram fails to build for any reason.
+      console.error("stage render failed for animation key:", q.animation, e);
+      stageEl.innerHTML = stagePlaceholder;
     }
 
     const optWrap = document.getElementById("q-options");
@@ -1553,7 +1571,7 @@ const Leaderboard = {
       return `<div class="l1-lb-row ${me?'me':''}">
         <div class="l1-lb-rank">${rankBadge}</div>
         <div class="l1-lb-avatar">${me?(App.state.avatar||'🙂'):'🧒'}</div>
-        <div style="flex:1;">${me?`<strong>${r.name} (You)</strong>`:r.name}</div>
+        <div style="flex:1;">${me?`<strong>${escHtml(r.name)} (You)</strong>`:escHtml(r.name)}</div>
         <div class="l1-lb-xp">${r.xp||0} XP</div>
       </div>`;
     }).join("") || `<p class="muted small" style="padding:8px;">No students on the leaderboard yet — be the first! 🚀</p>`;
@@ -1884,9 +1902,11 @@ const HomeL1 = {
     Leaderboard.render("l1-leaderboard", "l1");
   },
 
-  // Find the lesson the teacher has pinned for today's class.
+  // Find the lesson the teacher has pinned for today's class. Never silently
+  // falls back to a different lesson — a missing id is a config/cache bug and
+  // should say so loudly, not quietly show the wrong lesson to a class.
   todaysLesson(){
-    return this.lessons().find(l => this.lessonKey(l) === CLASS_MODE.lessonId) || this.lessons()[0] || null;
+    return this.lessons().find(l => this.lessonKey(l) === CLASS_MODE.lessonId) || null;
   },
 
   // Lock the dashboard down to a single guided lesson during a live class.
@@ -2127,6 +2147,13 @@ const HomeL1 = {
     if(!lsn) return;
     this.currentLessonIndex = i;
     this.currentLesson = lsn;
+    // Some lessons (e.g. L298N) are authored entirely as guided steps with
+    // no notes[] — open those in the step-by-step player instead of the
+    // notes screen, which would otherwise render blank.
+    if((!lsn.notes || !lsn.notes.length) && Array.isArray(lsn.steps) && lsn.steps.length){
+      GuidedLesson.open(lsn);
+      return;
+    }
     document.getElementById("l1-lesson-detail-title").textContent = lsn.title || "Lesson";
     const notesBox = document.getElementById("l1-lesson-notes");
     notesBox.innerHTML = (lsn.notes||[]).map(block=>this.renderNoteBlock(block)).join("");
@@ -2180,6 +2207,8 @@ const HomeL1 = {
         return this.imageBlockHtml(block);
       case "sketchfab":
         return this.sketchfabHtml(block);
+      case "component-grid":
+        return this.componentGridHtml(block);
       case "code":
         return `<div class="l1-code-wrap">${block.title?`<div class="l1-code-title">${block.title}</div>`:""}<pre class="l1-code"><code>${this.escAttr(block.code||"")}</code></pre></div>`;
       case "tip":
@@ -2201,6 +2230,8 @@ const HomeL1 = {
     return bare ? bare[0] : "";
   },
 
+  // block: {url, title, start, end, loop} — start/end are seconds; loop plays
+  // just the start–end range on repeat (uses the standard YouTube loop+playlist=self trick).
   videoBlockHtml(block){
     const id = this.youtubeId(block.url);
     const title = block.title || "Watch & learn";
@@ -2211,9 +2242,13 @@ const HomeL1 = {
         <div><strong>${title}</strong><br><span class="small muted">Video coming soon — an instructor will add it here.</span></div>
       </div>`;
     }
+    const params = ["rel=0", "modestbranding=1"];
+    if(block.start != null) params.push(`start=${Math.max(0, Math.floor(block.start))}`);
+    if(block.end != null) params.push(`end=${Math.max(0, Math.floor(block.end))}`);
+    if(block.loop){ params.push("loop=1"); params.push(`playlist=${id}`); }
     return `<figure class="l1-video">
       <div class="l1-video-frame">
-        <iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1"
+        <iframe src="https://www.youtube-nocookie.com/embed/${id}?${params.join("&")}"
           title="${this.escAttr(title)}" loading="lazy" allowfullscreen
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
       </div>
@@ -2232,6 +2267,21 @@ const HomeL1 = {
       <img src="${this.escAttr(block.src)}" alt="${this.escAttr(block.alt||block.caption||"Lesson picture")}" loading="lazy">
       ${block.caption ? `<figcaption>${block.caption}</figcaption>` : ""}
     </figure>`;
+  },
+
+  // A grid of "meet the parts" cards: name + one-line sentence + a photo (or an
+  // emoji icon when no photo is set). Each item: {name, text, img, alt, credit, emoji}.
+  componentGridHtml(block){
+    const items = block.items || [];
+    return `<div class="l1-component-grid">${items.map(c => `
+      <div class="l1-component-card">
+        ${c.img
+          ? `<img src="${this.escAttr(c.img)}" alt="${this.escAttr(c.alt||c.name||"Component")}" loading="lazy">`
+          : `<div class="l1-component-icon">${c.emoji||"🔩"}</div>`}
+        <div class="l1-component-name">${this.escAttr(c.name||"")}</div>
+        <div class="l1-component-sentence">${this.escAttr(c.text||"")}</div>
+        ${c.credit ? `<div class="l1-component-credit">${this.escAttr(c.credit)}</div>` : ""}
+      </div>`).join("")}</div>`;
   },
 
   // Embed a rotatable Sketchfab 3D model. CC-BY models require attribution.

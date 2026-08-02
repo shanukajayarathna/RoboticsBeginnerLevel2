@@ -1287,6 +1287,281 @@
           "answer": "Write"
         }
       ]
+    },
+    {
+      "id": "obstacle-day1",
+      "icon": "🚗",
+      "title": "Obstacle-Avoidance Robot — Day 1: Build the Chassis",
+      "topic": "Obstacle-Avoidance Robot",
+      "summary": "Assemble the body of your 2-wheeled robot — motors, wheels, caster wheel and battery holder. Wiring comes next class!",
+      "steps": [
+        {
+          "kind": "intro",
+          "emoji": "🚗",
+          "title": "Let's build a real robot!",
+          "text": "Over the next 4 classes, YOU are going to build a real, working obstacle-avoidance robot — one that drives around a room all by itself and dodges anything in its way. Today is Day 1. Let's meet your robot's body! 🚀"
+        },
+        {
+          "kind": "poll",
+          "title": "Warm-up",
+          "question": "Have you ever seen a robot that avoids things on its own — like a robot vacuum cleaner?",
+          "options": [
+            "Yes, at home! 🏠",
+            "Only in videos 📱",
+            "Never — but I'm about to build one! 🔧"
+          ],
+          "reaction": "By the end of Day 4, you'll have built one yourself — let's get started! 🌟"
+        },
+        {
+          "kind": "teach",
+          "title": "What makes a robot 'obstacle-avoiding'?",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "An <b>obstacle-avoidance robot</b> drives forward on its own, and when it senses something blocking its path, it stops and turns away — no human needed!"
+            },
+            {
+              "type": "text",
+              "text": "You've already met this idea: <b>Sense → Think → Act.</b> A sensor will be its eyes, the Arduino will be its brain, and the motors + wheels will be its legs."
+            },
+            {
+              "type": "tip",
+              "icon": "💡",
+              "text": "Real robots use this exact idea — robot vacuum cleaners, warehouse delivery robots, and even Mars rovers all sense obstacles and steer around them!"
+            }
+          ]
+        },
+        {
+          "kind": "teach",
+          "title": "Here's the sneak peek — your Day 4 robot!",
+          "blocks": [
+            {
+              "type": "diagram",
+              "key": "robot-car"
+            },
+            {
+              "type": "text",
+              "text": "That's the finished robot — sensor, brain and all. But every robot starts with a <b>body</b>. That's your whole mission today."
+            }
+          ]
+        },
+        {
+          "kind": "teach",
+          "title": "Your 4-day build plan",
+          "blocks": [
+            {
+              "type": "heading",
+              "text": "🗺️ The road ahead"
+            },
+            {
+              "type": "text",
+              "text": "<b>Day 1 (today):</b> Build the chassis — motors, wheels, caster wheel, battery holder."
+            },
+            {
+              "type": "text",
+              "text": "<b>Day 2:</b> Wire up the motors and the motor driver, and get the wheels spinning."
+            },
+            {
+              "type": "text",
+              "text": "<b>Day 3:</b> Add the ultrasonic sensor so your robot can 'see' obstacles."
+            },
+            {
+              "type": "text",
+              "text": "<b>Day 4:</b> Write the code, upload it, and test + fine-tune your robot's moves!"
+            },
+            {
+              "type": "tip",
+              "icon": "🔒",
+              "text": "Days 2–4 unlock on their class day — one step at a time, so we build it right together."
+            }
+          ]
+        },
+        {
+          "kind": "teach",
+          "title": "Meet your robot's parts",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "Here's the <b>whole kit</b> you'll use across all 4 days. Today (Day 1) we only need the first 6 — the rest come later, one day at a time!"
+            },
+            {
+              "type": "component-grid",
+              "items": [
+                {
+                  "name": "Arduino Uno",
+                  "text": "The brain of your robot — this tiny computer runs your code.",
+                  "img": "images/l1/comp-arduino.jpg",
+                  "credit": "Photo: SparkFun Electronics · CC BY 2.0"
+                },
+                {
+                  "name": "Chassis Plate",
+                  "text": "The frame that holds every part of your robot together.",
+                  "emoji": "🟫"
+                },
+                {
+                  "name": "Jumper Wires",
+                  "text": "Flexible wires that connect your parts — no soldering needed.",
+                  "img": "images/l1/comp-jumperwires.jpg",
+                  "credit": "Photo: oomlout · CC BY-SA 2.0"
+                },
+                {
+                  "name": "Servo Motor",
+                  "text": "A precise little motor that will turn your sensor left and right to scan.",
+                  "img": "images/l1/comp-servo.jpg",
+                  "credit": "Photo: Suyash Dwivedi · CC BY-SA 4.0"
+                },
+                {
+                  "name": "Ultrasonic Sensor",
+                  "text": "Your robot's 'eyes' — it bounces sound waves off objects to measure distance.",
+                  "img": "images/l1/comp-ultrasonic.jpg",
+                  "credit": "Photo: Nevit Dilmen · CC BY-SA 3.0"
+                },
+                {
+                  "name": "Motor Driver (L298N)",
+                  "text": "The muscle relay you met last class — lets the Arduino safely control the motors.",
+                  "img": "images/l1/l298n-real2.jpg"
+                },
+                {
+                  "name": "DC Gear Motors ×2",
+                  "text": "These spin your wheels to drive forward, backward and turn.",
+                  "emoji": "⚙️"
+                },
+                {
+                  "name": "Wheels ×2",
+                  "text": "Attach to the motors and grip the floor to move your robot.",
+                  "emoji": "⭕"
+                },
+                {
+                  "name": "Caster Wheel",
+                  "text": "A free-rolling wheel that balances the robot — no motor needed.",
+                  "emoji": "🔵"
+                },
+                {
+                  "name": "Battery Holder",
+                  "text": "Holds your batteries and delivers power to the whole robot.",
+                  "emoji": "🔋"
+                },
+                {
+                  "name": "3.7V Batteries ×2",
+                  "text": "The energy source — like the robot's stomach, giving it the power to run.",
+                  "img": "images/l1/comp-battery.jpg",
+                  "credit": "Photo: Lead holder · CC BY-SA 3.0"
+                }
+              ]
+            },
+            {
+              "type": "tip",
+              "icon": "📌",
+              "text": "<b>Today's build uses:</b> Chassis Plate, DC Gear Motors, Wheels, Caster Wheel, Battery Holder, and Screws."
+            }
+          ]
+        },
+        {
+          "kind": "activity",
+          "title": "Find your parts!",
+          "html": "<b>Hands-on:</b> Lay out your chassis plate, 2 motors, 2 wheels, caster wheel, battery holder and screws on your desk. Check them against the list above.",
+          "hint": "Missing something? Ask your teacher before we start building."
+        },
+        {
+          "kind": "teach",
+          "title": "Watch: building the chassis",
+          "blocks": [
+            {
+              "type": "video",
+              "url": "https://youtu.be/WSMFLkL-niY",
+              "title": "Building the 2-wheeled chassis",
+              "start": 13,
+              "end": 278,
+              "loop": true
+            },
+            {
+              "type": "text",
+              "text": "Watch this clip on repeat while you build — pause anytime, or just let it loop and follow along step by step with your team!"
+            }
+          ]
+        },
+        {
+          "kind": "activity",
+          "title": "Build your chassis!",
+          "html": "<b>Hands-on:</b> Follow the 5 assembly steps with your team. Take your time — a solid chassis makes every later step easier. Show your teacher when it's standing on its own three 'feet' (2 wheels + caster).",
+          "hint": "Stuck on a screw? Ask a neighbour or your teacher — teamwork makes this faster!"
+        },
+        {
+          "kind": "check",
+          "title": "Quick check · Q1",
+          "question": "Why does the robot use a caster wheel instead of a third motor?",
+          "options": [
+            "It just rolls freely for balance — no motor needed",
+            "It makes the robot go faster",
+            "It charges the battery",
+            "It senses obstacles"
+          ],
+          "answer": "It just rolls freely for balance — no motor needed",
+          "explain": "A caster wheel is a simple, cheap way to support the third point of the robot — it just swivels and rolls, so only the 2 back wheels need motors."
+        },
+        {
+          "kind": "check",
+          "title": "Quick check · Q2",
+          "question": "What happens on Day 2 of the build?",
+          "options": [
+            "Wiring the motors to the motor driver",
+            "Writing the final code",
+            "Adding the ultrasonic sensor",
+            "Painting the robot"
+          ],
+          "answer": "Wiring the motors to the motor driver",
+          "explain": "Day 2 is all about connecting the motors to the motor driver so we can control speed and direction from the Arduino."
+        },
+        {
+          "kind": "celebrate",
+          "emoji": "🎉",
+          "title": "Your robot has a body!",
+          "text": "Amazing work — your chassis is built! Next class (Day 2) we wire up the motors and driver so it can actually move. 🚀"
+        }
+      ],
+      "quiz": [
+        {
+          "type": "mcq",
+          "question": "What is the job of the chassis plate?",
+          "options": [
+            "It's the frame that holds all the parts together",
+            "It senses obstacles",
+            "It stores the Arduino code",
+            "It powers the batteries"
+          ],
+          "answer": "It's the frame that holds all the parts together",
+          "explanation": "The chassis plate is the robot's frame — the motors, wheels, caster and battery holder all mount onto it."
+        },
+        {
+          "type": "truefalse",
+          "question": "Both motors should face the same direction, or the robot will spin instead of driving straight.",
+          "answer": true,
+          "explanation": "If one motor is mounted backwards, the wheels will push against each other instead of driving the robot forward."
+        },
+        {
+          "type": "mcq",
+          "question": "How many DC motors does a 2-wheeled robot chassis normally use?",
+          "options": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ],
+          "answer": "2",
+          "explanation": "One motor per driven wheel — two motors for a 2-wheel-drive robot, plus a free-rolling caster wheel for balance."
+        },
+        {
+          "type": "fillblank",
+          "question": "The little wheel that rolls freely for balance (not driven by a motor) is called a ______ wheel.",
+          "answer": "caster",
+          "acceptable": [
+            "caster wheel",
+            "castor",
+            "castor wheel"
+          ],
+          "explanation": "A caster wheel just swivels and rolls — it supports the robot's weight without needing its own motor."
+        }
+      ]
     }
   ],
   "activities": [

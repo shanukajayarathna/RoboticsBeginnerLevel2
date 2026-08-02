@@ -6,12 +6,12 @@
     "type": "MCQ",
     "question": "What is electric current measured in?",
     "options": [
-      "Volts",
-      "Amperes",
-      "Ohms",
-      "Watts"
+      "Volts (V)",
+      "Amperes (A)",
+      "Ohms (Ω)",
+      "Watts (W)"
     ],
-    "answer": "Amperes",
+    "answer": "Amperes (A)",
     "explanation": "Electric current is the flow of electric charge, measured in Amperes (A). Volts measure potential difference, Ohms measure resistance, and Watts measure power.",
     "hint1": "Think of the unit that shares its name with 'Amp' in a guitar amplifier.",
     "hint2": "It's named after André-Marie Ampère.",
@@ -73,10 +73,10 @@
     "type": "MCQ",
     "question": "In a circuit diagram, what does the symbol for a battery represent?",
     "options": [
-      "A source of resistance",
+      "A source of resistance in the circuit",
       "A source of electromotive force (voltage)",
-      "A switch",
-      "A sensor"
+      "A switch that opens and closes the circuit",
+      "A sensor that detects motion or light"
     ],
     "answer": "A source of electromotive force (voltage)",
     "explanation": "A battery symbol (long and short parallel lines) represents a voltage source that pushes current through the circuit, converting chemical energy into electrical energy.",
@@ -96,10 +96,10 @@
     "type": "MCQ",
     "question": "What is voltage?",
     "options": [
-      "The rate of flow of charge",
-      "The opposition to current flow",
+      "The rate at which electric charge flows past a point",
       "The difference in electric potential between two points",
-      "The power consumed by a device"
+      "The material's opposition to the flow of current",
+      "The total electrical power consumed by a device"
     ],
     "answer": "The difference in electric potential between two points",
     "explanation": "Voltage is the 'electrical pressure' that pushes electrons through a circuit — the potential difference between two points. Higher voltage means a stronger push for current to flow.",
@@ -119,10 +119,10 @@
     "type": "MCQ",
     "question": "Which term describes the opposition to current flow in a circuit?",
     "options": [
-      "Voltage",
+      "Voltage level",
       "Resistance",
-      "Power",
-      "Frequency"
+      "Power output",
+      "Wave frequency"
     ],
     "answer": "Resistance",
     "explanation": "Resistance opposes the flow of current, converting some electrical energy into heat. It's measured in Ohms (Ω), and components like resistors are designed specifically to add resistance.",
@@ -349,10 +349,10 @@
     "type": "MatchComponent",
     "question": "What is the main function of a capacitor in a circuit?",
     "options": [
-      "Amplify signals",
+      "Amplify small electrical signals",
       "Store and release electrical energy",
-      "Convert AC to DC only",
-      "Increase resistance"
+      "Convert AC to DC power only",
+      "Increase circuit resistance"
     ],
     "answer": "Store and release electrical energy",
     "explanation": "A capacitor stores electrical energy in an electric field between two plates and can release it quickly, often used for smoothing power or filtering noise.",
@@ -372,10 +372,10 @@
     "type": "MCQ",
     "question": "What do the colored bands on a resistor indicate?",
     "options": [
-      "Its voltage rating",
+      "Its maximum voltage rating",
       "Its resistance value and tolerance",
-      "Its manufacturer",
-      "Its current capacity"
+      "Its manufacturer's brand name",
+      "Its maximum current capacity"
     ],
     "answer": "Its resistance value and tolerance",
     "explanation": "Resistor color bands follow a standard code where each color represents a digit, multiplier, or tolerance percentage, allowing you to read the resistance value without a multimeter.",
@@ -418,10 +418,10 @@
     "type": "MCQ",
     "question": "What is the purpose of a transistor in basic Arduino projects?",
     "options": [
-      "To store energy",
+      "To store energy for later use",
       "To act as an electronic switch or amplifier",
-      "To measure temperature",
-      "To reduce voltage only"
+      "To measure ambient temperature",
+      "To reduce voltage permanently"
     ],
     "answer": "To act as an electronic switch or amplifier",
     "explanation": "Transistors act as electronic switches that let a small Arduino signal (like 5V from a pin) control a much larger current, such as powering a motor — they can also amplify signals.",
@@ -487,10 +487,10 @@
     "type": "CodeReading",
     "question": "What does pinMode(13, OUTPUT); do?",
     "options": [
-      "Reads a value from pin 13",
+      "Reads a digital value from pin 13",
       "Configures pin 13 to send signals out",
-      "Deletes pin 13",
-      "Sets pin 13 to always be HIGH"
+      "Permanently disables pin 13 forever",
+      "Sets pin 13 to always stay HIGH"
     ],
     "answer": "Configures pin 13 to send signals out",
     "explanation": "pinMode() configures whether a pin behaves as an INPUT (reading signals) or OUTPUT (sending signals). Here, pin 13 is set as OUTPUT, often used to control the onboard LED.",
@@ -510,10 +510,10 @@
     "type": "CodeReading",
     "question": "What does this code do?\n\ndigitalWrite(8, HIGH);\ndelay(1000);\ndigitalWrite(8, LOW);\ndelay(1000);",
     "options": [
-      "Keeps pin 8 constantly HIGH",
+      "Keeps pin 8 constantly HIGH forever",
       "Blinks a component on pin 8 on/off every second",
-      "Reads a sensor on pin 8",
-      "Turns off the Arduino"
+      "Reads a sensor value from pin 8",
+      "Turns off the entire Arduino board"
     ],
     "answer": "Blinks a component on pin 8 on/off every second",
     "explanation": "This is the classic 'blink' pattern: it sets pin 8 HIGH (on) for 1000ms (1 second), then LOW (off) for another second — when repeated in loop(), it creates a blinking effect.",
@@ -533,10 +533,10 @@
     "type": "MCQ",
     "question": "What is the Arduino IDE used for?",
     "options": [
-      "Designing PCB layouts",
+      "Designing custom PCB circuit layouts",
       "Writing, compiling, and uploading code to the board",
-      "3D printing enclosures",
-      "Only viewing sensor data"
+      "3D printing robot enclosures and cases",
+      "Only viewing live sensor data graphs"
     ],
     "answer": "Writing, compiling, and uploading code to the board",
     "explanation": "The Arduino IDE (Integrated Development Environment) is software used to write sketches (programs), compile them into machine code, and upload them to the Arduino board via USB.",
@@ -556,10 +556,10 @@
     "type": "CodeReading",
     "question": "What is wrong with this code if the intent is to blink an LED on pin 9?\n\nvoid setup() {\n  digitalWrite(9, OUTPUT);\n}\nvoid loop() {\n  pinMode(9, HIGH);\n  delay(500);\n}",
     "options": [
-      "Nothing is wrong",
+      "Nothing is wrong with this code",
       "pinMode() and digitalWrite() are swapped/misused",
-      "delay() should be removed",
-      "Pin 9 doesn't exist"
+      "The delay() call should be removed",
+      "Pin 9 doesn't exist on this board"
     ],
     "answer": "pinMode() and digitalWrite() are swapped/misused",
     "explanation": "pinMode() should configure direction (INPUT/OUTPUT) and belongs in setup(), while digitalWrite() should set the pin's state (HIGH/LOW) and belongs in loop(). This code has them reversed and misused — a common beginner bug.",
@@ -625,12 +625,12 @@
     "type": "MCQ",
     "question": "Why is a pull-down or pull-up resistor typically used with a push button?",
     "options": [
-      "To make the button brighter",
-      "To prevent the input pin from 'floating' between HIGH and LOW",
-      "To increase button speed",
-      "To reduce voltage to zero"
+      "To make the button glow much brighter",
+      "To stop the input pin from floating between states",
+      "To make the button respond much faster",
+      "To permanently reduce the voltage to zero"
     ],
-    "answer": "To prevent the input pin from 'floating' between HIGH and LOW",
+    "answer": "To stop the input pin from floating between states",
     "explanation": "Without a pull-up/pull-down resistor, an unconnected digital input pin can 'float' and randomly read HIGH or LOW due to electrical noise. The resistor ensures a defined default state when the button isn't pressed.",
     "hint1": "Unconnected pins can pick up random noise.",
     "hint2": "The resistor gives the pin a stable default state.",
@@ -648,12 +648,12 @@
     "type": "CodeReading",
     "question": "if (digitalRead(2) == HIGH) {\n  digitalWrite(13, HIGH);\n}\n\nWhat does this code do?",
     "options": [
-      "Turns on pin 13's output when pin 2 reads HIGH (e.g. button pressed)",
-      "Turns off pin 13 always",
-      "Reads pin 13 and writes to pin 2",
-      "Sets pin 2 to HIGH"
+      "Turns off pin 13's output permanently",
+      "Turns pin 13 HIGH when pin 2 reads HIGH (button pressed)",
+      "Reads pin 13 and writes the value to pin 2",
+      "Forces pin 2 to always read HIGH"
     ],
-    "answer": "Turns on pin 13's output when pin 2 reads HIGH (e.g. button pressed)",
+    "answer": "Turns pin 13 HIGH when pin 2 reads HIGH (button pressed)",
     "explanation": "This code checks if pin 2 (likely a button input) is HIGH, and if so, turns pin 13 (likely an LED) HIGH — a simple event-driven digital input/output pattern.",
     "hint1": "digitalRead(2) checks the button's current state.",
     "hint2": "The if-statement only runs the code inside when true.",
@@ -692,10 +692,10 @@
     "type": "MCQ",
     "question": "Unlike digital pins, analog input pins can read what kind of range of values?",
     "options": [
-      "Only HIGH or LOW",
+      "Only two states, HIGH or LOW",
       "A continuous range of values",
-      "Only prime numbers",
-      "Only negative values"
+      "Only whole prime numbers",
+      "Only negative decimal values"
     ],
     "answer": "A continuous range of values",
     "explanation": "Analog inputs measure a continuous range of voltage (converted into a number, typically 0-1023 on most Arduinos) rather than just two states — ideal for sensors like potentiometers and light sensors.",
@@ -807,12 +807,12 @@
     "type": "CodeReading",
     "question": "Serial.println(\"Hello Arduino!\");\n\nWhat will this do?",
     "options": [
-      "Print 'Hello Arduino!' followed by a new line to the Serial Monitor",
-      "Delete the Serial Monitor content",
-      "Read a message from the Serial Monitor",
-      "Turn on an LED"
+      "Permanently deletes all Serial Monitor content",
+      "Prints 'Hello Arduino!' with a new line after it",
+      "Reads an incoming message from the Serial Monitor",
+      "Turns on the Arduino's built-in status LED"
     ],
-    "answer": "Print 'Hello Arduino!' followed by a new line to the Serial Monitor",
+    "answer": "Prints 'Hello Arduino!' with a new line after it",
     "explanation": "Serial.println() sends text to the Serial Monitor and automatically adds a new line afterward, making each message appear on its own line — useful for debugging sensor values.",
     "hint1": "'print' + 'ln' (line) suggests printing with a line break.",
     "hint2": "It's commonly used for debugging output.",
@@ -830,12 +830,12 @@
     "type": "MCQ",
     "question": "Why is 'baud rate' important in serial communication?",
     "options": [
-      "It sets the color of text in the monitor",
-      "It defines the speed of data transmission, and both devices must match",
-      "It controls LED brightness",
-      "It has no real function"
+      "It only changes the color of monitor text",
+      "It sets the data speed, and both devices must match it",
+      "It only controls the LED's brightness",
+      "It has no real function or effect"
     ],
-    "answer": "It defines the speed of data transmission, and both devices must match",
+    "answer": "It sets the data speed, and both devices must match it",
     "explanation": "Baud rate is the speed (bits per second) at which data is sent. Both the Arduino and the receiving device (like your computer's Serial Monitor) must be set to the same baud rate, or the data will appear as garbled characters.",
     "hint1": "Both sender and receiver must agree on a speed.",
     "hint2": "Common values are 9600 or 115200.",
@@ -853,10 +853,10 @@
     "type": "MCQ",
     "question": "What two environmental values does a DHT11/DHT22 sensor typically measure?",
     "options": [
-      "Light and sound",
+      "Brightness and sound level",
       "Temperature and humidity",
-      "Distance and speed",
-      "Pressure and altitude"
+      "Distance and travel speed",
+      "Air pressure and altitude"
     ],
     "answer": "Temperature and humidity",
     "explanation": "DHT sensors (DHT11 and DHT22) are digital sensors that measure both ambient temperature and relative humidity, commonly used in weather stations and environmental monitoring projects.",
@@ -876,10 +876,10 @@
     "type": "MCQ",
     "question": "Compared to the DHT11, the DHT22 sensor generally offers what advantage?",
     "options": [
-      "Lower cost only",
+      "It only costs less to buy, nothing more",
       "Higher accuracy and wider measurement range",
-      "It measures sound instead",
-      "It cannot measure humidity"
+      "It measures sound waves instead of temperature",
+      "It cannot measure humidity at all, only temperature"
     ],
     "answer": "Higher accuracy and wider measurement range",
     "explanation": "The DHT22 is a more precise and capable version of the DHT11, offering better accuracy, a wider temperature/humidity range, and faster sampling, though at a higher price.",
@@ -899,12 +899,12 @@
     "type": "CodeReading",
     "question": "float temp = dht.readTemperature();\nfloat hum = dht.readHumidity();\n\nWhat do these two lines do?",
     "options": [
-      "Set the temperature and humidity manually",
-      "Read the current temperature and humidity from the DHT sensor into variables",
-      "Turn on a heater",
-      "Print sensor data directly to an LED"
+      "Manually sets the temperature and humidity values",
+      "Reads the current temperature and humidity into variables",
+      "Turns on an external heating element device",
+      "Prints the sensor data directly onto an LED"
     ],
-    "answer": "Read the current temperature and humidity from the DHT sensor into variables",
+    "answer": "Reads the current temperature and humidity into variables",
     "explanation": "These lines call the DHT library's built-in functions to fetch the latest temperature and humidity readings from the sensor and store them in the variables temp and hum for further use.",
     "hint1": "readTemperature() and readHumidity() are library functions.",
     "hint2": "The values are stored into variables for later use (like printing or logic).",
@@ -922,10 +922,10 @@
     "type": "MCQ",
     "question": "In an environmental monitoring project, what is the purpose of logging sensor data over time?",
     "options": [
-      "To make the Arduino run faster",
+      "To make the Arduino run much faster",
       "To track trends and detect changes in conditions",
-      "To reduce power consumption",
-      "To disable sensors when not needed"
+      "To greatly reduce power consumption",
+      "To disable sensors when they aren't needed"
     ],
     "answer": "To track trends and detect changes in conditions",
     "explanation": "Logging data over time (temperature, humidity, air quality, etc.) lets you analyze trends, detect anomalies, and make informed decisions — such as watering plants or triggering alerts.",
@@ -945,12 +945,12 @@
     "type": "MCQ",
     "question": "Which combination of sensors would best build a basic 'smart greenhouse' monitor?",
     "options": [
-      "Only a buzzer",
-      "DHT sensor for temp/humidity + soil moisture sensor + light sensor",
-      "Only a servo motor",
-      "Only an LED"
+      "Only a single piezo buzzer, nothing else",
+      "A DHT sensor, soil moisture sensor, and light sensor",
+      "Only a single servo motor, nothing else",
+      "Only a single blinking LED, nothing else"
     ],
-    "answer": "DHT sensor for temp/humidity + soil moisture sensor + light sensor",
+    "answer": "A DHT sensor, soil moisture sensor, and light sensor",
     "explanation": "A smart greenhouse benefits from monitoring multiple environmental factors together — temperature, humidity, soil moisture, and light — to give a complete picture of plant growing conditions.",
     "hint1": "Think about everything a plant needs to grow.",
     "hint2": "Multiple sensors give a fuller picture than just one.",
@@ -968,10 +968,10 @@
     "type": "MCQ",
     "question": "What happens to a simple DC motor's direction if you reverse the polarity of its power connections?",
     "options": [
-      "It spins faster",
+      "It spins much faster",
       "It reverses direction",
       "It stops permanently",
-      "Nothing changes"
+      "Nothing changes at all"
     ],
     "answer": "It reverses direction",
     "explanation": "DC motors spin based on the direction of current flow through their coils. Reversing the + and - connections reverses the magnetic interaction, causing the motor to spin the opposite way.",
@@ -991,12 +991,12 @@
     "type": "MCQ",
     "question": "Why can't a DC motor typically be powered directly from an Arduino digital pin?",
     "options": [
-      "Motors don't need power",
-      "Arduino pins can't supply enough current for most motors",
-      "Motors only work with AC",
-      "Arduino pins are digital only"
+      "Motors don't actually need any power",
+      "Arduino pins can't supply enough current for motors",
+      "Motors only work when powered by AC",
+      "Arduino pins can only output digital signals"
     ],
-    "answer": "Arduino pins can't supply enough current for most motors",
+    "answer": "Arduino pins can't supply enough current for motors",
     "explanation": "Arduino I/O pins can typically supply only about 20-40mA safely, while most DC motors need much more current to spin — this is why motor drivers or transistors are used as an intermediary.",
     "hint1": "Compare a pin's rated current (~20-40mA) to a motor's needs.",
     "hint2": "Motors often need hundreds of milliamps or more.",
@@ -1037,12 +1037,12 @@
     "type": "MCQ",
     "question": "What role does a flyback diode play when controlling a DC motor with a transistor?",
     "options": [
-      "It increases motor speed",
-      "It protects the transistor from voltage spikes when the motor turns off",
-      "It measures motor current",
-      "It reverses motor direction"
+      "It increases the motor's top speed",
+      "It protects the transistor from voltage spikes",
+      "It measures the motor's current draw",
+      "It reverses the motor's spin direction"
     ],
-    "answer": "It protects the transistor from voltage spikes when the motor turns off",
+    "answer": "It protects the transistor from voltage spikes",
     "explanation": "When a motor (an inductive load) is suddenly switched off, it generates a voltage spike (back-EMF) that can damage the transistor. A flyback diode provides a safe path for this energy to dissipate, protecting the circuit.",
     "hint1": "Motors are 'inductive loads' that resist sudden current changes.",
     "hint2": "Turning off an inductor releases a stored energy spike.",
@@ -1061,11 +1061,11 @@
     "question": "Unlike a DC motor, a standard hobby servo motor typically:",
     "options": [
       "Spins continuously in one direction forever",
-      "Rotates to a specific angle (usually 0-180°) and holds it",
-      "Only works with AC power",
-      "Cannot be controlled by Arduino"
+      "Rotates to a specific angle and holds that position",
+      "Only works when connected to AC power",
+      "Cannot be controlled by an Arduino at all"
     ],
-    "answer": "Rotates to a specific angle (usually 0-180°) and holds it",
+    "answer": "Rotates to a specific angle and holds that position",
     "explanation": "A standard servo motor moves to and holds a specific angular position (commonly 0-180°) based on the control signal it receives, unlike a DC motor which just spins continuously.",
     "hint1": "Think about precise positioning, like a robot arm joint.",
     "hint2": "It has a limited rotation range, not continuous spinning.",
@@ -1085,8 +1085,8 @@
     "options": [
       "A simple HIGH/LOW digital signal",
       "A Pulse Width Modulation (PWM) control signal",
-      "An analog voltage only",
-      "A serial data packet"
+      "An analog voltage signal only",
+      "A serial data packet stream"
     ],
     "answer": "A Pulse Width Modulation (PWM) control signal",
     "explanation": "Servos read the width (duration) of pulses sent to their control wire, typically every 20ms, to determine the target angle — this is a specific application of PWM.",
@@ -1106,12 +1106,12 @@
     "type": "CodeReading",
     "question": "myServo.write(90);\n\nWhat does this line do?",
     "options": [
-      "Sets the servo motor to its 90° (usually middle) position",
-      "Spins the servo continuously",
-      "Turns the servo off",
-      "Sets servo speed to 90%"
+      "Spins the servo continuously forever",
+      "Moves the servo to its 90°, roughly middle position",
+      "Turns the servo motor completely off",
+      "Sets the servo's speed to ninety percent"
     ],
-    "answer": "Sets the servo motor to its 90° (usually middle) position",
+    "answer": "Moves the servo to its 90°, roughly middle position",
     "explanation": "The write() function of the Servo library moves the servo shaft to the specified angle in degrees — here, 90° which for most servos is the center/neutral position.",
     "hint1": "The number represents an angle.",
     "hint2": "90° is typically the middle of the 0-180° range.",
@@ -1129,10 +1129,10 @@
     "type": "Calculation",
     "question": "A servo's control pulse is 1.5ms wide within a 20ms period. Approximately what angle does this correspond to on a standard 0-180° servo?",
     "options": [
-      "0°",
+      "0° (one end)",
       "90° (center)",
-      "180°",
-      "270°"
+      "180° (other end)",
+      "270° (out of range)"
     ],
     "answer": "90° (center)",
     "explanation": "For a standard hobby servo, a 1.5ms pulse typically corresponds to the center (90°) position, while 1ms corresponds to 0° and 2ms corresponds to 180°. This linear pulse-to-angle mapping is fundamental to servo control.",
@@ -1152,12 +1152,12 @@
     "type": "MCQ",
     "question": "What is the main purpose of a motor driver IC like the L298N?",
     "options": [
-      "To measure temperature",
-      "To allow low-power Arduino signals to control higher-power motors safely",
-      "To connect to WiFi",
-      "To display text"
+      "To measure the room's air temperature and humidity",
+      "To let low-power Arduino signals safely control motors",
+      "To connect the board to a home WiFi network",
+      "To display scrolling text on a small screen"
     ],
-    "answer": "To allow low-power Arduino signals to control higher-power motors safely",
+    "answer": "To let low-power Arduino signals safely control motors",
     "explanation": "Motor driver ICs act as an interface between the low-current Arduino pins and the higher current/voltage needs of motors, using internal transistors (often an H-Bridge) to safely control speed and direction.",
     "hint1": "Arduino pins alone can't power most motors directly.",
     "hint2": "The driver acts as a 'middleman' amplifying control signals.",
@@ -1175,12 +1175,12 @@
     "type": "MCQ",
     "question": "What does an 'H-Bridge' circuit inside a motor driver allow you to do?",
     "options": [
-      "Only turn the motor on/off",
-      "Control both the speed and the direction (forward/reverse) of a DC motor",
-      "Only measure motor current",
-      "Convert AC to DC"
+      "Only turn the motor fully on or off",
+      "Control both the speed and direction of a DC motor",
+      "Only measure the motor's current draw",
+      "Convert AC power into DC power"
     ],
-    "answer": "Control both the speed and the direction (forward/reverse) of a DC motor",
+    "answer": "Control both the speed and direction of a DC motor",
     "explanation": "An H-Bridge uses four switches (transistors) arranged in an 'H' shape to reverse the current direction through a motor, enabling both forward and reverse rotation, plus PWM speed control.",
     "hint1": "The circuit's shape resembles the letter it's named after.",
     "hint2": "It can reverse current direction through the motor.",
@@ -1224,7 +1224,7 @@
       "Power Wave Modulation",
       "Pulse Width Modulation",
       "Positive Wire Method",
-      "Program Write Mode"
+      "Program Writing Mode"
     ],
     "answer": "Pulse Width Modulation",
     "explanation": "PWM (Pulse Width Modulation) rapidly switches a digital pin on and off, varying the proportion of 'on' time to simulate an analog output — used for LED dimming and motor speed control.",
@@ -1290,10 +1290,10 @@
     "type": "Calculation",
     "question": "A PWM value of 255 is used for an LED. What is the resulting duty cycle and brightness?",
     "options": [
-      "0% duty cycle, LED off",
+      "0% duty cycle, LED stays off",
       "50% duty cycle, half brightness",
       "100% duty cycle, full brightness",
-      "It's undefined"
+      "It's completely undefined here"
     ],
     "answer": "100% duty cycle, full brightness",
     "explanation": "255 is the maximum PWM value on most Arduino boards (8-bit resolution: 0-255), representing a 100% duty cycle where the pin is continuously HIGH — full brightness for an LED.",
@@ -1336,12 +1336,12 @@
     "type": "MCQ",
     "question": "How does a piezo buzzer typically produce sound?",
     "options": [
-      "By spinning a small motor",
-      "By vibrating a piezoelectric material at a set frequency",
-      "By heating a wire",
-      "By flashing light rapidly"
+      "By spinning a tiny motor rapidly",
+      "By vibrating a piezoelectric material rapidly",
+      "By rapidly heating a thin wire",
+      "By rapidly flashing a bright light"
     ],
-    "answer": "By vibrating a piezoelectric material at a set frequency",
+    "answer": "By vibrating a piezoelectric material rapidly",
     "explanation": "Piezo buzzers use a piezoelectric ceramic disc that vibrates rapidly when voltage is applied, and the frequency of vibration determines the pitch of the sound produced.",
     "hint1": "The name 'piezo' relates to a special material property.",
     "hint2": "It vibrates rather than spins or heats up.",
@@ -1382,10 +1382,10 @@
     "type": "MCQ",
     "question": "What does a 16x2 LCD display refer to?",
     "options": [
-      "16 pins and 2 wires",
+      "16 connector pins and 2 signal wires",
       "16 characters per row across 2 rows",
       "16 colors and 2 brightness levels",
-      "16 volts and 2 amps"
+      "16 volts of power and 2 amps of current"
     ],
     "answer": "16 characters per row across 2 rows",
     "explanation": "A '16x2' LCD (Liquid Crystal Display) has 2 rows, each capable of displaying up to 16 characters — a very common display size in beginner Arduino projects.",
@@ -1405,12 +1405,12 @@
     "type": "CodeReading",
     "question": "lcd.setCursor(0, 1);\nlcd.print(\"Hello!\");\n\nWhat does this do?",
     "options": [
-      "Prints 'Hello!' starting at column 0, row 1 (the second row)",
-      "Clears the entire display",
-      "Prints 'Hello!' on row 0 only",
-      "Turns off the LCD backlight"
+      "Clears the entire LCD display screen",
+      "Prints 'Hello!' at column 0 on the second row",
+      "Prints 'Hello!' only on the first row",
+      "Turns off the LCD's backlight light"
     ],
-    "answer": "Prints 'Hello!' starting at column 0, row 1 (the second row)",
+    "answer": "Prints 'Hello!' at column 0 on the second row",
     "explanation": "setCursor(column, row) positions where text will appear next. Since rows are zero-indexed, row 1 is the second line of the display, and column 0 is the leftmost position.",
     "hint1": "setCursor takes (column, row) as arguments.",
     "hint2": "Rows are counted starting from 0.",
@@ -1428,12 +1428,12 @@
     "type": "MCQ",
     "question": "What is the purpose of the I2C module often attached to LCD displays in Arduino projects?",
     "options": [
-      "To increase display brightness only",
-      "To reduce the number of wires needed to connect the LCD",
-      "To make the display wireless",
-      "To add color to the display"
+      "To only increase the display's brightness",
+      "To reduce the number of wires connecting the LCD",
+      "To make the LCD fully wireless",
+      "To add color to a black-and-white display"
     ],
-    "answer": "To reduce the number of wires needed to connect the LCD",
+    "answer": "To reduce the number of wires connecting the LCD",
     "explanation": "A standard LCD needs many wires (often 6+ data/control pins), but an I2C backpack module converts this to just 2 data wires (SDA/SCL) plus power, greatly simplifying wiring.",
     "hint1": "Standard LCDs need many connection wires.",
     "hint2": "I2C is known for simplifying communication.",
@@ -1451,12 +1451,12 @@
     "type": "MCQ",
     "question": "How does an ultrasonic sensor (like the HC-SR04) measure distance?",
     "options": [
-      "By measuring light reflection",
-      "By sending a sound pulse and timing how long it takes to bounce back",
+      "By measuring reflected light levels",
+      "By sending a sound pulse and timing its echo",
       "By measuring temperature changes",
-      "By counting rotations"
+      "By counting wheel rotations"
     ],
-    "answer": "By sending a sound pulse and timing how long it takes to bounce back",
+    "answer": "By sending a sound pulse and timing its echo",
     "explanation": "Ultrasonic sensors emit a high-frequency sound pulse (inaudible to humans) and measure the time it takes for the echo to return after bouncing off an object, then calculate distance using the speed of sound.",
     "hint1": "Think of how bats navigate using sound (echolocation).",
     "hint2": "It measures a time delay, not light.",
@@ -1566,12 +1566,12 @@
     "type": "MCQ",
     "question": "In a line-following robot, how are IR sensors typically used?",
     "options": [
-      "To measure temperature of the line",
-      "To detect the contrast between a dark line and a light surface (or vice versa)",
-      "To play music",
-      "To measure distance only"
+      "To measure the exact temperature of the floor surface",
+      "To detect the contrast between a dark line and light floor",
+      "To play a warning music sound loudly through a buzzer",
+      "To measure the distance only, and nothing else at all"
     ],
-    "answer": "To detect the contrast between a dark line and a light surface (or vice versa)",
+    "answer": "To detect the contrast between a dark line and light floor",
     "explanation": "IR sensors detect differences in reflected infrared light — dark surfaces absorb more IR light while light surfaces reflect more, letting the robot 'see' and follow a line on the floor.",
     "hint1": "Think about how much light different colors reflect.",
     "hint2": "Dark colors absorb more light; light colors reflect more.",
@@ -1589,12 +1589,12 @@
     "type": "MCQ",
     "question": "What is a common application of an IR receiver module paired with an IR remote control?",
     "options": [
-      "Measuring humidity",
-      "Wirelessly controlling an Arduino project (e.g. changing modes, adjusting settings)",
-      "Detecting sound levels",
-      "Measuring voltage"
+      "Measuring the room's ambient temperature and humidity",
+      "Wirelessly sending commands to control an Arduino project",
+      "Detecting how loud the surrounding sound levels are",
+      "Measuring the Arduino's incoming supply voltage level"
     ],
-    "answer": "Wirelessly controlling an Arduino project (e.g. changing modes, adjusting settings)",
+    "answer": "Wirelessly sending commands to control an Arduino project",
     "explanation": "An IR receiver can decode signals sent by a standard remote control, letting users wirelessly send commands to an Arduino — a popular, low-cost way to add remote control to a project.",
     "hint1": "Think about how a TV remote works with a TV.",
     "hint2": "The receiver decodes a pattern of infrared pulses.",
@@ -1612,9 +1612,9 @@
     "type": "MCQ",
     "question": "In basic robotics, what are the three fundamental building blocks of any robot?",
     "options": [
+      "Wheels, Bolts, and Screws",
       "Sensors, Processor (brain), Actuators",
-      "Wheels, Paint, Screws",
-      "Battery, Wires, Stickers",
+      "Battery, Motor, and Stickers",
       "Camera, Speaker, Microphone only"
     ],
     "answer": "Sensors, Processor (brain), Actuators",
@@ -1635,12 +1635,12 @@
     "type": "MCQ",
     "question": "What does 'autonomous' mean in the context of a robot?",
     "options": [
-      "Remote-controlled by a human at all times",
-      "Able to make decisions and act without constant human control",
-      "Powered only by solar energy",
-      "Unable to move"
+      "Always remote-controlled by a human operator",
+      "Able to sense, decide, and act without human control",
+      "Only ever powered by solar energy",
+      "Completely unable to move at all"
     ],
-    "answer": "Able to make decisions and act without constant human control",
+    "answer": "Able to sense, decide, and act without human control",
     "explanation": "An autonomous robot uses its own sensors and programming to make decisions and navigate its environment independently, without requiring continuous human input — like an obstacle-avoiding robot car.",
     "hint1": "The word shares a root with 'automatic'.",
     "hint2": "Think of self-driving cars as an example.",
@@ -1658,12 +1658,12 @@
     "type": "MCQ",
     "question": "Why is feedback (e.g. from sensors) important in a robotic system?",
     "options": [
-      "It's not important",
-      "It lets the robot adjust its actions based on real-world conditions",
-      "It only makes the robot louder",
-      "It replaces the need for a processor"
+      "It really isn't important for robots at all",
+      "It lets the robot adjust its actions to real conditions",
+      "It only makes the robot beep a little louder",
+      "It completely replaces the need for a processor"
     ],
-    "answer": "It lets the robot adjust its actions based on real-world conditions",
+    "answer": "It lets the robot adjust its actions to real conditions",
     "explanation": "Feedback lets a robot compare its actual state (from sensors) to its desired state, and adjust its behavior accordingly — essential for tasks like maintaining a straight path or avoiding obstacles.",
     "hint1": "Think about how you adjust your walking when you feel an obstacle.",
     "hint2": "Feedback creates a 'loop' of sense-decide-act-sense again.",
@@ -1681,12 +1681,12 @@
     "type": "MCQ",
     "question": "What does 'dead reckoning' navigation rely on for a robot?",
     "options": [
-      "GPS satellites only",
-      "Estimating position based on known speed, direction, and time traveled",
-      "Random movement",
-      "Human remote control"
+      "Only relying on GPS satellites for positioning",
+      "Estimating position from known speed, direction, and time",
+      "Completely random movement with no pattern at all",
+      "Constant control from a human remote operator"
     ],
-    "answer": "Estimating position based on known speed, direction, and time traveled",
+    "answer": "Estimating position from known speed, direction, and time",
     "explanation": "Dead reckoning estimates a robot's current position by using its previous known position plus its speed, heading, and elapsed time — without needing external references like GPS, though errors accumulate over time.",
     "hint1": "Think about estimating distance from speed × time.",
     "hint2": "It doesn't require external signals like GPS.",
@@ -1704,12 +1704,12 @@
     "type": "MCQ",
     "question": "How can a robot use two wheel encoders to help navigate more precisely?",
     "options": [
-      "They measure temperature of each wheel",
-      "They count wheel rotations to estimate distance traveled and turning",
-      "They measure battery voltage",
-      "They control the robot's color"
+      "They measure the exact temperature of each wheel",
+      "They count wheel rotations to estimate distance and turning",
+      "They only measure the robot's battery voltage level",
+      "They only control the color of the robot's paint"
     ],
-    "answer": "They count wheel rotations to estimate distance traveled and turning",
+    "answer": "They count wheel rotations to estimate distance and turning",
     "explanation": "Wheel encoders count rotations (or partial rotations) of each wheel, allowing the robot to estimate how far it has traveled and, by comparing the two wheels, how much it has turned.",
     "hint1": "Encoders 'count' something related to wheel movement.",
     "hint2": "Comparing left vs right wheel rotation reveals turning.",
@@ -1752,8 +1752,8 @@
     "options": [
       "DHT temperature sensor",
       "Ultrasonic distance sensor",
-      "Piezo buzzer",
-      "LCD display"
+      "Piezo sound buzzer",
+      "LCD text display screen"
     ],
     "answer": "Ultrasonic distance sensor",
     "explanation": "Ultrasonic sensors (like the HC-SR04) are ideal for obstacle avoidance because they measure distance to objects in front of the robot in real time, letting it stop or turn before colliding.",
@@ -1796,12 +1796,12 @@
     "type": "CodeReading",
     "question": "if (distance < 15) {\n  stopMotors();\n  turnRight();\n} else {\n  moveForward();\n}\n\nWhat behavior does this code create?",
     "options": [
-      "The robot always moves forward regardless of obstacles",
-      "The robot stops and turns right when an obstacle is within 15cm, otherwise moves forward",
-      "The robot only turns left",
-      "The robot measures temperature"
+      "The robot always moves forward, ignoring obstacles",
+      "It stops and turns right if an obstacle is within 15cm",
+      "The robot only ever turns left, never right",
+      "The robot only measures the temperature"
     ],
-    "answer": "The robot stops and turns right when an obstacle is within 15cm, otherwise moves forward",
+    "answer": "It stops and turns right if an obstacle is within 15cm",
     "explanation": "This is a basic obstacle-avoidance conditional: if the measured distance is less than 15cm (too close), the robot stops and turns right; otherwise, it's safe to continue moving forward.",
     "hint1": "The if-condition checks a distance threshold.",
     "hint2": "'distance < 15' means an obstacle is close.",
@@ -1820,11 +1820,11 @@
     "question": "What does 'forward kinematics' calculate for a robotic arm?",
     "options": [
       "The required joint angles to reach a target position",
-      "The position of the arm's end (end-effector) given known joint angles",
-      "The robot's battery life",
-      "The color of the robot"
+      "The end-effector's position, given known joint angles",
+      "The robot's remaining battery life",
+      "The color of the robot's paint"
     ],
-    "answer": "The position of the arm's end (end-effector) given known joint angles",
+    "answer": "The end-effector's position, given known joint angles",
     "explanation": "Forward kinematics answers: 'Given these joint angles, where does the end-effector (like a gripper) end up?' It works forward from known angles to an unknown final position — the reverse of inverse kinematics.",
     "hint1": "The word 'forward' suggests working from cause to effect.",
     "hint2": "Input: joint angles. Output: final position.",
@@ -1865,12 +1865,12 @@
     "type": "MCQ",
     "question": "What does 'inverse kinematics' calculate for a robotic arm?",
     "options": [
-      "The required joint angles needed to reach a desired end-effector position",
-      "The final position from known angles",
-      "The robot's power consumption",
+      "The final end-effector position from known angles",
+      "The joint angles needed to reach a target position",
+      "The robot's total power consumption",
       "The material the arm is made of"
     ],
-    "answer": "The required joint angles needed to reach a desired end-effector position",
+    "answer": "The joint angles needed to reach a target position",
     "explanation": "Inverse kinematics works backward from a desired target position to figure out what joint angles are needed to get there — essential for tasks like 'move the gripper to this exact point.'",
     "hint1": "The word 'inverse' suggests the reverse of forward kinematics.",
     "hint2": "Input: target position. Output: required joint angles.",
@@ -1888,12 +1888,12 @@
     "type": "MCQ",
     "question": "Why can inverse kinematics problems sometimes have multiple valid solutions?",
     "options": [
-      "Because robots are unpredictable",
-      "Because the same end position can often be reached with different joint angle combinations (e.g. 'elbow up' vs 'elbow down')",
-      "Because sensors are inaccurate",
-      "Because it never has any solution"
+      "Because all robots are always fundamentally unpredictable",
+      "Because the same end position can be reached with different joint angles",
+      "Because the arm's sensors are almost always inaccurate",
+      "Because these kinds of problems never have a real solution"
     ],
-    "answer": "Because the same end position can often be reached with different joint angle combinations (e.g. 'elbow up' vs 'elbow down')",
+    "answer": "Because the same end position can be reached with different joint angles",
     "explanation": "Just like your own arm can reach the same point with your elbow bent up or down in some cases, robotic arms with multiple joints often have several valid joint-angle combinations that all place the end-effector at the same target point.",
     "hint1": "Think about how your own elbow can bend different ways to touch the same spot.",
     "hint2": "More joints generally mean more possible configurations.",
@@ -1934,12 +1934,12 @@
     "type": "CodeReading",
     "question": "baseServo.write(45);\nelbowServo.write(90);\ngripperServo.write(0);\n\nWhat is this code sequence likely doing?",
     "options": [
-      "Reading sensor values from three sensors",
-      "Positioning a 3-joint robotic arm: base rotation, elbow bend, and gripper state",
-      "Playing three musical tones",
-      "Measuring three distances"
+      "Reading three separate sensor values at once",
+      "Positioning a 3-joint arm: base, elbow, and gripper",
+      "Playing three different musical tones in a row",
+      "Measuring three separate distance readings"
     ],
-    "answer": "Positioning a 3-joint robotic arm: base rotation, elbow bend, and gripper state",
+    "answer": "Positioning a 3-joint arm: base, elbow, and gripper",
     "explanation": "This code commands three separate servos — likely controlling the arm's base rotation (45°), elbow joint (90°), and gripper (0°, perhaps 'closed' or 'open') — a typical multi-joint arm control sequence.",
     "hint1": "Each variable name hints at which joint it controls.",
     "hint2": "Multiple servo.write() calls together position a whole arm.",

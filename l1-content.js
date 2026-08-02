@@ -8,7 +8,7 @@
 const L1_DIAGRAMS = {
 
   "robot-parts": () => `
-    <svg viewBox="0 0 340 210" role="img" aria-label="The three main parts of a robot">
+    <svg viewBox="0 0 340 210" width="340" height="210" role="img" aria-label="The three main parts of a robot">
       <rect x="120" y="55" width="100" height="90" rx="14" fill="#7b2ff7"/>
       <circle cx="150" cy="90" r="9" fill="#fff"/><circle cx="190" cy="90" r="9" fill="#fff"/>
       <circle cx="150" cy="90" r="4" fill="#212121"/><circle cx="190" cy="90" r="4" fill="#212121"/>
@@ -31,7 +31,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "simple-circuit": () => `
-    <svg viewBox="0 0 320 190" role="img" aria-label="A simple electric circuit loop">
+    <svg viewBox="0 0 320 190" width="320" height="190" role="img" aria-label="A simple electric circuit loop">
       <rect x="30" y="30" width="260" height="130" rx="14" fill="none" stroke="#3AA0FF" stroke-width="4"/>
       <rect x="30" y="80" width="20" height="34" fill="#15181c"/>
       <line x1="30" y1="86" x2="30" y2="108" stroke="#FFC53D" stroke-width="6"/>
@@ -44,7 +44,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "breadboard-led": () => `
-    <svg viewBox="0 0 320 200" role="img" aria-label="An LED and resistor on a breadboard">
+    <svg viewBox="0 0 320 200" width="320" height="200" role="img" aria-label="An LED and resistor on a breadboard">
       <rect x="20" y="30" width="280" height="120" rx="10" fill="#eef1f4"/>
       ${Array.from({length:14}).map((_,c)=>Array.from({length:6}).map((_,r)=>`<circle cx="${40+c*18}" cy="${50+r*16}" r="2.4" fill="#c3ccd4"/>`).join("")).join("")}
       <line x1="90" y1="66" x2="140" y2="66" stroke="#8d6e63" stroke-width="4"/>
@@ -61,7 +61,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "arduino-board": () => `
-    <svg viewBox="0 0 320 190" role="img" aria-label="An Arduino board with pins">
+    <svg viewBox="0 0 320 190" width="320" height="190" role="img" aria-label="An Arduino board with pins">
       <rect x="50" y="40" width="220" height="110" rx="12" fill="#00979D"/>
       ${Array.from({length:12}).map((_,i)=>`<rect x="${64+i*16}" y="46" width="8" height="10" fill="#0c1b1c"/>`).join("")}
       ${Array.from({length:12}).map((_,i)=>`<rect x="${64+i*16}" y="134" width="8" height="10" fill="#0c1b1c"/>`).join("")}
@@ -74,7 +74,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "microbit": () => `
-    <svg viewBox="0 0 320 190" role="img" aria-label="A micro:bit board">
+    <svg viewBox="0 0 320 190" width="320" height="190" role="img" aria-label="A micro:bit board">
       <rect x="70" y="35" width="180" height="120" rx="14" fill="#00C853"/>
       ${Array.from({length:5}).map((_,r)=>Array.from({length:5}).map((_,c)=>`<rect x="${118+c*18}" y="${58+r*15}" width="10" height="10" rx="2" fill="${(r+c)%2? '#b9f6ca':'#d50000'}"/>`).join("")).join("")}
       <circle cx="92" cy="150" r="9" fill="#212121"/><text x="92" y="154" font-size="9" fill="#fff" text-anchor="middle">A</text>
@@ -84,7 +84,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "sensor-flow": () => `
-    <svg viewBox="0 0 340 150" role="img" aria-label="Sensor to controller to actuator flow">
+    <svg viewBox="0 0 340 150" width="340" height="150" role="img" aria-label="Sensor to controller to actuator flow">
       <rect x="15" y="50" width="80" height="50" rx="10" fill="#00BCD4"/>
       <text x="55" y="72" font-size="11" fill="#04240f" text-anchor="middle" font-weight="700">SENSOR</text>
       <text x="55" y="88" font-size="9" fill="#04240f" text-anchor="middle">input 👀</text>
@@ -101,7 +101,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "ultrasonic": () => `
-    <svg viewBox="0 0 320 170" role="img" aria-label="Ultrasonic sensor sending and receiving sound">
+    <svg viewBox="0 0 320 170" width="320" height="170" role="img" aria-label="Ultrasonic sensor sending and receiving sound">
       <rect x="20" y="60" width="60" height="50" rx="8" fill="#3AA0FF"/>
       <circle cx="38" cy="85" r="12" fill="#0d47a1"/><circle cx="62" cy="85" r="12" fill="#0d47a1"/>
       <text x="50" y="130" font-size="9" fill="#a9b3ba" text-anchor="middle">ultrasonic</text>
@@ -114,7 +114,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "servo-motor": () => `
-    <svg viewBox="0 0 300 170" role="img" aria-label="A servo motor turning to an angle">
+    <svg viewBox="0 0 300 170" width="300" height="170" role="img" aria-label="A servo motor turning to an angle">
       <rect x="90" y="70" width="70" height="55" rx="8" fill="#FF9800"/>
       <circle cx="125" cy="70" r="10" fill="#455a64"/>
       <line x1="125" y1="70" x2="180" y2="40" stroke="#212121" stroke-width="6" stroke-linecap="round"/>
@@ -124,7 +124,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "ai-teachable": () => `
-    <svg viewBox="0 0 340 180" role="img" aria-label="Teachable Machine: examples train a model that predicts">
+    <svg viewBox="0 0 340 180" width="340" height="180" role="img" aria-label="Teachable Machine: examples train a model that predicts">
       <rect x="15" y="40" width="80" height="45" rx="8" fill="#00BCD4"/>
       <text x="55" y="60" font-size="10" fill="#04240f" text-anchor="middle" font-weight="700">EXAMPLES</text>
       <text x="55" y="75" font-size="9" fill="#04240f" text-anchor="middle">📷 photos</text>
@@ -142,7 +142,7 @@ const L1_DIAGRAMS = {
     </svg>`,
 
   "robot-car": () => `
-    <svg viewBox="0 0 300 180" role="img" aria-label="An obstacle avoidance robot car">
+    <svg viewBox="0 0 300 180" width="300" height="180" role="img" aria-label="An obstacle avoidance robot car">
       <rect x="80" y="70" width="140" height="50" rx="10" fill="#7b2ff7"/>
       <circle cx="105" cy="130" r="18" fill="#212121"/><circle cx="105" cy="130" r="7" fill="#9e9e9e"/>
       <circle cx="195" cy="130" r="18" fill="#212121"/><circle cx="195" cy="130" r="7" fill="#9e9e9e"/>
@@ -151,6 +151,23 @@ const L1_DIAGRAMS = {
       <path d="M170 60 q26 -6 44 4" stroke="#FFC53D" fill="none" stroke-width="2"/>
       <rect x="232" y="48" width="14" height="80" rx="3" fill="#8d6e63"/>
       <text x="150" y="160" font-size="10" fill="#a9b3ba" text-anchor="middle">The robot 'sees' the wall with its sensor and turns away 🤖</text>
+    </svg>`,
+
+  "chassis-build": () => `
+    <svg viewBox="0 0 300 190" width="300" height="190" role="img" aria-label="An assembled 2-wheeled robot chassis, before wiring">
+      <rect x="60" y="50" width="180" height="110" rx="14" fill="#B0BEC5" stroke="#78909C" stroke-width="2"/>
+      <circle cx="150" cy="44" r="12" fill="#CFD8DC" stroke="#78909C" stroke-width="2"/><circle cx="150" cy="44" r="5" fill="#607D8B"/>
+      <text x="150" y="24" font-size="9" fill="#a9b3ba" text-anchor="middle">CASTER WHEEL</text>
+      <rect x="30" y="130" width="50" height="26" rx="5" fill="#FFC107"/>
+      <circle cx="35" cy="143" r="24" fill="#212121"/><circle cx="35" cy="143" r="8" fill="#9e9e9e"/>
+      <rect x="220" y="130" width="50" height="26" rx="5" fill="#FFC107"/>
+      <circle cx="265" cy="143" r="24" fill="#212121"/><circle cx="265" cy="143" r="8" fill="#9e9e9e"/>
+      <text x="150" y="186" font-size="9" fill="#a9b3ba" text-anchor="middle">MOTOR + WHEEL (×2)</text>
+      <rect x="110" y="75" width="80" height="35" rx="6" fill="#43A047"/>
+      <rect x="120" y="83" width="25" height="19" rx="4" fill="#2E7D32"/><rect x="155" y="83" width="25" height="19" rx="4" fill="#2E7D32"/>
+      <text x="150" y="70" font-size="9" fill="#a9b3ba" text-anchor="middle">BATTERY HOLDER</text>
+      <circle cx="70" cy="60" r="3" fill="#616161"/><circle cx="230" cy="60" r="3" fill="#616161"/>
+      <circle cx="70" cy="150" r="3" fill="#616161"/><circle cx="230" cy="150" r="3" fill="#616161"/>
     </svg>`
 };
 
