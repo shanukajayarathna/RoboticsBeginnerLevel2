@@ -207,7 +207,14 @@ const Auth = {
       await this.afterLogin(user);
       this.captureCredential(user.id, {name:this.selected.name, username:this.selected.key, password:pin, cls:"l2"});
     }catch(e){
-      errEl.textContent = e.message === "Invalid login credentials" ? "Wrong PIN." : (e.message || "Login failed.");
+      // "Invalid login credentials" here means the account already exists with a
+      // DIFFERENT stored PIN than the one just typed (often from a typo the very first
+      // time this account was created — this flow silently creates the account on first
+      // login with whatever was typed then, so there's no confirmation step to catch it).
+      // The fix is the admin's Accounts screen -> 🔑 Reset password, not retyping the PIN.
+      errEl.textContent = e.message === "Invalid login credentials"
+        ? "Wrong PIN. If you're sure that's right, ask your teacher to reset it (Accounts → 🔑)."
+        : (e.message || "Login failed.");
     }finally{
       btn.disabled = false; btn.textContent = "Log In";
     }
@@ -353,7 +360,7 @@ const ClassGate = {
 
   async submitL1Login(){
     const username = document.getElementById("l1-login-username").value.trim().toLowerCase();
-    const password = document.getElementById("l1-login-password").value;
+    const password = document.getElementById("l1-login-password").value.trim();
     const errEl = document.getElementById("l1-login-error");
     errEl.textContent = "";
     if(!username || !password){ errEl.textContent = "Enter your username and password."; return; }
@@ -362,7 +369,7 @@ const ClassGate = {
     try{
       await Auth.logInL1({username, password});
     }catch(e){
-      errEl.textContent = e.message === "Invalid login credentials" ? "Wrong username or password." : (e.message || "Login failed.");
+      errEl.textContent = e.message === "Invalid login credentials" ? "Wrong username or password. Ask your teacher to reset it if you're sure it's right." : (e.message || "Login failed.");
     }finally{
       btn.disabled = false; btn.textContent = "Log In";
     }
@@ -371,8 +378,8 @@ const ClassGate = {
   async submitL1Signup(){
     const name = document.getElementById("l1-signup-name").value.trim();
     const username = document.getElementById("l1-signup-username").value.trim().toLowerCase();
-    const password = document.getElementById("l1-signup-password").value;
-    const confirm = document.getElementById("l1-signup-confirm").value;
+    const password = document.getElementById("l1-signup-password").value.trim();
+    const confirm = document.getElementById("l1-signup-confirm").value.trim();
     const errEl = document.getElementById("l1-signup-error");
     errEl.textContent = "";
     if(!name){ errEl.textContent = "Enter your name."; return; }

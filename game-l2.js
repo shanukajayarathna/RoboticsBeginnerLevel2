@@ -24,13 +24,62 @@
    CERT_MODULES, renderAnimation.
    ============================================================ */
 
-const BQ_SIZE = 48;        // world footprint, X and Z
+const BQ_SIZE = 72;        // world footprint, X and Z (island shape/world-gen math is all
+                            // normalized by this constant, so it's safe to retune here alone)
 const BQ_HEIGHT = 32;      // world height, Y
 const BQ_SEA = 12;         // sea level Y
 const BQ_SEED = 1337;
 const BQ_WORLD_ID = "l2-main";
 const BQ_REACH = 6;        // block interaction distance, in blocks
-const BQ_POPQUIZ_INTERVAL = 240; // seconds between unprompted "pop quiz" events (4 min)
+const BQ_POPQUIZ_INTERVAL = 180; // seconds between unprompted "pop quiz" events (3 min)
+
+/* ---------------- CAR RACE TRACK ----------------
+   A closed-loop sky track (floating well above the tallest possible terrain, so it never
+   collides with the buildable world below — reachable by flying, same as everything else
+   above ground level). It's static, deterministic geometry generated fresh from these
+   constants on every client, same as the terrain — nothing about its shape needs to be
+   synced over the network, only who's on it. */
+const BQ_TRACK_CENTER = { x: BQ_SIZE/2, z: BQ_SIZE/2 };
+const BQ_TRACK_RADIUS = 170;       // average loop radius
+const BQ_TRACK_HEIGHT = BQ_HEIGHT + 12; // well above BQ_HEIGHT-3, the tallest terrain can ever get
+const BQ_TRACK_HALF_WIDTH = 4.5;   // drivable corridor half-width used for boundary collision
+const BQ_TRACK_WIDTH = BQ_TRACK_HALF_WIDTH*2; // visual ribbon width — kept equal so the drawn road matches where you can actually drive
+const BQ_TRACK_CHECKPOINTS = 5;    // last one doubles as the finish line
+const BQ_CHECKPOINT_CAPTURE = 7;   // how close the car must get to a checkpoint gate to trigger it
+const BQ_CAR_SLOTS = 6;
+const BQ_CAR_COLORS = [0xFF5252,0x3AA0FF,0x00C853,0xFFD54F,0x9C4DFF,0xFF9800];
+// Manual car physics (arrow-key driven) — all easily retunable.
+const BQ_CAR_MAX_SPEED = 11;
+const BQ_CAR_MAX_REVERSE = -5;
+const BQ_CAR_ACCEL = 9;
+const BQ_CAR_BRAKE = 16;
+const BQ_CAR_FRICTION = 4;         // drag when no accelerator/brake is held
+const BQ_CAR_TURN_RATE = 2.0;      // radians/sec while moving, scaled toward 0 near a standstill
+
+// A multi-harmonic radius curve instead of a single sine wobble — reads as a flowing
+// circuit with alternating wide sweeps and tighter sections, not a perfect circle. It's
+// still a pure function of angle-from-center, which GUARANTEES the loop can never
+// self-intersect (every angle maps to exactly one point, no matter how wild the curve) —
+// important since there's no way to visually check a hand-authored track shape here.
+function bqTrackRadius(theta){
+  return BQ_TRACK_RADIUS
+    + Math.sin(theta*2)*38
+    + Math.sin(theta*5 + 1.1)*16
+    + Math.cos(theta*3 + 0.4)*20;
+}
+function bqTrackPoint(theta){
+  const r = bqTrackRadius(theta);
+  return { x: BQ_TRACK_CENTER.x + Math.cos(theta)*r, y: BQ_TRACK_HEIGHT, z: BQ_TRACK_CENTER.z + Math.sin(theta)*r };
+}
+// Matches the exact same yaw convention derived for player look/movement elsewhere in this
+// file (forward = (-sin(yaw), -cos(yaw)) at yaw=0) — reusing already-verified math here
+// rather than re-deriving a second convention for the car.
+function bqTrackYaw(theta){
+  const a = bqTrackPoint(theta), b = bqTrackPoint(theta+0.01);
+  return Math.atan2(-(b.x-a.x), -(b.z-a.z));
+}
+function bqCheckpointTheta(i){ return (i/BQ_TRACK_CHECKPOINTS) * Math.PI*2; } // i: 0..BQ_TRACK_CHECKPOINTS
+function bqCheckpointPoint(i){ return bqTrackPoint(bqCheckpointTheta(i)); }
 
 /* ---------------- BLOCK REGISTRY ---------------- */
 // Index in this array = the numeric id stored in the voxel grid. 0 = air.
@@ -152,7 +201,8 @@ function bqBiome(x,z){ return bqFbm(x*0.02+500, z*0.02+500, BQ_SEED+900, 2); }
       check:s=>!!(s.game && s.game.unlockedRecipes && BQ_RECIPES.filter(r=>r.module).every(r=>s.game.unlockedRecipes.includes(r.id)))},
     {id:"bq_architect",   name:"Master Builder", icon:"🏗️", desc:"Place 200 blocks in BuildQuest", check:s=>!!(s.game && s.game.blocksPlaced>=200)},
     {id:"bq_treasure",    name:"Treasure Hunter",icon:"🗝️", desc:"Find 3 hidden treasure chests in BuildQuest", check:s=>!!(s.game && s.game.chestsFound>=3)},
-    {id:"bq_sharp",       name:"Sharp Mind",     icon:"🧠", desc:"Answer 5 BuildQuest pop quizzes correctly", check:s=>!!(s.game && s.game.popQuizCorrect>=5)}
+    {id:"bq_sharp",       name:"Sharp Mind",     icon:"🧠", desc:"Answer 5 BuildQuest pop quizzes correctly", check:s=>!!(s.game && s.game.popQuizCorrect>=5)},
+    {id:"bq_racer",       name:"Checkered Flag", icon:"🏁", desc:"Finish the BuildQuest sky car race", check:s=>!!(s.game && s.game.racesFinished>=1)}
   );
 })();
 
@@ -166,7 +216,7 @@ const BuildQuest = {
   hemi:null, sun:null,
   rafId:null, dayTime:0.3,
   player:{ x:BQ_SIZE/2, y:BQ_HEIGHT, z:BQ_SIZE/2, vx:0,vy:0,vz:0, yaw:Math.PI, pitch:0, grounded:false, flying:false },
-  keyState:{ w:false,a:false,s:false,d:false,space:false,shift:false },
+  keyState:{ w:false,a:false,s:false,d:false,space:false,shift:false, up:false,down:false,left:false,right:false },
   pointerLocked:false, leftDown:false, targeted:null, mining:null,
   panelOpen:null, chatOpen:false,
   inventory:{}, hotbar:["grass","dirt","stone","sand","log","planks","torch",null,null], selectedSlot:0, unlockedRecipes:[],
@@ -187,6 +237,7 @@ const BuildQuest = {
         await this.loadDiffsFromDB();
         this.spawnPlayer();
         this.buildAllMeshes();
+        this.Race.init();
         this.bindInputOnce();
         this._built = true;
       }catch(err){
@@ -208,6 +259,7 @@ const BuildQuest = {
     this.startLoop();
     this.Net.join();
     this.renderPlayerList();
+    this.Tutorial.maybeStart();
   },
 
   suspend(){
@@ -225,8 +277,18 @@ const BuildQuest = {
     // pause player movement (via the loop's `paused` check) on the next re-entry.
     this.PopQuiz.active = false; this.PopQuiz.q = null;
     this.Quiz.recipe = null; this.Quiz.q = null;
+    const tut = document.getElementById("bq-tutorial"); if(tut) tut.classList.remove("show");
+    // Free up the car slot (local only — Net.leave()'s untrack() above already tells
+    // everyone else this player is gone, which is what actually clears their car for them).
+    if(this.Race.inCar && this.Race.slots[this.Race.mySlotIndex]){
+      const slot = this.Race.slots[this.Race.mySlotIndex];
+      slot.occupiedBy = null; slot.mesh.visible = true;
+    }
+    if(this.Race.myCarMesh) this.Race.myCarMesh.visible = false;
+    this.Race.inCar = false; this.Race.active = false; this.Race.quizActive = false; this.Race.countdownActive = false;
+    ["bq-race-countdown","bq-race-hud","bq-race-prompt"].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.remove("show"); });
     this.Chat.close();
-    this.keyState = {w:false,a:false,s:false,d:false,space:false,shift:false};
+    this.keyState = {w:false,a:false,s:false,d:false,space:false,shift:false,up:false,down:false,left:false,right:false};
     this.leftDown = false;
   },
 
@@ -253,7 +315,15 @@ const BuildQuest = {
         <span class="bq-pill">⚡ <span id="bq-xp">0</span> XP</span>
         <span class="bq-pill">🪙 <span id="bq-coins">0</span></span>
         <button class="bq-pill" style="cursor:pointer;" onclick="BuildQuest.togglePanel('inventory')">🎒 Inventory (E)</button>
+        <button class="bq-pill" style="cursor:pointer;" onclick="BuildQuest.togglePanel('outfit')">🧑 Customize (C)</button>
         <button class="bq-pill" style="cursor:pointer;" onclick="BuildQuest.toggleFly()">🪶 Fly (F): <span id="bq-fly-state">Off</span></button>
+        <button class="bq-pill" style="cursor:pointer;" onclick="BuildQuest.Tutorial.start()">❓ Tutorial</button>
+      </div>
+      <div class="bq-tutorial" id="bq-tutorial">
+        <div class="bq-tut-head"><span id="bq-tut-step">Step 1</span><button class="bq-tut-skip" onclick="BuildQuest.Tutorial.skip()">Skip ✕</button></div>
+        <h3 id="bq-tut-title"></h3>
+        <p id="bq-tut-body"></p>
+        <div class="bq-tut-foot" id="bq-tut-foot"></div>
       </div>
       <div class="bq-players" id="bq-players"><h4>Online</h4><div id="bq-players-list"></div></div>
       <div class="bq-hotbar" id="bq-hotbar"></div>
@@ -267,15 +337,29 @@ const BuildQuest = {
         <div class="keys">
           <span class="bq-key">WASD move</span><span class="bq-key">Mouse look</span><span class="bq-key">Space jump</span><span class="bq-key">Shift sprint</span>
           <span class="bq-key">Left-click mine</span><span class="bq-key">Right-click place</span>
-          <span class="bq-key">1-9 hotbar</span><span class="bq-key">E inventory</span><span class="bq-key">F fly</span><span class="bq-key">T chat</span>
+          <span class="bq-key">1-9 hotbar</span><span class="bq-key">E inventory</span><span class="bq-key">C customize</span><span class="bq-key">F fly</span><span class="bq-key">T chat</span><span class="bq-key">R race car</span><span class="bq-key">Arrow keys drive</span>
         </div>
       </div>
+      <div class="bq-race-prompt" id="bq-race-prompt"></div>
+      <div class="bq-race-countdown" id="bq-race-countdown"></div>
+      <div class="bq-race-hud" id="bq-race-hud"></div>
       <div class="bq-panel" id="bq-panel-inventory">
         <div class="bq-panel-head"><h2>🎒 Inventory &amp; Crafting</h2><button class="btn btn-ghost btn-sm" onclick="BuildQuest.togglePanel('inventory')">✕ Close</button></div>
         <h3 class="small muted" style="margin-bottom:8px;">Resources (click to select for building)</h3>
         <div class="bq-inv-grid" id="bq-inv-grid"></div>
         <h3 class="small muted" style="margin-bottom:8px;">Crafting</h3>
         <div class="bq-recipe-list" id="bq-recipe-list"></div>
+      </div>
+      <div class="bq-panel" id="bq-panel-outfit">
+        <div class="bq-panel-head"><h2>🧑 Customize Your Character</h2><button class="btn btn-ghost btn-sm" onclick="BuildQuest.togglePanel('outfit')">✕ Close</button></div>
+        <div class="bq-outfit-preview" id="bq-outfit-preview"></div>
+        <h3 class="small muted" style="margin-bottom:8px;">Skin tone</h3>
+        <div class="bq-swatch-row" id="bq-skin-row"></div>
+        <h3 class="small muted" style="margin:14px 0 8px;">Shirt color</h3>
+        <div class="bq-swatch-row" id="bq-shirt-row"></div>
+        <h3 class="small muted" style="margin:14px 0 8px;">Pants color</h3>
+        <div class="bq-swatch-row" id="bq-pants-row"></div>
+        <p class="small muted" style="margin-top:14px;">Classmates see this on your character right away.</p>
       </div>
       <div class="bq-quiz-backdrop" id="bq-quiz-backdrop"><div class="bq-quiz-card" id="bq-quiz-card"></div></div>
     `;
@@ -297,7 +381,7 @@ const BuildQuest = {
   initScene(){
     const T = this.THREE;
     this.scene = new T.Scene();
-    this.scene.fog = new T.Fog(0x8fd0ee, 28, 96);
+    this.scene.fog = new T.Fog(0x8fd0ee, 34, 140);
     this.camera = new T.PerspectiveCamera(70, window.innerWidth/Math.max(1,window.innerHeight), 0.05, 200);
     this.renderer = new T.WebGLRenderer({ canvas:this.canvas, antialias:true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
@@ -654,19 +738,25 @@ const BuildQuest = {
       this.rafId = requestAnimationFrame(loop);
       const dt = Math.min(0.1, this.clock.getDelta());
       if(!this.active) return;
-      const paused = !!(this.panelOpen || this.chatOpen || this.PopQuiz.active || this.Quiz.recipe);
-      if(!paused) this.updatePlayer(dt);
+      const paused = !!(this.panelOpen || this.chatOpen || this.PopQuiz.active || this.Quiz.recipe || this.Race.quizActive);
+      const inCarNow = this.Race.inCar; // waiting in a parked car OR actively driving — either way, no on-foot control
+      if(this.Race.active) this.Race.updateDriving(dt);
+      else if(!inCarNow && !paused) this.updatePlayer(dt);
       this.updateTargeted();
-      if(!paused) this.updateMining(dt);
+      if(!paused && !inCarNow) this.updateMining(dt);
       this.updateDayNight(dt);
       this.updateClouds(dt);
       this.updateRemotes(dt);
+      this.Race.updateLobby(dt);
+      this.Tutorial.checkAction();
       this._popQuizTimer = (this._popQuizTimer||0) + dt;
-      if(!paused && this._popQuizTimer >= BQ_POPQUIZ_INTERVAL){ this._popQuizTimer = 0; this.PopQuiz.trigger(); }
+      if(!paused && !inCarNow && this._popQuizTimer >= BQ_POPQUIZ_INTERVAL){ this._popQuizTimer = 0; this.PopQuiz.trigger(); }
       if(this._waterMesh) this._waterMesh.position.y = Math.sin(performance.now()*0.0008)*0.06;
       this.Net.sendMove();
       this.renderer.render(this.scene, this.camera);
-      App.state.game.pos = { x:this.player.x, y:this.player.y, z:this.player.z, yaw:this.player.yaw };
+      // Don't persist the sky-track position as the "resume here" spot — if they log out
+      // mid-race they should come back on solid ground, not fall from the race track.
+      if(!inCarNow) App.state.game.pos = { x:this.player.x, y:this.player.y, z:this.player.z, yaw:this.player.yaw };
     };
     this.rafId = requestAnimationFrame(loop);
   },
@@ -679,6 +769,7 @@ const BuildQuest = {
     let mx=0, mz=0;
     if(this.keyState.w) mz-=1; if(this.keyState.s) mz+=1;
     if(this.keyState.a) mx-=1; if(this.keyState.d) mx+=1;
+    const hasInput = mx!==0 || mz!==0;
     const len = Math.hypot(mx,mz) || 1;
     mx/=len; mz/=len;
     // Camera forward (yaw=0 looks down -Z) is (-sin(yaw), -cos(yaw)); right is (cos(yaw), -sin(yaw)).
@@ -698,6 +789,14 @@ const BuildQuest = {
     this.moveAxis("x", p.vx*dt);
     this.moveAxis("z", p.vz*dt);
     this.moveAxis("y", p.vy*dt);
+
+    // Footstep ticks — a tiny procedural blip every ~1.4 units walked, purely for feel.
+    if(hasInput && p.grounded && !p.flying){
+      this._stepAccum = (this._stepAccum||0) + Math.hypot(p.vx,p.vz)*dt;
+      if(this._stepAccum >= 1.4){ this._stepAccum = 0; Sound.play([[95+Math.random()*25,0.05,"sine"]]); }
+    } else {
+      this._stepAccum = 0;
+    }
 
     this.camera.position.set(p.x, p.y+1.6, p.z);
     this.camera.rotation.order = "YXZ";
@@ -723,6 +822,7 @@ const BuildQuest = {
     for(const [px,py,pz] of pts){
       const id = this.World.getBlock(Math.floor(px), Math.floor(py), Math.floor(pz));
       if(id && BQ_BLOCKS[id].collidable) return true;
+      if(this.Race.solidAt(px,py,pz)) return true;
     }
     return false;
   },
@@ -795,6 +895,7 @@ const BuildQuest = {
     if(!id) return;
     const def = BQ_BLOCKS[id];
     this.World.setBlock(x,y,z,0);
+    Sound.play([[150,0.07,"square"],[110,0.09,"square"]]);
     if(id===BQ_ID.chest) this.openTreasure();
     else if(def.drop) this.addItem(def.drop,1);
     App.state.game.blocksMined = (App.state.game.blocksMined||0)+1;
@@ -824,7 +925,7 @@ const BuildQuest = {
     this._toastTimer = setTimeout(()=> el.classList.remove("show"), 3400);
   },
   placeBlock(){
-    if(!this.active || !this.pointerLocked || !this.targeted) return;
+    if(!this.active || !this.pointerLocked || !this.targeted || this.Race.inCar) return;
     const key = this.hotbar[this.selectedSlot];
     if(!key) return;
     const id = BQ_ID[key];
@@ -885,8 +986,8 @@ const BuildQuest = {
               id = BQ_ID.stone;
               const depth = h-y;
               const r = bqHash(x*3+1, z*7+y*13, BQ_SEED+42);
-              if(depth>4 && depth<10 && r<0.02) id = BQ_ID.coal_ore;
-              else if(depth>=10 && r<0.012) id = BQ_ID.iron_ore;
+              if(depth>3 && depth<12 && r<0.028) id = BQ_ID.coal_ore;
+              else if(depth>=8 && r<0.018) id = BQ_ID.iron_ore;
             }
             if(id) this.data[this.idx(x,y,z)] = id;
           }
@@ -897,7 +998,7 @@ const BuildQuest = {
           const h = this.heightAt(x,z);
           if(h<=BQ_SEA+1 || h>=BQ_SEA+14) continue;
           if(this.data[this.idx(x,h,z)]!==BQ_ID.grass) continue;
-          if(bqHash(x*17+3,z*23+9,BQ_SEED+777) < 0.025) this.placeTree(x,h+1,z);
+          if(bqHash(x*17+3,z*23+9,BQ_SEED+777) < 0.032) this.placeTree(x,h+1,z);
         }
       }
       // Rare hidden treasure chests — an exploration incentive. Deliberately low density
@@ -946,7 +1047,7 @@ const BuildQuest = {
 
   /* ---------------- player save state (App.state.game, via the site's existing Store) ---------------- */
   defaultGameState(){
-    return { inventory:{}, hotbar:["grass","dirt","stone","sand","log","planks","torch",null,null], selectedSlot:0, unlockedRecipes:[], blocksPlaced:0, blocksMined:0, itemsCrafted:0, pos:null };
+    return { inventory:{}, hotbar:["grass","dirt","stone","sand","log","planks","torch",null,null], selectedSlot:0, unlockedRecipes:[], blocksPlaced:0, blocksMined:0, itemsCrafted:0, pos:null, outfit:null, tutorialDone:false, racesFinished:0 };
   },
   loadPlayerState(){
     const g = App.state.game = Object.assign(this.defaultGameState(), App.state.game||{});
@@ -1000,6 +1101,7 @@ const BuildQuest = {
     }).join("");
   },
   togglePanel(name){
+    if(this.Race.inCar) return; // no menus while waiting in/driving the race car
     const wasOpen = this.panelOpen===name;
     this.hideAllPanels();
     if(wasOpen){ this.showPointerHint(!this.pointerLocked); return; }
@@ -1008,6 +1110,7 @@ const BuildQuest = {
     el.classList.add("show");
     this.panelOpen = name;
     if(name==="inventory") this.renderInventoryPanel();
+    if(name==="outfit") this.Outfit.render();
     if(this.canvas && document.pointerLockElement===this.canvas) document.exitPointerLock();
     this.showPointerHint(false);
   },
@@ -1035,21 +1138,30 @@ const BuildQuest = {
       const needTxt = Object.keys(r.need).map(k=>`${r.need[k]}× ${bqItemInfo(k).name}`).join(", ");
       const badge = locked ? `<span class="cert-chip c-${mod.color}">🔒 ${escHtml(mod.icon)} ${escHtml(mod.name)}</span>` : "";
       const btnLabel = locked ? "Unlock" : "Craft";
+      // Unlocking is the LEARNING step — it must always be available regardless of
+      // resources on hand, or a resource-poor student could never even attempt the
+      // quiz. Only actually crafting an already-unlocked item needs materials.
+      const disabled = (!locked && !have) ? "disabled" : "";
       return `<div class="bq-recipe">
         <div class="sw" style="background:${bqItemColor(r.out)}"></div>
         <div class="info">
           <div class="nm">${escHtml(r.name)} ${badge}</div>
           <div class="need">Needs: ${needTxt} → +${r.qty}</div>
         </div>
-        <button class="btn btn-sm ${locked?'btn-primary':'btn-green'}" ${!have?"disabled":""} onclick="BuildQuest.craft('${r.id}')">${btnLabel}</button>
+        <button class="btn btn-sm ${locked?'btn-primary':'btn-green'}" ${disabled} onclick="BuildQuest.craft('${r.id}')">${btnLabel}</button>
       </div>`;
     }).join("");
   },
   craft(recipeId){
     const r = bqRecipe(recipeId);
-    if(!r || !this.hasItems(r.need)) return;
+    if(!r) return;
     const locked = !!(r.module && !this.unlockedRecipes.includes(r.id));
     if(locked){ this.Quiz.open(r); return; }
+    if(!this.hasItems(r.need)){
+      const needTxt = Object.keys(r.need).map(k=>`${r.need[k]}× ${bqItemInfo(k).name}`).join(", ");
+      this.toast(`🧰 Not enough resources yet — you'll need ${needTxt}.`);
+      return;
+    }
     Object.keys(r.need).forEach(k=> this.inventory[k] -= r.need[k]);
     this.addItem(r.out, r.qty);
     App.state.game.itemsCrafted = (App.state.game.itemsCrafted||0)+1;
@@ -1134,8 +1246,10 @@ const BuildQuest = {
           <button class="btn btn-primary cert-next" onclick="BuildQuest.Quiz.finish(true)">Craft it! →</button></div>`;
       } else {
         Sound.wrong();
+        const lesson = this.q.hint1 || (this.q.explanation||"").split(". ")[0] || "Have another look at this topic, then try again.";
         exp.innerHTML = `<div class="cert-exp-card no"><div class="cert-exp-head">❌ Not quite — the answer is <b>${escHtml(this.q.answer)}</b></div>
           <div class="cert-exp-body">${escHtml(this.q.explanation||"")}</div>
+          <div class="cert-exp-key">🔑 Remember this for next time: ${escHtml(lesson)}</div>
           <button class="btn btn-primary cert-next" onclick="BuildQuest.Quiz.next()">Try another question →</button></div>`;
       }
       BuildQuest.scheduleSave();
@@ -1288,6 +1402,543 @@ const BuildQuest = {
     }
   },
 
+  /* ---------------- guided tutorial ----------------
+     A small non-blocking banner (NOT a full-screen modal) — several steps require the
+     player to actually do something in the world (mine/place a block), which they
+     couldn't do if the tutorial covered the screen. Auto-starts once, ever, on first
+     entry; replayable any time via the "❓ Tutorial" HUD button. */
+  Tutorial: {
+    steps: [
+      { title:"👋 Welcome to BuildQuest!", body:"A shared 3D world where you mine, build, and level up your Arduino knowledge with your classmates. Let's learn the basics." },
+      { title:"🚶 Move &amp; Look Around", body:"Use <b>W A S D</b> to move and your <b>mouse</b> to look around. Give it a try!" },
+      { title:"⛏️ Mine a Block", body:"Hold <b>left-click</b> on a block to break it into your inventory.", action:"mine" },
+      { title:"🧱 Place a Block", body:"<b>Right-click</b> to place the block you're holding.", action:"place" },
+      { title:"🎒 Inventory &amp; Crafting", body:"Press <b>E</b> anytime to see your resources and craft new items — like turning Wood Logs into Planks." },
+      { title:"🔒 Unlock Engineering Blocks", body:"Circuit, Sensor, Motor, Display, Robot and Arm blocks need a real Arduino question answered correctly first — building here also drills your syllabus." },
+      { title:"👥 Play Together", body:"Press <b>T</b> to chat with classmates in the world, and <b>C</b> anytime to customize how your character looks to others." },
+      { title:"🗝️ Adventure Awaits", body:"A surprise <b>pop quiz</b> arrives every few minutes, and rare hidden <b>treasure chests</b> are scattered around the island. Have fun exploring!" },
+    ],
+    index:0, active:false, _startMined:0, _startPlaced:0,
+    maybeStart(){
+      if(App.state.game && App.state.game.tutorialDone) return;
+      this.start();
+    },
+    start(){
+      this.index = 0; this.active = true;
+      this.render();
+      const el = document.getElementById("bq-tutorial"); if(el) el.classList.add("show");
+    },
+    render(){
+      const step = this.steps[this.index];
+      if(!step) return;
+      this._startMined = (App.state.game && App.state.game.blocksMined) || 0;
+      this._startPlaced = (App.state.game && App.state.game.blocksPlaced) || 0;
+      const last = this.index===this.steps.length-1;
+      document.getElementById("bq-tut-step").textContent = `Step ${this.index+1} of ${this.steps.length}`;
+      document.getElementById("bq-tut-title").innerHTML = step.title;
+      document.getElementById("bq-tut-body").innerHTML = step.body;
+      const foot = document.getElementById("bq-tut-foot");
+      foot.innerHTML = step.action
+        ? `<span class="bq-tut-hint">👉 Do it in the world to continue automatically…</span>`
+        : `<button class="btn btn-primary btn-sm" onclick="BuildQuest.Tutorial.next()">${last?"Start exploring! 🚀":"Next →"}</button>`;
+    },
+    checkAction(){
+      if(!this.active) return;
+      const step = this.steps[this.index];
+      if(!step || !step.action) return;
+      const g = App.state.game || {};
+      if(step.action==="mine" && (g.blocksMined||0) > this._startMined) this.next();
+      else if(step.action==="place" && (g.blocksPlaced||0) > this._startPlaced) this.next();
+    },
+    next(){
+      this.index++;
+      if(this.index>=this.steps.length){ this.finish(); return; }
+      this.render();
+    },
+    skip(){ this.finish(); },
+    finish(){
+      this.active = false;
+      const el = document.getElementById("bq-tutorial"); if(el) el.classList.remove("show");
+      if(App.state.game){ App.state.game.tutorialDone = true; BuildQuest.scheduleSave(); }
+    }
+  },
+
+  /* ---------------- outfit customization ----------------
+     Purely cosmetic, client-side color choices — no new gameplay stats. Persisted like
+     everything else in App.state.game, and re-broadcast via Supabase presence so
+     classmates see the change on your character live, without a page reload. */
+  Outfit: {
+    SKINS:  [0xffdbac,0xf1c27d,0xe0ac69,0xc68642,0x8d5524,0x5c3a21],
+    COLORS: [0xFF5252,0xFF9800,0xFFD54F,0x00C853,0x00BCD4,0x3AA0FF,0x9C4DFF,0xFF5FA2,0x455A64,0xffffff],
+    default(){ return { skin:this.SKINS[1], shirt:this.COLORS[5], pants:0x37474f }; },
+    hex(c){ return "#"+c.toString(16).padStart(6,"0"); },
+    current(){ return Object.assign(this.default(), (App.state.game && App.state.game.outfit) || {}); },
+    render(){
+      const o = this.current();
+      const row = (list,slot,current)=> list.map(c=>
+        `<button class="bq-swatch${c===current?' on':''}" style="background:${this.hex(c)}" onclick="BuildQuest.Outfit.pick('${slot}',${c})" aria-label="${slot} color"></button>`
+      ).join("");
+      const skinRow = document.getElementById("bq-skin-row"); if(skinRow) skinRow.innerHTML = row(this.SKINS,"skin",o.skin);
+      const shirtRow = document.getElementById("bq-shirt-row"); if(shirtRow) shirtRow.innerHTML = row(this.COLORS,"shirt",o.shirt);
+      const pantsRow = document.getElementById("bq-pants-row"); if(pantsRow) pantsRow.innerHTML = row(this.COLORS,"pants",o.pants);
+      const preview = document.getElementById("bq-outfit-preview");
+      if(preview) preview.innerHTML = `
+        <div class="bq-doll-head" style="background:${this.hex(o.skin)}"></div>
+        <div class="bq-doll-shirt" style="background:${this.hex(o.shirt)}"></div>
+        <div class="bq-doll-pants" style="background:${this.hex(o.pants)}"></div>`;
+    },
+    pick(slot, color){
+      const o = this.current();
+      o[slot] = color;
+      App.state.game.outfit = o;
+      this.render();
+      BuildQuest.scheduleSave();
+      BuildQuest.Net.updatePresence();
+    }
+  },
+
+  /* ---------------- car race mini-game ----------------
+     A shared sky-track loop with parked cars at a starting line. Any player can walk/fly
+     up (there's a beacon marking it from the ground) and press R near an empty car to
+     "get in." The race starts ~3s after the last car-less player near the start line gets
+     in a car — evaluated independently by every client from the SAME synced inputs
+     (Supabase presence for who's in a car, the existing move-broadcast for who's nearby),
+     so every client converges on starting at roughly the same moment without needing an
+     explicit "go" message. Once driving, the car is rail-guided along the track (the
+     player doesn't steer) so the whole activity stays focused on the checkpoints, not on
+     driving skill. Each checkpoint pulls a random MCQ from the real L2 question bank,
+     options reshuffled every time: right answer keeps going, wrong sends the car back to
+     the previous checkpoint. Reuses the same #bq-quiz-backdrop/#bq-quiz-card DOM as the
+     other two quiz types — only one of the three can ever be showing at once anyway. */
+  Race: {
+    slots:[], nearSlot:-1, inCar:false, mySlotIndex:-1,
+    countdownActive:false, countdownVal:0, countdownAcc:0,
+    active:false, checkpointIdx:0,
+    carX:0, carZ:0, carHeading:0, carSpeed:0, myCarMesh:null,
+    quizActive:false, q:null, displayOpts:[], correctIdx:-1,
+    startTime:0, questionsAnswered:0, questionsCorrect:0,
+
+    init(){
+      const T = BuildQuest.THREE;
+      this.trackGroup = new T.Group();
+      this.buildTrack();
+      this.buildStartArea();
+      this.buildRoad();
+      BuildQuest.scene.add(this.trackGroup);
+    },
+    // A real, walkable ramp from ground level (right at spawn) up to the starting
+    // platform — not just a decorative beam. The track/road live entirely outside the
+    // voxel World grid (they're way above BQ_HEIGHT), so ordinary block collision can't
+    // see them; solidAt() below is a small supplementary collision check for this ramp
+    // and the platform, wired into the existing collides() function.
+    buildRoad(){
+      const T = BuildQuest.THREE;
+      const cx = Math.floor(BQ_TRACK_CENTER.x), cz = Math.floor(BQ_TRACK_CENTER.z);
+      const groundY = BuildQuest.World.heightAt(cx, cz) + 1;
+      const p0 = bqTrackPoint(0);
+      this.roadStart = { x: BQ_TRACK_CENTER.x, y: groundY, z: BQ_TRACK_CENTER.z };
+      this.roadEnd = { x: p0.x, y: p0.y - 0.2, z: p0.z };
+      this.roadHalfWidth = 3.2;
+
+      const dx = this.roadEnd.x-this.roadStart.x, dy = this.roadEnd.y-this.roadStart.y, dz = this.roadEnd.z-this.roadStart.z;
+      const dist3d = Math.hypot(dx,dy,dz);
+      const steps = Math.max(1, Math.ceil(dist3d/2.5));
+      const yaw = Math.atan2(-dx, -dz); // same forward->yaw convention used everywhere else
+      const roadMat = new T.MeshStandardMaterial({ color:0x37474f, roughness:0.9 });
+      const segGeo = new T.BoxGeometry(this.roadHalfWidth*2, 0.4, 2.6);
+      const mesh = new T.InstancedMesh(segGeo, roadMat, steps+1);
+      const dummy = new T.Object3D();
+      for(let i=0;i<=steps;i++){
+        const t = i/steps;
+        dummy.position.set(this.roadStart.x+dx*t, this.roadStart.y+dy*t, this.roadStart.z+dz*t);
+        dummy.rotation.set(0, yaw, 0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.receiveShadow = true;
+      this.trackGroup.add(mesh);
+
+      // Low guard rails along both edges so it reads clearly as a road, not a runway.
+      const railMat = new T.MeshStandardMaterial({ color:0xffca28, roughness:0.6 });
+      const railGeo = new T.BoxGeometry(0.3,0.7,2.6);
+      const railMesh = new T.InstancedMesh(railGeo, railMat, (steps+1)*2);
+      const perpX = Math.cos(yaw), perpZ = -Math.sin(yaw);
+      let ri=0;
+      for(let i=0;i<=steps;i++){
+        const t = i/steps;
+        const bx=this.roadStart.x+dx*t, by=this.roadStart.y+dy*t, bz=this.roadStart.z+dz*t;
+        [-1,1].forEach(side=>{
+          dummy.position.set(bx+perpX*this.roadHalfWidth*side, by+0.55, bz+perpZ*this.roadHalfWidth*side);
+          dummy.rotation.set(0, yaw, 0);
+          dummy.updateMatrix();
+          railMesh.setMatrixAt(ri++, dummy.matrix);
+        });
+      }
+      railMesh.instanceMatrix.needsUpdate = true;
+      this.trackGroup.add(railMesh);
+    },
+    // Supplementary collision for the road ramp AND the circular starting platform —
+    // both live outside the voxel World grid (way above BQ_HEIGHT), so ordinary block
+    // collision can't see them. Checked as an extra condition per corner point inside
+    // the existing collides() alongside the normal voxel check.
+    solidAt(x,y,z){
+      if(!this.roadStart) return false;
+      // the circular platform
+      const pc = this.platformCenter;
+      if(Math.hypot(x-pc.x, z-pc.z) <= this.platformRadius && y<=pc.y && y>pc.y-1.2) return true;
+      // the ramp connecting it to the ground
+      const s=this.roadStart, e=this.roadEnd;
+      const dx=e.x-s.x, dz=e.z-s.z;
+      const lenSq = dx*dx+dz*dz;
+      let t = lenSq>0 ? ((x-s.x)*dx+(z-s.z)*dz)/lenSq : 0;
+      t = Math.max(0, Math.min(1, t));
+      const px = s.x+dx*t, pz = s.z+dz*t;
+      if(Math.hypot(x-px, z-pz) <= this.roadHalfWidth){
+        const roadY = s.y + (e.y-s.y)*t;
+        if(y<=roadY && y>roadY-1.2) return true;
+      }
+      return false;
+    },
+    buildTrack(){
+      const T = BuildQuest.THREE;
+      const segMat = new T.MeshStandardMaterial({ color:0x2b2f33, roughness:0.85 });
+      const segGeo = new T.BoxGeometry(BQ_TRACK_WIDTH, 0.4, 2.4);
+      const steps = 240;
+      const mesh = new T.InstancedMesh(segGeo, segMat, steps);
+      const dummy = new T.Object3D();
+      for(let i=0;i<steps;i++){
+        const theta = (i/steps)*Math.PI*2;
+        const p = bqTrackPoint(theta);
+        dummy.position.set(p.x,p.y,p.z);
+        dummy.rotation.set(0, bqTrackYaw(theta), 0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.receiveShadow = true;
+      this.trackGroup.add(mesh);
+
+      // Checkpoint gates — two bright pillars flanking the track (last one green = finish).
+      for(let i=1;i<=BQ_TRACK_CHECKPOINTS;i++){
+        const theta = bqCheckpointTheta(i);
+        const p = bqTrackPoint(theta);
+        const yaw = bqTrackYaw(theta);
+        const isFinish = i===BQ_TRACK_CHECKPOINTS;
+        const mat = new T.MeshBasicMaterial({ color:isFinish?0x00e676:0xffd54f });
+        const perpX = Math.cos(yaw), perpZ = -Math.sin(yaw);
+        [-1,1].forEach(side=>{
+          const pillar = new T.Mesh(new T.BoxGeometry(0.4,4,0.4), mat);
+          pillar.position.set(p.x+perpX*BQ_TRACK_WIDTH*0.8*side, p.y+2, p.z+perpZ*BQ_TRACK_WIDTH*0.8*side);
+          this.trackGroup.add(pillar);
+        });
+      }
+    },
+    buildStartArea(){
+      const T = BuildQuest.THREE;
+      const p0 = bqTrackPoint(0);
+      // A beacon from the ground straight up to the start line, so it's findable by flying.
+      const beacon = new T.Mesh(new T.CylinderGeometry(0.15,0.15,BQ_TRACK_HEIGHT,6), new T.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.45 }));
+      beacon.position.set(p0.x, BQ_TRACK_HEIGHT/2, p0.z);
+      this.trackGroup.add(beacon);
+
+      const platform = new T.Mesh(new T.CylinderGeometry(10,10,0.6,24), new T.MeshStandardMaterial({ color:0x455a64 }));
+      platform.position.set(p0.x, BQ_TRACK_HEIGHT-0.3, p0.z);
+      this.trackGroup.add(platform);
+      this.platformCenter = { x:p0.x, y:BQ_TRACK_HEIGHT, z:p0.z };
+      this.platformRadius = 10.5; // slightly larger than the visual disc so its edge isn't walkable-through
+
+      this.slots = [];
+      for(let i=0;i<BQ_CAR_SLOTS;i++){
+        const angle = (i/BQ_CAR_SLOTS)*Math.PI*2;
+        const x = p0.x + Math.cos(angle)*6.5, z = p0.z + Math.sin(angle)*6.5;
+        const color = BQ_CAR_COLORS[i%BQ_CAR_COLORS.length];
+        const car = BuildQuest.makeCarModel(color);
+        car.position.set(x, BQ_TRACK_HEIGHT, z);
+        car.rotation.y = angle;
+        this.trackGroup.add(car);
+        this.slots.push({ mesh:car, x, y:BQ_TRACK_HEIGHT, z, occupiedBy:null, color });
+      }
+    },
+
+    /* ---- lobby: proximity prompt + shared countdown ---- */
+    updateLobby(dt){
+      if(!this.inCar){
+        let best=-1, bestDist=4;
+        this.slots.forEach((s,i)=>{
+          if(s.occupiedBy) return;
+          const d = Math.hypot(BuildQuest.player.x-s.x, BuildQuest.player.y-s.y, BuildQuest.player.z-s.z);
+          if(d<bestDist){ bestDist=d; best=i; }
+        });
+        this.nearSlot = best;
+      } else {
+        this.nearSlot = -1;
+      }
+      this.updatePrompt();
+      // While waiting in a parked car (in it, but not yet driving), snap the view to the
+      // car each frame — otherwise the camera is just left wherever it was the instant
+      // before entering, since updatePlayer()/updateDriving() both skip this state.
+      if(this.inCar && !this.active){
+        const slot = this.slots[this.mySlotIndex];
+        if(slot){
+          BuildQuest.camera.position.set(slot.x, slot.y+0.9+0.6, slot.z);
+          BuildQuest.camera.rotation.order = "YXZ";
+          BuildQuest.camera.rotation.y = 0; BuildQuest.camera.rotation.x = 0;
+        }
+      }
+      if(this.active || this.quizActive) return; // already racing/answering — lobby logic irrelevant
+
+      const anyoneInCar = this.inCar || this.slots.some(s=>s.occupiedBy);
+      const waiting = this.anyoneWaitingNotInCar();
+      if(anyoneInCar && !waiting){
+        if(!this.countdownActive){ this.countdownActive=true; this.countdownVal=3; this.countdownAcc=0; this.showCountdown(); }
+        this.countdownAcc += dt;
+        if(this.countdownAcc>=1){
+          this.countdownAcc=0; this.countdownVal--;
+          this.showCountdown();
+          if(this.countdownVal<=0){ this.countdownActive=false; this.hideCountdown(); if(this.inCar) this.beginDriving(); }
+        }
+      } else if(this.countdownActive){
+        this.countdownActive=false; this.hideCountdown();
+      }
+    },
+    // "Is anyone standing near the start line who hasn't got in a car yet?" — computed
+    // from the same move-broadcast + presence data every client already has, so every
+    // client reaches the same answer at roughly the same time without extra messaging.
+    anyoneWaitingNotInCar(){
+      const p0 = bqTrackPoint(0);
+      const near = (x,y,z)=> Math.hypot(x-p0.x,y-p0.y,z-p0.z) < 16;
+      if(!this.inCar && near(BuildQuest.player.x,BuildQuest.player.y,BuildQuest.player.z)) return true;
+      let found=false;
+      BuildQuest.Net.remotes.forEach(r=>{
+        if(found) return;
+        const inCar = typeof r.carSlot==="number" && r.carSlot>=0;
+        if(!inCar && near(r.target.x,r.target.y,r.target.z)) found=true;
+      });
+      return found;
+    },
+    updatePrompt(){
+      const el = document.getElementById("bq-race-prompt");
+      if(!el) return;
+      if(this.nearSlot>=0){ el.textContent = "Press R to get in the car"; el.classList.add("show"); }
+      else if(this.inCar && !this.active){ el.textContent = "Waiting for everyone at the start line…"; el.classList.add("show"); }
+      else el.classList.remove("show");
+    },
+    showCountdown(){
+      const el = document.getElementById("bq-race-countdown");
+      if(!el) return;
+      el.textContent = this.countdownVal>0 ? this.countdownVal : "GO!";
+      el.classList.add("show");
+      if(this.countdownVal<=0) setTimeout(()=>el.classList.remove("show"), 700);
+    },
+    hideCountdown(){ const el=document.getElementById("bq-race-countdown"); if(el) el.classList.remove("show"); },
+
+    enterCar(){
+      if(this.nearSlot<0 || this.inCar) return;
+      const slot = this.slots[this.nearSlot];
+      slot.occupiedBy = Auth.profile ? Auth.profile.id : "me";
+      slot.mesh.visible = false; // the parked model is hidden — myCarMesh (below) represents you instead
+      this.inCar = true; this.mySlotIndex = this.nearSlot;
+      this.checkpointIdx = 0;
+      this.questionsAnswered = 0; this.questionsCorrect = 0;
+      BuildQuest.player.x = slot.x; BuildQuest.player.y = slot.y+0.9; BuildQuest.player.z = slot.z;
+      BuildQuest.player.vx=BuildQuest.player.vy=BuildQuest.player.vz=0;
+      BuildQuest.Net.updatePresence();
+      Sound.click();
+      this.updatePrompt();
+    },
+    exitCar(){
+      if(!this.inCar) return;
+      const slot = this.slots[this.mySlotIndex];
+      if(slot){ slot.occupiedBy=null; slot.mesh.visible=true; }
+      this.inCar = false; this.active = false; this.mySlotIndex=-1;
+      this.countdownActive = false; this.hideCountdown();
+      if(this.myCarMesh) this.myCarMesh.visible = false;
+      const hud = document.getElementById("bq-race-hud"); if(hud) hud.classList.remove("show");
+      BuildQuest.Net.updatePresence();
+      this.updatePrompt();
+    },
+    beginDriving(){
+      this.active = true; this.startTime = performance.now();
+      this.carSpeed = 0;
+      const start = bqTrackPoint(0);
+      this.carX = start.x; this.carZ = start.z;
+      this.carHeading = bqTrackYaw(0);
+      if(!this.myCarMesh){
+        const slot = this.slots[this.mySlotIndex];
+        this.myCarMesh = BuildQuest.makeCarModel(slot?slot.color:undefined);
+        BuildQuest.scene.add(this.myCarMesh);
+      }
+      this.myCarMesh.visible = true;
+      document.getElementById("bq-race-hud").classList.add("show");
+      this.renderHud();
+    },
+    // Real arcade car physics: Up/Down accelerate & brake, Left/Right steer (only while
+    // moving — a stationary car can't turn, same as a real one). The track boundary is a
+    // hard-ish barrier: driving off it doesn't teleport you, it just kills your speed, so
+    // recovering is a simple matter of steering back on rather than a run-ending mistake.
+    updateDriving(dt){
+      if(this.quizActive) return; // paused at a checkpoint
+      const k = BuildQuest.keyState;
+      if(k.up) this.carSpeed += BQ_CAR_ACCEL*dt;
+      else if(k.down) this.carSpeed -= BQ_CAR_BRAKE*dt;
+      else if(this.carSpeed>0) this.carSpeed = Math.max(0, this.carSpeed-BQ_CAR_FRICTION*dt);
+      else if(this.carSpeed<0) this.carSpeed = Math.min(0, this.carSpeed+BQ_CAR_FRICTION*dt);
+      this.carSpeed = Math.max(BQ_CAR_MAX_REVERSE, Math.min(BQ_CAR_MAX_SPEED, this.carSpeed));
+
+      if(Math.abs(this.carSpeed) > 0.15){
+        // If left/right ever feel swapped in testing, flip the sign of `steer` here.
+        const steer = (k.left?1:0) - (k.right?1:0);
+        this.carHeading += steer * BQ_CAR_TURN_RATE * dt * Math.sign(this.carSpeed);
+      }
+
+      const fx = -Math.sin(this.carHeading), fz = -Math.cos(this.carHeading);
+      const nx = this.carX + fx*this.carSpeed*dt;
+      const nz = this.carZ + fz*this.carSpeed*dt;
+      if(this.isOnTrack(nx,nz)){ this.carX=nx; this.carZ=nz; }
+      else { this.carSpeed *= 0.35; } // bumped the edge — bleed speed, don't move through it
+
+      const cp = bqCheckpointPoint(this.checkpointIdx+1);
+      if(Math.hypot(this.carX-cp.x, this.carZ-cp.z) < BQ_CHECKPOINT_CAPTURE) this.hitCheckpoint();
+
+      // Third-person chase camera — first-person would make judging the track edges
+      // while actually steering nearly impossible.
+      const camDist=6, camHeight=3.2;
+      BuildQuest.camera.position.set(this.carX-fx*camDist, BQ_TRACK_HEIGHT+camHeight, this.carZ-fz*camDist);
+      BuildQuest.camera.lookAt(this.carX+fx*4, BQ_TRACK_HEIGHT+0.6, this.carZ+fz*4);
+
+      BuildQuest.player.x = this.carX; BuildQuest.player.y = BQ_TRACK_HEIGHT; BuildQuest.player.z = this.carZ;
+      BuildQuest.player.yaw = this.carHeading;
+
+      if(this.myCarMesh){
+        this.myCarMesh.position.set(this.carX, BQ_TRACK_HEIGHT, this.carZ);
+        this.myCarMesh.rotation.y = this.carHeading;
+      }
+      this.renderHud();
+    },
+    // Is (x,z) still on drivable ground — either the starting platform, or within the
+    // track's corridor width of the ideal centerline at that angle from the track center?
+    isOnTrack(x,z){
+      if(this.platformCenter && Math.hypot(x-this.platformCenter.x, z-this.platformCenter.z) <= this.platformRadius) return true;
+      const dx=x-BQ_TRACK_CENTER.x, dz=z-BQ_TRACK_CENTER.z;
+      const theta = Math.atan2(dz,dx);
+      const rho = Math.hypot(dx,dz);
+      return Math.abs(rho - bqTrackRadius(theta)) <= BQ_TRACK_HALF_WIDTH;
+    },
+
+    hitCheckpoint(){
+      this.quizActive = true;
+      const all = (App.classData.l2 && App.classData.l2.questions) || [];
+      if(!all.length){ this.quizActive=false; this.advanceAfterCheckpoint(); return; }
+      this.q = all[Math.floor(Math.random()*all.length)];
+      const opts = this.q.options.map(o=>({o, correct:o===this.q.answer})).sort(()=>Math.random()-0.5);
+      this.displayOpts = opts;
+      this.correctIdx = opts.findIndex(x=>x.correct);
+      this.renderQuiz();
+      document.getElementById("bq-quiz-backdrop").classList.add("show");
+    },
+    renderQuiz(){
+      const isFinish = (this.checkpointIdx+1)===BQ_TRACK_CHECKPOINTS;
+      const card = document.getElementById("bq-quiz-card");
+      card.innerHTML = `
+        <div class="bq-quiz-head"><h2>🏁 Checkpoint ${this.checkpointIdx+1}/${BQ_TRACK_CHECKPOINTS}${isFinish?" — Finish Line!":""}</h2></div>
+        <div class="cert-meta">
+          <span class="cert-chip">${escHtml(this.q.topic)}</span>
+          <span class="cert-chip diff-${String(this.q.difficulty).toLowerCase()}">${escHtml(this.q.difficulty)}</span>
+        </div>
+        <div class="cert-body">
+          <div class="cert-stage" id="bq-quiz-stage"></div>
+          <div class="cert-qcol">
+            <div class="cert-qtext ${this.q.type==='CodeReading'?'code':''}">${escHtml(this.q.question)}</div>
+            ${this.q.formula?`<div class="cert-formula">🧮 ${escHtml(this.q.formula)}</div>`:""}
+            <div class="cert-options" id="bq-quiz-options">
+              ${this.displayOpts.map((x,i)=>`<button class="cert-opt" data-i="${i}" onclick="BuildQuest.Race.answer(${i})"><span class="cert-opt-k">${String.fromCharCode(65+i)}</span><span>${escHtml(x.o)}</span></button>`).join("")}
+            </div>
+            <div class="cert-explain" id="bq-quiz-explain"></div>
+          </div>
+        </div>`;
+      const stage = document.getElementById("bq-quiz-stage");
+      if(stage){
+        if(typeof renderAnimation==="function"){ try{ renderAnimation(this.q.animation, stage, {}); }catch(e){ stage.innerHTML = `<div class="cert-stage-ph">🏎️</div>`; } }
+        else stage.innerHTML = `<div class="cert-stage-ph">🏎️</div>`;
+      }
+    },
+    answer(i){
+      const correct = i===this.correctIdx;
+      document.querySelectorAll("#bq-quiz-options .cert-opt").forEach((b,bi)=>{
+        b.disabled = true;
+        if(bi===this.correctIdx) b.classList.add("correct");
+        else if(bi===i) b.classList.add("wrong");
+      });
+      this.questionsAnswered++;
+      App.state.totalAnswered = (App.state.totalAnswered||0)+1;
+      const exp = document.getElementById("bq-quiz-explain");
+      if(correct){
+        this.questionsCorrect++;
+        Sound.correct();
+        App.state.totalCorrect = (App.state.totalCorrect||0)+1;
+        App.state.xp += 12; App.state.coins += 4;
+        App.checkAchievements();
+        BuildQuest.renderHUDStats();
+        exp.innerHTML = `<div class="cert-exp-card ok"><div class="cert-exp-head">✅ Correct! +12 XP — full speed ahead!</div>
+          <div class="cert-exp-body">${escHtml(this.q.explanation||"")}</div>
+          <button class="btn btn-primary cert-next" onclick="BuildQuest.Race.continueAfterQuiz(true)">Drive on! →</button></div>`;
+      } else {
+        Sound.wrong();
+        App.state.xp = Math.max(0, App.state.xp - 5);
+        BuildQuest.renderHUDStats();
+        const lesson = this.q.hint1 || (this.q.explanation||"").split(". ")[0] || "Review this before the next checkpoint.";
+        exp.innerHTML = `<div class="cert-exp-card no"><div class="cert-exp-head">❌ -5 XP — sent back to the last checkpoint!</div>
+          <div class="cert-exp-body">${escHtml(this.q.explanation||"")}</div>
+          <div class="cert-exp-key">🔑 Remember this for next time: ${escHtml(lesson)}</div>
+          <button class="btn btn-primary cert-next" onclick="BuildQuest.Race.continueAfterQuiz(false)">Back on the road →</button></div>`;
+      }
+      BuildQuest.scheduleSave();
+    },
+    continueAfterQuiz(correct){
+      document.getElementById("bq-quiz-backdrop").classList.remove("show");
+      this.quizActive = false;
+      if(correct){
+        this.advanceAfterCheckpoint();
+      } else {
+        // Sent back to the previous checkpoint (checkpoint 0 = the start line), stopped
+        // and facing back along the track rather than left wherever momentum carried it.
+        const back = bqCheckpointPoint(this.checkpointIdx);
+        this.carX = back.x; this.carZ = back.z;
+        this.carHeading = bqTrackYaw(bqCheckpointTheta(this.checkpointIdx));
+        this.carSpeed = 0;
+      }
+    },
+    advanceAfterCheckpoint(){
+      this.checkpointIdx++;
+      if(this.checkpointIdx>=BQ_TRACK_CHECKPOINTS) this.finishRace();
+    },
+    finishRace(){
+      this.active = false;
+      const secs = Math.round((performance.now()-this.startTime)/1000);
+      const mins = Math.floor(secs/60), rem = secs%60;
+      App.state.xp += 40; App.state.coins += 20;
+      App.state.game.racesFinished = (App.state.game.racesFinished||0)+1;
+      App.checkAchievements();
+      App.celebrate();
+      BuildQuest.renderHUDStats();
+      BuildQuest.toast(`🏁 Finished in ${mins}:${String(rem).padStart(2,"0")}! ${this.questionsCorrect}/${this.questionsAnswered} correct. +40 XP, +20 coins.`);
+      const hud = document.getElementById("bq-race-hud"); if(hud) hud.classList.remove("show");
+      this.exitCar(); // also hides myCarMesh
+      BuildQuest.scheduleSave();
+    },
+    renderHud(){
+      const el = document.getElementById("bq-race-hud");
+      if(!el) return;
+      const pct = Math.max(0, Math.min(100, (this.checkpointIdx/BQ_TRACK_CHECKPOINTS)*100));
+      const speedPct = Math.max(0, Math.min(100, (this.carSpeed/BQ_CAR_MAX_SPEED)*100));
+      el.innerHTML = `
+        <div class="bq-race-lbl">🏎️ Checkpoint ${this.checkpointIdx+1}/${BQ_TRACK_CHECKPOINTS}</div>
+        <div class="bq-race-bar"><div class="bq-race-bar-fill" style="width:${pct}%"></div></div>
+        <div class="bq-race-speed"><div class="bq-race-speed-fill" style="width:${speedPct}%"></div></div>`;
+    },
+  },
+
   /* ---------------- multiplayer (Supabase Realtime: presence + broadcast) ---------------- */
   Net: {
     channel:null, remotes:new Map(), lastSend:0,
@@ -1300,11 +1951,21 @@ const BuildQuest = {
       ch.on("broadcast", {event:"block"}, ({payload})=> this.onRemoteBlock(payload));
       ch.on("broadcast", {event:"chat"}, ({payload})=> BuildQuest.Chat.receive(payload));
       ch.subscribe(async status=>{
-        if(status==="SUBSCRIBED"){
-          try{ await ch.track({ name:Auth.profile.name, color:bqColorForId(Auth.profile.id) }); }catch(e){}
-        }
+        if(status==="SUBSCRIBED") this.updatePresence();
       });
       this.channel = ch;
+    },
+    // Re-broadcasts this player's presence metadata (name/color/outfit/car-race state).
+    // Called on join, on outfit change, and on entering/exiting a race car — every
+    // classmate's client independently applies the update via updateRemoteMeta().
+    async updatePresence(){
+      if(!this.channel || !Auth.profile) return;
+      const outfit = (App.state.game && App.state.game.outfit) || BuildQuest.Outfit.default();
+      const inCar = BuildQuest.Race.inCar;
+      const slot = inCar ? BuildQuest.Race.slots[BuildQuest.Race.mySlotIndex] : null;
+      const payload = { name:Auth.profile.name, color:bqColorForId(Auth.profile.id), outfit, carSlot: inCar?BuildQuest.Race.mySlotIndex:-1 };
+      if(slot) payload.carColor = slot.color;
+      try{ await this.channel.track(payload); }catch(e){}
     },
     leave(){
       if(!this.channel) return;
@@ -1321,7 +1982,13 @@ const BuildQuest = {
       Object.keys(state).forEach(key=>{
         if(Auth.profile && key===Auth.profile.id) return;
         seen.add(key);
-        if(!this.remotes.has(key)) BuildQuest.spawnRemote(key, state[key][0]);
+        const meta = state[key][0];
+        // Fixed bug: this used to only ever spawn NEW remotes and silently ignore
+        // metadata changes on ones already on screen — meaning outfit changes (and now
+        // car-race state) never actually reached classmates already rendered, despite
+        // re-broadcasting presence correctly. Existing remotes must be updated too.
+        if(!this.remotes.has(key)) BuildQuest.spawnRemote(key, meta);
+        else BuildQuest.updateRemoteMeta(key, meta);
       });
       Array.from(this.remotes.keys()).forEach(key=>{ if(!seen.has(key)) this.removeRemote(key); });
       BuildQuest.renderPlayerList();
@@ -1351,6 +2018,8 @@ const BuildQuest = {
     onRemoteMove(payload){
       const r = this.remotes.get(payload.from);
       if(!r) return;
+      const dist = Math.hypot(payload.x-r.target.x, payload.z-r.target.z);
+      r.moving = dist > 0.02;
       r.target.x=payload.x; r.target.y=payload.y; r.target.z=payload.z; r.target.yaw=payload.yaw;
     },
     onRemoteBlock(payload){
@@ -1359,19 +2028,110 @@ const BuildQuest = {
     },
   },
 
-  spawnRemote(key, meta){
+  // A simple blocky humanoid rig (torso/head/2 arms/2 legs) built from primitives —
+  // limbs pivot from Object3D "joints" so they can swing for a walk cycle, without any
+  // skeletal animation/rigging machinery. Colors come from each player's outfit choice.
+  makeCharacterModel(outfit){
     const T = this.THREE;
-    const color = (meta && meta.color) || 0x3AA0FF;
+    const o = Object.assign(this.Outfit.default(), outfit||{});
     const group = new T.Group();
-    const body = new T.Mesh(new T.BoxGeometry(0.6,1.6,0.6), new T.MeshLambertMaterial({ color }));
-    body.position.y = 0.8;
+    const skinMat = new T.MeshLambertMaterial({ color:o.skin });
+    const shirtMat = new T.MeshLambertMaterial({ color:o.shirt });
+    const pantsMat = new T.MeshLambertMaterial({ color:o.pants });
+
+    const torso = new T.Mesh(new T.BoxGeometry(0.5,0.7,0.28), shirtMat);
+    torso.position.y = 1.05;
+    group.add(torso);
+
+    const head = new T.Mesh(new T.BoxGeometry(0.42,0.42,0.42), skinMat);
+    head.position.y = 1.62;
+    group.add(head);
+
+    const mkLimb = (w,h,d,mat,x,y)=>{
+      const pivot = new T.Group();
+      pivot.position.set(x,y,0);
+      const mesh = new T.Mesh(new T.BoxGeometry(w,h,d), mat);
+      mesh.position.y = -h/2;
+      pivot.add(mesh);
+      group.add(pivot);
+      return pivot;
+    };
+    const limbs = {
+      armL: mkLimb(0.16,0.62,0.16, skinMat, -0.33, 1.36),
+      armR: mkLimb(0.16,0.62,0.16, skinMat,  0.33, 1.36),
+      legL: mkLimb(0.19,0.68,0.19, pantsMat, -0.14, 0.68),
+      legR: mkLimb(0.19,0.68,0.19, pantsMat,  0.14, 0.68),
+    };
+    group.traverse(obj=>{ if(obj.isMesh) obj.castShadow = true; });
+    group.userData.limbs = limbs;
+    return group;
+  },
+  // A simple blocky car — body, glass cabin, four wheels. Used both for the parked cars
+  // at the race starting line and for how a racing player renders to everyone else.
+  makeCarModel(color){
+    const T = this.THREE;
+    const group = new T.Group();
+    const bodyMat = new T.MeshLambertMaterial({ color: color!=null?color:0xFF5252 });
+    const wheelMat = new T.MeshLambertMaterial({ color:0x222222 });
+    const glassMat = new T.MeshLambertMaterial({ color:0x81d4fa, transparent:true, opacity:0.7 });
+
+    const body = new T.Mesh(new T.BoxGeometry(1.1,0.5,2.0), bodyMat);
+    body.position.y = 0.55;
     group.add(body);
+
+    const cabin = new T.Mesh(new T.BoxGeometry(0.9,0.4,1.0), glassMat);
+    cabin.position.set(0, 0.95, -0.1);
+    group.add(cabin);
+
+    const wheelGeo = new T.CylinderGeometry(0.28,0.28,0.24,10);
+    [[-0.55,0.28,0.7],[0.55,0.28,0.7],[-0.55,0.28,-0.7],[0.55,0.28,-0.7]].forEach(([x,y,z])=>{
+      const wheel = new T.Mesh(wheelGeo, wheelMat);
+      wheel.rotation.z = Math.PI/2;
+      wheel.position.set(x,y,z);
+      group.add(wheel);
+    });
+    group.traverse(obj=>{ if(obj.isMesh) obj.castShadow = true; });
+    return group;
+  },
+  spawnRemote(key, meta){
+    const carSlot = (meta && typeof meta.carSlot==="number") ? meta.carSlot : -1;
+    const isRacing = carSlot>=0;
+    const group = isRacing ? this.makeCarModel((meta&&meta.carColor)||bqColorForId(key)) : this.makeCharacterModel(meta && meta.outfit);
     const label = this.makeLabelSprite((meta&&meta.name)||"Player");
-    label.position.y = 2.05;
+    label.position.y = isRacing ? 1.6 : 2.15;
     group.add(label);
     group.position.set(BQ_SIZE/2, BQ_SEA+2, BQ_SIZE/2);
     this.scene.add(group);
-    this.Net.remotes.set(key, { group, target:{x:BQ_SIZE/2,y:BQ_SEA+2,z:BQ_SIZE/2,yaw:0}, name:(meta&&meta.name)||"Player" });
+    this.Net.remotes.set(key, {
+      group, target:{x:BQ_SIZE/2,y:BQ_SEA+2,z:BQ_SIZE/2,yaw:0}, name:(meta&&meta.name)||"Player",
+      moving:false, walkPhase:0, carSlot, _outfitKey: JSON.stringify((meta&&meta.outfit)||{})
+    });
+  },
+  // Applies a changed presence payload to an ALREADY-spawned remote — swaps in a fresh
+  // character/car model only when the outfit or car-race state actually changed, so this
+  // stays cheap on the far more common case of "someone just moved."
+  updateRemoteMeta(key, meta){
+    const r = this.Net.remotes.get(key);
+    if(!r) return;
+    r.name = (meta&&meta.name)||r.name;
+    const carSlot = (meta && typeof meta.carSlot==="number") ? meta.carSlot : -1;
+    const wasRacing = r.carSlot>=0, isRacing = carSlot>=0;
+    r.carSlot = carSlot;
+    const outfitKey = JSON.stringify((meta&&meta.outfit)||{});
+    const outfitChanged = outfitKey !== r._outfitKey;
+    r._outfitKey = outfitKey;
+    if(outfitChanged || wasRacing!==isRacing){
+      const pos = r.group.position.clone(), rotY = r.group.rotation.y;
+      this.scene.remove(r.group);
+      const group = isRacing ? this.makeCarModel((meta&&meta.carColor)||bqColorForId(key)) : this.makeCharacterModel(meta&&meta.outfit);
+      const label = this.makeLabelSprite(r.name);
+      label.position.y = isRacing ? 1.6 : 2.15;
+      group.add(label);
+      group.position.copy(pos);
+      group.rotation.y = rotY;
+      this.scene.add(group);
+      r.group = group;
+    }
   },
   makeLabelSprite(text){
     const T = this.THREE;
@@ -1397,6 +2157,18 @@ const BuildQuest = {
       g.position.y += (r.target.y - g.position.y)*k;
       g.position.z += (r.target.z - g.position.z)*k;
       g.rotation.y += (r.target.yaw - g.rotation.y)*k;
+      const limbs = g.userData.limbs;
+      if(!limbs) return;
+      if(r.moving){
+        r.walkPhase += dt*8;
+        const swing = Math.sin(r.walkPhase)*0.55;
+        limbs.armL.rotation.x = swing; limbs.armR.rotation.x = -swing;
+        limbs.legL.rotation.x = -swing; limbs.legR.rotation.x = swing;
+      } else {
+        // ease limbs back to a relaxed resting pose rather than snapping
+        limbs.armL.rotation.x *= 0.8; limbs.armR.rotation.x *= 0.8;
+        limbs.legL.rotation.x *= 0.8; limbs.legR.rotation.x *= 0.8;
+      }
     });
   },
   renderPlayerList(){
@@ -1441,8 +2213,19 @@ const BuildQuest = {
       case "KeyD": this.keyState.d=true; break;
       case "Space": this.keyState.space=true; e.preventDefault(); break;
       case "ShiftLeft": case "ShiftRight": this.keyState.shift=true; break;
+      // Arrow keys drive the race car (accelerate/brake/steer) — only meaningful while
+      // Race.active, but always prevent the browser's default page-scroll either way.
+      case "ArrowUp": this.keyState.up=true; e.preventDefault(); break;
+      case "ArrowDown": this.keyState.down=true; e.preventDefault(); break;
+      case "ArrowLeft": this.keyState.left=true; e.preventDefault(); break;
+      case "ArrowRight": this.keyState.right=true; e.preventDefault(); break;
       case "KeyF": this.toggleFly(); break;
       case "KeyE": this.togglePanel("inventory"); break;
+      case "KeyC": this.togglePanel("outfit"); break;
+      case "KeyR":
+        if(this.Race.inCar) this.Race.exitCar();
+        else if(this.Race.nearSlot>=0) this.Race.enterCar();
+        break;
       case "KeyT": this.Chat.open(); e.preventDefault(); break;
       case "Escape":
         // Esc always releases pointer lock first (the browser does this for us before
@@ -1464,6 +2247,10 @@ const BuildQuest = {
       case "KeyD": this.keyState.d=false; break;
       case "Space": this.keyState.space=false; break;
       case "ShiftLeft": case "ShiftRight": this.keyState.shift=false; break;
+      case "ArrowUp": this.keyState.up=false; break;
+      case "ArrowDown": this.keyState.down=false; break;
+      case "ArrowLeft": this.keyState.left=false; break;
+      case "ArrowRight": this.keyState.right=false; break;
     }
   },
   onMouseMove(e){
