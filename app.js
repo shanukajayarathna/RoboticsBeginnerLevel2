@@ -633,10 +633,10 @@ const CLASS_META = {
    `lessonId` must match a lesson `id` in data/l1/learn.json.
    ============================================================ */
 const CLASS_MODE = {
-  enabled: true,
-  lessonId: "obstacle-day1",         // which lesson auto-launches in class
+  enabled: false,
+  lessonId: "obstacle-day2",         // which lesson auto-launches in class
   title: "Today's Build",            // label on the dashboard card
-  subtitle: "Day 1: Assemble your robot's chassis! 🔧🚗"
+  subtitle: "Day 2: Wire up the motors and driver! 🔌🚗"
 };
 
 // True only when we should lock an L1 student's dashboard for class.

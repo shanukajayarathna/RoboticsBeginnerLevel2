@@ -1289,161 +1289,69 @@
       ]
     },
     {
-      "id": "obstacle-day1",
-      "icon": "🚗",
-      "title": "Obstacle-Avoidance Robot — Day 1: Build the Chassis",
+      "id": "obstacle-day2",
+      "icon": "🔌",
+      "title": "Obstacle-Avoidance Robot — Day 2: Wire the Motors",
       "topic": "Obstacle-Avoidance Robot",
-      "summary": "Assemble the body of your 2-wheeled robot — motors, wheels, caster wheel and battery holder. Wiring comes next class!",
+      "summary": "Connect your two DC motors and battery pack to the L298N motor driver on the chassis you built last class, and watch the wheels spin!",
       "steps": [
         {
           "kind": "intro",
-          "emoji": "🚗",
-          "title": "Let's build a real robot!",
-          "text": "Over the next 4 classes, YOU are going to build a real, working obstacle-avoidance robot — one that drives around a room all by itself and dodges anything in its way. Today is Day 1. Let's meet your robot's body! 🚀"
+          "emoji": "🔌",
+          "title": "Welcome back — Day 2!",
+          "text": "Last class you built your robot's body. Today we give it muscles! By the end of today, your wheels will actually spin. 🚀"
         },
         {
           "kind": "poll",
           "title": "Warm-up",
-          "question": "Have you ever seen a robot that avoids things on its own — like a robot vacuum cleaner?",
+          "question": "Do you remember what the L298N motor driver does?",
           "options": [
-            "Yes, at home! 🏠",
-            "Only in videos 📱",
-            "Never — but I'm about to build one! 🔧"
+            "Yes — it's the muscle that powers the motors! 💪",
+            "Kind of — remind me! 🤔",
+            "Not really, but I'm ready to learn! 🔌"
           ],
-          "reaction": "By the end of Day 4, you'll have built one yourself — let's get started! 🌟"
+          "reaction": "The Arduino can't power motors directly — it sends tiny signals, and the L298N supplies the real muscle. Let's put that to work!"
         },
         {
           "kind": "teach",
-          "title": "What makes a robot 'obstacle-avoiding'?",
-          "blocks": [
-            {
-              "type": "text",
-              "text": "An <b>obstacle-avoidance robot</b> drives forward on its own, and when it senses something blocking its path, it stops and turns away — no human needed!"
-            },
-            {
-              "type": "text",
-              "text": "You've already met this idea: <b>Sense → Think → Act.</b> A sensor will be its eyes, the Arduino will be its brain, and the motors + wheels will be its legs."
-            },
-            {
-              "type": "tip",
-              "icon": "💡",
-              "text": "Real robots use this exact idea — robot vacuum cleaners, warehouse delivery robots, and even Mars rovers all sense obstacles and steer around them!"
-            }
-          ]
-        },
-        {
-          "kind": "teach",
-          "title": "Here's the sneak peek — your Day 4 robot!",
+          "title": "Quick recap: brain vs. muscle",
           "blocks": [
             {
               "type": "diagram",
-              "key": "robot-car"
+              "key": "l298n-bodyguard"
             },
             {
               "type": "text",
-              "text": "That's the finished robot — sensor, brain and all. But every robot starts with a <b>body</b>. That's your whole mission today."
+              "text": "The <b>Arduino</b> is the brain — it sends small signals. The <b>L298N</b> is the muscle — it takes battery power and drives the motors. Today we wire that muscle onto your chassis."
             }
           ]
         },
         {
           "kind": "teach",
-          "title": "Your 4-day build plan",
+          "title": "Today's mission",
           "blocks": [
-            {
-              "type": "heading",
-              "text": "🗺️ The road ahead"
-            },
-            {
-              "type": "text",
-              "text": "<b>Day 1 (today):</b> Build the chassis — motors, wheels, caster wheel, battery holder."
-            },
-            {
-              "type": "text",
-              "text": "<b>Day 2:</b> Wire up the motors and the motor driver, and get the wheels spinning."
-            },
-            {
-              "type": "text",
-              "text": "<b>Day 3:</b> Add the ultrasonic sensor so your robot can 'see' obstacles."
-            },
-            {
-              "type": "text",
-              "text": "<b>Day 4:</b> Write the code, upload it, and test + fine-tune your robot's moves!"
-            },
-            {
-              "type": "tip",
-              "icon": "🔒",
-              "text": "Days 2–4 unlock on their class day — one step at a time, so we build it right together."
-            }
-          ]
-        },
-        {
-          "kind": "teach",
-          "title": "Meet your robot's parts",
-          "blocks": [
-            {
-              "type": "text",
-              "text": "Here's the <b>whole kit</b> you'll use across all 4 days. Today (Day 1) we only need the first 6 — the rest come later, one day at a time!"
-            },
             {
               "type": "component-grid",
               "items": [
                 {
-                  "name": "Arduino Uno",
-                  "text": "The brain of your robot — this tiny computer runs your code.",
-                  "img": "images/l1/comp-arduino.jpg",
-                  "credit": "Photo: SparkFun Electronics · CC BY 2.0"
+                  "name": "Your Chassis",
+                  "text": "The body you built last class — motors, wheels, caster and battery holder already mounted.",
+                  "emoji": "🚗"
                 },
                 {
-                  "name": "Chassis Plate",
-                  "text": "The frame that holds every part of your robot together.",
-                  "emoji": "🟫"
+                  "name": "Motor Driver (L298N)",
+                  "text": "Bolts onto your chassis and connects to both motors and the battery.",
+                  "img": "images/l1/l298n-real2.jpg"
                 },
                 {
                   "name": "Jumper Wires",
-                  "text": "Flexible wires that connect your parts — no soldering needed.",
+                  "text": "Connect the motors and battery to the driver — no soldering needed.",
                   "img": "images/l1/comp-jumperwires.jpg",
                   "credit": "Photo: oomlout · CC BY-SA 2.0"
                 },
                 {
-                  "name": "Servo Motor",
-                  "text": "A precise little motor that will turn your sensor left and right to scan.",
-                  "img": "images/l1/comp-servo.jpg",
-                  "credit": "Photo: Suyash Dwivedi · CC BY-SA 4.0"
-                },
-                {
-                  "name": "Ultrasonic Sensor",
-                  "text": "Your robot's 'eyes' — it bounces sound waves off objects to measure distance.",
-                  "img": "images/l1/comp-ultrasonic.jpg",
-                  "credit": "Photo: Nevit Dilmen · CC BY-SA 3.0"
-                },
-                {
-                  "name": "Motor Driver (L298N)",
-                  "text": "The muscle relay you met last class — lets the Arduino safely control the motors.",
-                  "img": "images/l1/l298n-real2.jpg"
-                },
-                {
-                  "name": "DC Gear Motors ×2",
-                  "text": "These spin your wheels to drive forward, backward and turn.",
-                  "emoji": "⚙️"
-                },
-                {
-                  "name": "Wheels ×2",
-                  "text": "Attach to the motors and grip the floor to move your robot.",
-                  "emoji": "⭕"
-                },
-                {
-                  "name": "Caster Wheel",
-                  "text": "A free-rolling wheel that balances the robot — no motor needed.",
-                  "emoji": "🔵"
-                },
-                {
-                  "name": "Battery Holder",
-                  "text": "Holds your batteries and delivers power to the whole robot.",
-                  "emoji": "🔋"
-                },
-                {
                   "name": "3.7V Batteries ×2",
-                  "text": "The energy source — like the robot's stomach, giving it the power to run.",
+                  "text": "Already in your battery holder — today we connect them to the driver.",
                   "img": "images/l1/comp-battery.jpg",
                   "credit": "Photo: Lead holder · CC BY-SA 3.0"
                 }
@@ -1452,114 +1360,125 @@
             {
               "type": "tip",
               "icon": "📌",
-              "text": "<b>Today's build uses:</b> Chassis Plate, DC Gear Motors, Wheels, Caster Wheel, Battery Holder, and Screws."
+              "text": "No Arduino code today — that's Day 4! Today is 100% hands-on wiring."
             }
           ]
         },
         {
           "kind": "activity",
-          "title": "Find your parts!",
-          "html": "<b>Hands-on:</b> Lay out your chassis plate, 2 motors, 2 wheels, caster wheel, battery holder and screws on your desk. Check them against the list above.",
-          "hint": "Missing something? Ask your teacher before we start building."
+          "title": "Grab your Day 1 chassis!",
+          "html": "<b>Hands-on:</b> Get your chassis, L298N driver, jumper wires and the L298N handout from last class. Sit with the same team.",
+          "hint": "Chassis wheel loose? Tighten its screw before we start wiring."
         },
         {
           "kind": "teach",
-          "title": "Watch: building the chassis",
+          "title": "Watch: wiring the motors & driver",
           "blocks": [
             {
               "type": "video",
-              "url": "https://youtu.be/WSMFLkL-niY",
-              "title": "Building the 2-wheeled chassis",
-              "start": 13,
-              "end": 278,
-              "loop": true
+              "url": "https://youtu.be/EFeluD3sop8",
+              "title": "Wiring the motors and motor driver"
             },
             {
               "type": "text",
-              "text": "Watch this clip on repeat while you build — pause anytime, or just let it loop and follow along step by step with your team!"
+              "text": "Watch the whole clip once together, then replay it while your team wires — pause anytime you need to catch up!"
+            }
+          ]
+        },
+        {
+          "kind": "teach",
+          "title": "The wiring map",
+          "blocks": [
+            {
+              "type": "diagram",
+              "key": "wiring-map"
+            },
+            {
+              "type": "text",
+              "text": "Each motor connects to one pair of OUT terminals: <b>OUT1/OUT2</b> for the left motor, <b>OUT3/OUT4</b> for the right motor. The battery pack connects to the driver's power terminal."
+            },
+            {
+              "type": "tip",
+              "icon": "⚠️",
+              "text": "The Golden Rule: every ground (GND) wire must connect back to the same shared ground. Skip this and nothing will work!"
             }
           ]
         },
         {
           "kind": "activity",
-          "title": "Build your chassis!",
-          "html": "<b>Hands-on:</b> Follow the 5 assembly steps with your team. Take your time — a solid chassis makes every later step easier. Show your teacher when it's standing on its own three 'feet' (2 wheels + caster).",
-          "hint": "Stuck on a screw? Ask a neighbour or your teacher — teamwork makes this faster!"
+          "title": "Wire it up!",
+          "html": "<b>Hands-on:</b> With your team — 1) Left motor wires → OUT1/OUT2. 2) Right motor wires → OUT3/OUT4. 3) Battery pack → the power terminal (watch + and −!). 4) Double-check the shared ground. Show your teacher before connecting power.",
+          "hint": "Wheels spinning backwards? Just swap that motor's two wires at the OUT terminal."
         },
         {
           "kind": "check",
           "title": "Quick check · Q1",
-          "question": "Why does the robot use a caster wheel instead of a third motor?",
+          "question": "Which OUT terminals does the left motor connect to?",
           "options": [
-            "It just rolls freely for balance — no motor needed",
-            "It makes the robot go faster",
-            "It charges the battery",
-            "It senses obstacles"
+            "OUT1 / OUT2",
+            "OUT3 / OUT4",
+            "IN1 / IN2",
+            "5V / GND"
           ],
-          "answer": "It just rolls freely for balance — no motor needed",
-          "explain": "A caster wheel is a simple, cheap way to support the third point of the robot — it just swivels and rolls, so only the 2 back wheels need motors."
+          "answer": "OUT1 / OUT2",
+          "explain": "OUT1/OUT2 is Motor A's pair of terminals — that's where the left motor's two wires connect."
         },
         {
           "kind": "check",
           "title": "Quick check · Q2",
-          "question": "What happens on Day 2 of the build?",
+          "question": "What happens on Day 3 of the build?",
           "options": [
-            "Wiring the motors to the motor driver",
-            "Writing the final code",
             "Adding the ultrasonic sensor",
+            "Wiring the motors",
+            "Writing the final code",
             "Painting the robot"
           ],
-          "answer": "Wiring the motors to the motor driver",
-          "explain": "Day 2 is all about connecting the motors to the motor driver so we can control speed and direction from the Arduino."
+          "answer": "Adding the ultrasonic sensor",
+          "explain": "Day 3 gives your robot 'eyes' — the ultrasonic sensor that lets it detect obstacles."
         },
         {
           "kind": "celebrate",
           "emoji": "🎉",
-          "title": "Your robot has a body!",
-          "text": "Amazing work — your chassis is built! Next class (Day 2) we wire up the motors and driver so it can actually move. 🚀"
+          "title": "Your wheels are spinning!",
+          "text": "Fantastic work — your robot has muscles now! Next class (Day 3) we add the ultrasonic sensor so it can 'see' obstacles. 🚀"
         }
       ],
       "quiz": [
         {
           "type": "mcq",
-          "question": "What is the job of the chassis plate?",
+          "question": "What does the L298N motor driver do?",
           "options": [
-            "It's the frame that holds all the parts together",
-            "It senses obstacles",
-            "It stores the Arduino code",
-            "It powers the batteries"
+            "Takes battery power and drives the motors",
+            "Senses obstacles",
+            "Stores the Arduino code",
+            "Charges the batteries"
           ],
-          "answer": "It's the frame that holds all the parts together",
-          "explanation": "The chassis plate is the robot's frame — the motors, wheels, caster and battery holder all mount onto it."
+          "answer": "Takes battery power and drives the motors",
+          "explanation": "The Arduino only sends small control signals — the L298N supplies the real power that spins the motors."
         },
         {
           "type": "truefalse",
-          "question": "Both motors should face the same direction, or the robot will spin instead of driving straight.",
+          "question": "Every ground (GND) wire in the circuit must connect back to the same shared ground.",
           "answer": true,
-          "explanation": "If one motor is mounted backwards, the wheels will push against each other instead of driving the robot forward."
+          "explanation": "A shared ground completes the circuit for every part — without it, signals and power don't have a return path and nothing works."
         },
         {
           "type": "mcq",
-          "question": "How many DC motors does a 2-wheeled robot chassis normally use?",
+          "question": "If a motor spins the wrong way, what's the easiest fix?",
           "options": [
-            "1",
-            "2",
-            "3",
-            "4"
+            "Swap that motor's two wires at the OUT terminal",
+            "Replace the battery",
+            "Rewrite the Arduino code",
+            "Swap the two motors' positions"
           ],
-          "answer": "2",
-          "explanation": "One motor per driven wheel — two motors for a 2-wheel-drive robot, plus a free-rolling caster wheel for balance."
+          "answer": "Swap that motor's two wires at the OUT terminal",
+          "explanation": "Reversing the two wires at the OUT terminal reverses that motor's spin direction — a quick fix with no code needed."
         },
         {
           "type": "fillblank",
-          "question": "The little wheel that rolls freely for balance (not driven by a motor) is called a ______ wheel.",
-          "answer": "caster",
-          "acceptable": [
-            "caster wheel",
-            "castor",
-            "castor wheel"
-          ],
-          "explanation": "A caster wheel just swivels and rolls — it supports the robot's weight without needing its own motor."
+          "question": "The right motor connects to the OUT3 / OUT____ terminals.",
+          "answer": "4",
+          "explanation": "OUT3 and OUT4 form Motor B's pair of terminals on the L298N."
         }
       ]
     }
