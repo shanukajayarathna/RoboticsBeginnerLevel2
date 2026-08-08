@@ -633,7 +633,7 @@ const CLASS_META = {
    `lessonId` must match a lesson `id` in data/l1/learn.json.
    ============================================================ */
 const CLASS_MODE = {
-  enabled: false,
+  enabled: true,
   lessonId: "obstacle-day2",         // which lesson auto-launches in class
   title: "Today's Build",            // label on the dashboard card
   subtitle: "Day 2: Wire up the motors and driver! 🔌🚗"
