@@ -828,9 +828,10 @@ textarea.auth-input{resize:vertical; min-height:74px; font-family:inherit; line-
 .ml1-field input:focus, .ml1-field textarea:focus, .ml1-field select:focus{outline:none; border-color:var(--teal);}
 .ml1-opt-row{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
 .ml1-opt-row input[type="radio"]{width:18px; height:18px; flex-shrink:0; accent-color:var(--green);}
-.ml1-opt-row .mf-opt-text{flex:1;}
+.ml1-opt-row .mf-opt-text, .ml1-opt-row .mxf-opt-text{flex:1;}
 .ml1-opt{display:inline-flex; align-items:center; gap:8px; margin-right:18px; color:var(--text-1);}
 .ml1-opt input[type="radio"]{width:18px; height:18px; accent-color:var(--green);}
+.exam-divider{border:none; border-top:1px solid var(--card-border); margin:18px 0;}
 
 @media(max-width:900px){
   .l1-stat-row{grid-template-columns:repeat(3,1fr);}

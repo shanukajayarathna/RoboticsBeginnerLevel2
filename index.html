@@ -42,6 +42,8 @@
     <button data-nav="students" onclick="Router.go('students')">📊 Progress</button>
     <button data-nav="admin" onclick="Router.go('admin')">🗃️ Questions</button>
     <button data-nav="manage-l1" onclick="Router.go('manage-l1')">🛠️ Manage L1</button>
+    <button data-nav="exam-review" onclick="Router.go('exam-review')">🎓 Exams</button>
+    <button data-nav="manage-exam" onclick="Router.go('manage-exam')">📝 Manage Exam</button>
   </div>
   <div class="flex items-center gap-8" id="user-badge" style="display:none;">
     <button class="btn btn-ghost btn-sm" id="sound-toggle" style="display:none;" title="Sound on / off" onclick="App.toggleSound()">🔊</button>
@@ -221,6 +223,9 @@
 
     <!-- Class-mode: today's certification MCQ (shown only when CLASS_MODE_L2 is on) -->
     <div class="l1-today-card" id="l2-today-card" style="display:none;"></div>
+
+    <!-- Mock certification exam launch card -->
+    <div class="bq-launch-card" id="l2-exam-card"></div>
 
     <!-- BuildQuest: multiplayer voxel learning world -->
     <div class="bq-launch-card">
@@ -660,6 +665,37 @@
     <div class="section-title"><h2>📖 Lesson Notes <span class="small muted">(read-only)</span></h2></div>
     <p class="small muted" style="margin-bottom:12px;">Notes are authored in the course files. Tell Claude what to change and it will be updated.</p>
     <div class="card" id="ml1-notes-preview"></div>
+  </section>
+
+  <!-- ============ MOCK EXAM (Level 2 student) ============ -->
+  <section id="screen-exam-l2" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
+      <h2>🎓 Mock Certification Exam</h2>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
+    </div>
+    <div id="exam-l2-root"></div>
+  </section>
+
+  <!-- ============ MOCK EXAM SUBMISSIONS (admin grading) ============ -->
+  <section id="screen-exam-review" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:14px;">
+      <h2>🎓 Mock Exam Submissions</h2>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
+    </div>
+    <div id="exam-review-root"></div>
+  </section>
+
+  <!-- ============ MANAGE MOCK EXAM QUESTIONS (admin only) ============ -->
+  <section id="screen-manage-exam" class="screen">
+    <div class="flex justify-between items-center mt-20" style="margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+      <h2>📝 Manage Mock Exam Questions</h2>
+      <button class="btn btn-ghost btn-sm" onclick="App.goHome()">← Back</button>
+    </div>
+    <p class="small muted" style="margin-bottom:14px;">Add, edit, or remove questions in the mock exam paper. Changes save to the database and apply to the next student who starts the exam.</p>
+
+    <div class="card" id="mex-info" style="margin-bottom:14px;"></div>
+    <div id="mex-form" style="display:none;"></div>
+    <div id="mex-list"></div>
   </section>
 
 </div>

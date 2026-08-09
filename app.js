@@ -681,6 +681,7 @@ const App = {
     await Weekly.load();
     await HomeL1.load();
     await ManageL1.loadQuestions(); // override L1 bank from Supabase if the admin has published any
+    await ManageExamL2.loadQuestions(); // mock exam question bank (bundled or admin-published)
     this.buddyIdleLoop();
     const restored = await Auth.restoreSession();
     if(restored){ await this.startSession(); }
@@ -850,6 +851,7 @@ const App = {
     this.renderTopics();
     this.renderAchievements();
     this.renderAdmin();
+    if(!this.isL1Student() && typeof ExamL2 !== "undefined") ExamL2.renderDashboardCard();
 
     // Level 2 "class mode": lock the dashboard to today's certification MCQ.
     if(typeof CertExam !== "undefined") CertExam.applyClassMode();
@@ -3187,6 +3189,654 @@ const ManageL1 = {
   }
 };
 
+/* ---------------- MOCK EXAM QUESTION BANK (admin live editor, mirrors ManageL1) ---------------- */
+const ManageExamL2 = {
+  source: "bundled",     // "bundled" (built-in JSON) | "supabase" (admin-published rows)
+  bundled: [],            // starter questions from data/l2/exam-questions.json
+  rows: [],               // raw Supabase rows
+  questions: [],          // normalized list used by both this editor and the student exam
+  editing: null,
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
+
+  rowToQuestion(r){
+    return { id:r.id, part:r.part, section_title:r.section_title, order_num:r.order_num||0,
+      type:r.type, prompt:r.prompt, options:r.options||[], answer:r.answer||"", max_marks:r.max_marks||1 };
+  },
+
+  async loadQuestions(){
+    try{
+      const res = await fetch("data/l2/exam-questions.json");
+      this.bundled = await res.json();
+    }catch(e){ this.bundled = []; }
+    try{
+      const { data, error } = await sb.from("l2_exam_questions").select("*").order("part").order("order_num");
+      if(error) throw error;
+      if(data && data.length){
+        this.rows = data; this.source = "supabase";
+        this.questions = data.map(r=>this.rowToQuestion(r));
+      } else {
+        this.rows = []; this.source = "bundled";
+        this.questions = this.bundled.slice();
+      }
+    }catch(e){
+      // Table may not exist yet (SQL not run) — keep the bundled JSON. No crash.
+      this.rows = []; this.source = "bundled";
+      this.questions = this.bundled.slice();
+    }
+  },
+
+  async refresh(){ await this.loadQuestions(); this.render(); },
+
+  byPart(){
+    const parts = {A:[], B:[], C:[], D:[]};
+    this.questions.forEach(q=>{ (parts[q.part] || (parts[q.part]=[])).push(q); });
+    Object.values(parts).forEach(list=>list.sort((a,b)=>(a.order_num||0)-(b.order_num||0)));
+    return parts;
+  },
+
+  totalMarks(){ return this.questions.reduce((a,q)=>a+(q.max_marks||0), 0); },
+
+  PART_LABEL: {A:"Part A – Multiple Choice", B:"Part B – Short Answer", C:"Part C – Code Writing", D:"Part D – Practical Design"},
+
+  render(){
+    const info = document.getElementById("mex-info");
+    const wrap = document.getElementById("mex-list");
+    if(!info || !wrap) return;
+    const editable = this.source === "supabase";
+
+    info.innerHTML = `
+      <div class="flex justify-between items-center gap-12" style="flex-wrap:wrap;">
+        <div class="flex gap-8" style="flex-wrap:wrap; align-items:center;">
+          <span class="pill">${this.questions.length} questions</span>
+          <span class="pill">${this.totalMarks()} total marks</span>
+          <span class="pill">${editable ? "✅ editable (saved in database)" : "📦 using built-in starter set"}</span>
+        </div>
+        <div class="flex gap-8" style="flex-wrap:wrap;">
+          ${editable
+            ? `<button class="btn btn-primary btn-sm" onclick="ManageExamL2.startAdd()">+ Add Question</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="ManageExamL2.importStarter()">⬇ Import starter questions to edit</button>`}
+        </div>
+      </div>
+      ${editable ? "" : `<p class="small muted mt-10">Right now students see the built-in mock exam paper. Click <b>Import starter questions</b> once to copy it into the database so you can add, edit, and delete questions here.</p>`}`;
+
+    const parts = this.byPart();
+    wrap.innerHTML = ["A","B","C","D"].map(p=>{
+      const list = parts[p] || [];
+      if(!list.length) return "";
+      const marks = list.reduce((a,q)=>a+(q.max_marks||0), 0);
+      return `<div class="section-title mt-20"><h3>${this.PART_LABEL[p]} <span class="small muted">(${marks} marks)</span></h3></div>
+        <div class="card" style="margin-bottom:14px;">
+          <table class="admin-table">
+            <thead><tr><th>#</th><th>Prompt</th><th>Type</th><th>Marks</th><th></th></tr></thead>
+            <tbody>
+            ${list.map(q=>`
+              <tr>
+                <td>${q.order_num}</td>
+                <td>${this.esc((q.prompt||'').slice(0,90).replace(/\n/g,' '))}${(q.prompt||'').length>90?'…':''}</td>
+                <td>${q.type}</td>
+                <td>${q.max_marks}</td>
+                <td style="white-space:nowrap;">
+                  ${editable
+                    ? `<button class="btn btn-ghost btn-sm" onclick="ManageExamL2.startEdit('${q.id}')">✏️ Edit</button>
+                       <button class="btn btn-ghost btn-sm" onclick="ManageExamL2.remove('${q.id}')">🗑️</button>`
+                    : `<span class="small muted">read-only</span>`}
+                </td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }).join("");
+
+    document.getElementById("mex-form").style.display = "none";
+  },
+
+  startAdd(){ this.editing = null; this.showForm({part:"A", type:"mcq", options:["","","",""], answer:"", max_marks:2, order_num:(this.questions.length+1)}); },
+  startEdit(id){
+    const row = this.rows.find(r=>String(r.id)===String(id));
+    if(!row) return;
+    this.editing = row;
+    this.showForm(this.rowToQuestion(row));
+  },
+
+  showForm(q){
+    const wrap = document.getElementById("mex-form");
+    const isMcq = q.type === "mcq";
+    const opts = q.options && q.options.length ? q.options.concat(["","","",""]).slice(0,4) : ["","","",""];
+    wrap.innerHTML = `
+      <div class="card ml1-form-card">
+        <h3 style="margin:0 0 12px;">${this.editing ? "✏️ Edit question" : "➕ New question"}</h3>
+        <div class="flex gap-12" style="flex-wrap:wrap;">
+          <div class="ml1-field" style="flex:1; min-width:120px;"><label>Part</label>
+            <select id="mxf-part">${["A","B","C","D"].map(p=>`<option value="${p}" ${q.part===p?"selected":""}>${p} — ${this.PART_LABEL[p]}</option>`).join("")}</select>
+          </div>
+          <div class="ml1-field" style="flex:1; min-width:150px;"><label>Type</label>
+            <select id="mxf-type" onchange="ManageExamL2.onTypeChange()">
+              <option value="mcq" ${q.type==="mcq"?"selected":""}>Multiple choice</option>
+              <option value="short_answer" ${q.type==="short_answer"?"selected":""}>Short answer</option>
+              <option value="code" ${q.type==="code"?"selected":""}>Code writing</option>
+              <option value="design" ${q.type==="design"?"selected":""}>Practical design</option>
+            </select>
+          </div>
+          <div class="ml1-field" style="width:100px;"><label>Order #</label>
+            <input id="mxf-order" type="number" min="1" value="${q.order_num||1}">
+          </div>
+          <div class="ml1-field" style="width:100px;"><label>Marks</label>
+            <input id="mxf-marks" type="number" min="1" value="${q.max_marks||1}">
+          </div>
+        </div>
+        <div class="ml1-field"><label>Section title <span class="small muted">(shown as the part heading)</span></label>
+          <input id="mxf-section" value="${this.esc(q.section_title || this.PART_LABEL[q.part] || "")}">
+        </div>
+        <div class="ml1-field"><label>Question / prompt</label>
+          <textarea id="mxf-prompt" rows="3" placeholder="Type the question…">${this.esc(q.prompt||"")}</textarea>
+        </div>
+        <div id="mxf-options-wrap" style="display:${isMcq?"block":"none"};">
+          <div class="ml1-field"><label>Answers <span class="small muted">(tick the correct one)</span></label>
+            <div id="mxf-options">${this.optionsHtml(opts, q.answer)}</div>
+          </div>
+        </div>
+        <div id="mxf-error" class="small" style="color:#ff5252; min-height:18px;"></div>
+        <div class="flex gap-8" style="margin-top:6px;">
+          <button class="btn btn-primary btn-sm" onclick="ManageExamL2.save()">💾 Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="ManageExamL2.cancelForm()">Cancel</button>
+        </div>
+      </div>`;
+    wrap.style.display = "block";
+    wrap.scrollIntoView({behavior:"smooth", block:"start"});
+  },
+
+  optionsHtml(opts, answer){
+    return opts.map((o,i)=>`
+      <div class="ml1-opt-row">
+        <input type="radio" name="mxf-correct" value="opt${i}" ${(answer && answer===o)?"checked":""} title="Mark as correct">
+        <input type="text" class="mxf-opt-text" data-i="${i}" value="${this.esc(o||"")}" placeholder="Answer ${i+1}">
+      </div>`).join("");
+  },
+
+  onTypeChange(){
+    const type = document.getElementById("mxf-type").value;
+    document.getElementById("mxf-options-wrap").style.display = type==="mcq" ? "block" : "none";
+    if(type==="mcq") document.getElementById("mxf-options").innerHTML = this.optionsHtml(["","","",""], "");
+  },
+
+  cancelForm(){ document.getElementById("mex-form").style.display = "none"; this.editing = null; },
+
+  collectForm(){
+    const part = document.getElementById("mxf-part").value;
+    const type = document.getElementById("mxf-type").value;
+    const section_title = document.getElementById("mxf-section").value.trim();
+    const prompt = document.getElementById("mxf-prompt").value.trim();
+    const order_num = parseInt(document.getElementById("mxf-order").value, 10) || 1;
+    const max_marks = parseInt(document.getElementById("mxf-marks").value, 10) || 1;
+    let options = [], answer = null;
+    if(type==="mcq"){
+      const allTexts = Array.from(document.querySelectorAll(".mxf-opt-text")).map(el=>el.value.trim());
+      options = allTexts.filter(v=>v);
+      const correct = document.querySelector('input[name="mxf-correct"]:checked');
+      if(correct){ const idx = parseInt(correct.value.replace("opt",""),10); answer = allTexts[idx] || ""; }
+    }
+    return { part, type, section_title, prompt, order_num, max_marks, options, answer };
+  },
+
+  validate(f){
+    if(!f.section_title) return "Please enter a section title.";
+    if(!f.prompt) return "Please enter the question text.";
+    if(f.type==="mcq" && f.options.length < 2) return "Please add at least two answers.";
+    if(f.type==="mcq" && !f.answer) return "Please tick which answer is correct.";
+    if(f.type==="mcq" && !f.options.includes(f.answer)) return "The correct answer must be one of the typed answers.";
+    return null;
+  },
+
+  async save(){
+    const f = this.collectForm();
+    const err = this.validate(f);
+    const errEl = document.getElementById("mxf-error");
+    if(err){ errEl.textContent = err; return; }
+    errEl.textContent = "Saving…";
+    try{
+      if(this.editing){
+        const { error } = await sb.from("l2_exam_questions").update({ ...f, updated_at:new Date().toISOString() }).eq("id", this.editing.id);
+        if(error) throw error;
+      } else {
+        const { error } = await sb.from("l2_exam_questions").insert(f);
+        if(error) throw error;
+      }
+      this.editing = null;
+      await this.refresh();
+    }catch(e){
+      errEl.textContent = this.friendlyError(e);
+    }
+  },
+
+  async remove(id){
+    if(!confirm("Delete this question? This cannot be undone.")) return;
+    try{
+      const { error } = await sb.from("l2_exam_questions").delete().eq("id", id);
+      if(error) throw error;
+      await this.refresh();
+    }catch(e){
+      alert(this.friendlyError(e));
+    }
+  },
+
+  async importStarter(){
+    if(!confirm("Copy the built-in mock exam paper into the database so you can edit it?")) return;
+    const info = document.getElementById("mex-info");
+    if(info) info.insertAdjacentHTML("beforeend", `<p class="small muted" id="mex-importing">Importing…</p>`);
+    try{
+      const payload = (this.bundled||[]).map(q=>({
+        part:q.part, section_title:q.section_title, order_num:q.order_num||0, type:q.type,
+        prompt:q.prompt, options:q.options||[], answer:q.answer||null, max_marks:q.max_marks||1
+      }));
+      const { error } = await sb.from("l2_exam_questions").insert(payload);
+      if(error) throw error;
+      await this.refresh();
+    }catch(e){
+      alert(this.friendlyError(e));
+      const el = document.getElementById("mex-importing"); if(el) el.remove();
+    }
+  },
+
+  friendlyError(e){
+    const m = (e && e.message) || "Something went wrong.";
+    if(/row-level security|not authorized|permission/i.test(m))
+      return "You need to be logged in as the Admin to change exam questions.";
+    if(/relation .*l2_exam_questions.* does not exist|schema cache/i.test(m))
+      return "The exam question database isn't set up yet. Run supabase_mock_exam.sql in Supabase first.";
+    return m;
+  }
+};
+
+/* ---------------- MOCK EXAM — student flow (Level 2) ---------------- */
+const ExamL2 = {
+  DURATION_MS: 90 * 60 * 1000,   // 1h30m, matches the printed paper
+  submission: null,
+  timerHandle: null,
+  saveTimer: null,
+  dirty: false,
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
+
+  async myRow(){
+    const { data } = await sb.from("l2_exam_submissions").select("*").eq("user_id", Auth.profile.id).maybeSingle();
+    return data || null;
+  },
+
+  totalPossible(){ return ManageExamL2.totalMarks() || 100; },
+
+  // ---- Dashboard card (called from App.renderHome) ----
+  async renderDashboardCard(){
+    const el = document.getElementById("l2-exam-card");
+    if(!el) return;
+    const sub = await this.myRow();
+    this.submission = sub;
+    if(!sub){
+      el.innerHTML = `
+        <div class="bq-launch-ico">🎓</div>
+        <div class="bq-launch-text">
+          <span class="bq-launch-tag">📝 One attempt · 1h30m</span>
+          <h3>Mock Certification Exam</h3>
+          <p>The full 4-part paper — multiple choice, short answer, code writing and a design question. Your teacher marks Parts B–D.</p>
+        </div>
+        <button class="btn btn-primary bq-launch-btn" onclick="Router.go('exam-l2')">▶ Start Mock Exam</button>`;
+    } else if(sub.status === "in_progress"){
+      const remain = Math.max(0, (new Date(sub.started_at).getTime() + this.DURATION_MS) - Date.now());
+      el.innerHTML = `
+        <div class="bq-launch-ico">⏳</div>
+        <div class="bq-launch-text">
+          <span class="bq-launch-tag">🟢 In progress</span>
+          <h3>Mock Certification Exam</h3>
+          <p>You're partway through — ${this.fmtTime(remain)} left on the clock.</p>
+        </div>
+        <button class="btn btn-primary bq-launch-btn" onclick="Router.go('exam-l2')">▶ Resume Exam</button>`;
+    } else if(sub.status === "submitted"){
+      el.innerHTML = `
+        <div class="bq-launch-ico">📨</div>
+        <div class="bq-launch-text">
+          <span class="bq-launch-tag">⏳ Awaiting grading</span>
+          <h3>Mock Certification Exam</h3>
+          <p>Submitted! Part A (multiple choice): <strong>${sub.auto_score}/20</strong>. Your teacher will mark the rest.</p>
+        </div>
+        <button class="btn btn-ghost bq-launch-btn" onclick="Router.go('exam-l2')">View status →</button>`;
+    } else {
+      el.innerHTML = `
+        <div class="bq-launch-ico">🏆</div>
+        <div class="bq-launch-text">
+          <span class="bq-launch-tag">✅ Graded</span>
+          <h3>Mock Certification Exam</h3>
+          <p>Final score: <strong>${sub.total_score}/${this.totalPossible()}</strong>. Nice work!</p>
+        </div>
+        <button class="btn btn-teal bq-launch-btn" onclick="Router.go('exam-l2')">View results →</button>`;
+    }
+  },
+
+  fmtTime(ms){
+    const s = Math.floor(ms/1000);
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+    return h>0 ? `${h}h ${m}m` : `${m}m ${sec}s`;
+  },
+
+  // ---- Main exam screen ----
+  async render(){
+    const root = document.getElementById("exam-l2-root");
+    if(!root) return;
+    root.innerHTML = `<p class="muted small">Loading…</p>`;
+    if(!ManageExamL2.questions.length) await ManageExamL2.loadQuestions();
+    const sub = await this.myRow();
+    this.submission = sub;
+    this.stopTimer();
+
+    if(!sub) return this.renderIntro(root);
+    if(sub.status === "in_progress") return this.renderTaking(root, sub);
+    if(sub.status === "submitted") return this.renderPending(root, sub);
+    return this.renderGraded(root, sub);
+  },
+
+  renderIntro(root){
+    const parts = ManageExamL2.byPart();
+    root.innerHTML = `
+      <div class="card">
+        <h2 style="margin-top:0;">🎓 Arduino Junior Certification — Mock Exam</h2>
+        <p class="muted">Time: 1 Hour 30 Minutes · Total Marks: ${this.totalPossible()}</p>
+        <div class="flex gap-8 mt-10" style="flex-wrap:wrap;">
+          ${["A","B","C","D"].map(p=>`<span class="pill">${ManageExamL2.PART_LABEL[p]} — ${(parts[p]||[]).reduce((a,q)=>a+(q.max_marks||0),0)} marks</span>`).join("")}
+        </div>
+        <p class="small muted mt-10">You get <strong>one attempt</strong>. The multiple-choice section (Part A) is marked instantly; your teacher marks Parts B, C and D by hand. Your answers save automatically as you go, and the exam auto-submits when the clock runs out.</p>
+        <button class="btn btn-primary mt-20" onclick="ExamL2.start()">▶ Start Mock Exam</button>
+      </div>`;
+  },
+
+  async start(){
+    try{
+      const { error } = await sb.from("l2_exam_submissions").insert({ user_id: Auth.profile.id, status:"in_progress" });
+      if(error) throw error;
+      await this.render();
+    }catch(e){
+      Modal.alert({icon:"⚠️", title:"Couldn't start the exam", message: this.friendlyError(e)});
+    }
+  },
+
+  renderTaking(root, sub){
+    const parts = ManageExamL2.byPart();
+    const answers = sub.answers || {};
+    const questionBlock = (q)=>{
+      const val = answers[q.id];
+      if(q.type === "mcq"){
+        return `<div class="ml1-field">
+          <label>${q.order_num}. ${this.esc(q.prompt)} <span class="small muted">(${q.max_marks} marks)</span></label>
+          <div id="eq-opts-${q.id}">
+            ${(q.options||[]).map((o,i)=>`
+              <label class="ml1-opt"><input type="radio" name="eq-${q.id}" value="${this.esc(o)}" ${val===o?"checked":""} onchange="ExamL2.onAnswer('${q.id}', this.value)"> ${this.esc(o)}</label>`).join("")}
+          </div>
+        </div>`;
+      }
+      return `<div class="ml1-field">
+        <label>${q.order_num}. ${this.esc(q.prompt).replace(/\n/g,"<br>")} <span class="small muted">(${q.max_marks} marks)</span></label>
+        <textarea id="eq-${q.id}" rows="${q.type==='code'?7:4}" placeholder="Type your answer…" style="font-family:${q.type==='code'?"'JetBrains Mono',monospace":"inherit"};" oninput="ExamL2.onAnswer('${q.id}', this.value)">${this.esc(val||"")}</textarea>
+      </div>`;
+    };
+
+    root.innerHTML = `
+      <div class="card flex justify-between items-center" style="flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:5;">
+        <strong>🎓 Mock Exam in progress</strong>
+        <span class="timer-pill" id="exam-timer">--:--</span>
+        <button class="btn btn-primary btn-sm" onclick="ExamL2.confirmSubmit()">✅ Submit Exam</button>
+      </div>
+      ${["A","B","C","D"].map(p=>{
+        const list = parts[p]||[];
+        if(!list.length) return "";
+        return `<div class="section-title mt-20"><h3>${list[0].section_title}</h3></div>
+          <div class="card">${list.map(questionBlock).join('<hr class="exam-divider">')}</div>`;
+      }).join("")}
+      <button class="btn btn-primary mt-20" onclick="ExamL2.confirmSubmit()">✅ Submit Exam</button>`;
+
+    this.startTimer(sub);
+  },
+
+  onAnswer(qId, value){
+    if(!this.submission) return;
+    this.submission.answers = this.submission.answers || {};
+    this.submission.answers[qId] = value;
+    this.dirty = true;
+    clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(()=>this.autosave(), 1200);
+  },
+
+  async autosave(){
+    if(!this.dirty || !this.submission) return;
+    this.dirty = false;
+    try{
+      await sb.from("l2_exam_submissions").update({ answers:this.submission.answers, updated_at:new Date().toISOString() }).eq("id", this.submission.id);
+    }catch(e){ /* best-effort autosave; next save (or final submit) will retry */ }
+  },
+
+  startTimer(sub){
+    const deadline = new Date(sub.started_at).getTime() + this.DURATION_MS;
+    const tick = ()=>{
+      const remain = deadline - Date.now();
+      const el = document.getElementById("exam-timer");
+      if(!el) return;
+      if(remain <= 0){
+        el.textContent = "⏰ Time's up";
+        this.submit(true);
+        return;
+      }
+      el.textContent = "⏱ " + this.fmtTime(remain);
+    };
+    tick();
+    this.timerHandle = setInterval(tick, 1000);
+  },
+
+  stopTimer(){ if(this.timerHandle) clearInterval(this.timerHandle); this.timerHandle = null; },
+
+  confirmSubmit(){
+    Modal.show({
+      icon:"✅", title:"Submit the exam?",
+      message:"Once submitted you can't change your answers. Make sure you've answered everything you can.",
+      confirmLabel:"Submit now", showCancel:true,
+      onConfirm: ()=>{ Modal.close(); this.submit(false); }
+    });
+  },
+
+  async submit(auto){
+    this.stopTimer();
+    clearTimeout(this.saveTimer);
+    if(!this.submission) return;
+    const answers = this.submission.answers || {};
+    let autoScore = 0;
+    ManageExamL2.questions.filter(q=>q.type==="mcq").forEach(q=>{
+      if(answers[q.id] != null && answers[q.id] === q.answer) autoScore += (q.max_marks||0);
+    });
+    try{
+      const { error } = await sb.from("l2_exam_submissions").update({
+        answers, auto_score:autoScore, status:"submitted", submitted_at:new Date().toISOString(), updated_at:new Date().toISOString()
+      }).eq("id", this.submission.id);
+      if(error) throw error;
+      await this.render();
+      if(auto) Modal.alert({icon:"⏰", title:"Time's up!", message:"Your exam was submitted automatically."});
+    }catch(e){
+      Modal.alert({icon:"⚠️", title:"Couldn't submit", message: this.friendlyError(e)});
+    }
+  },
+
+  renderPending(root, sub){
+    root.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-size:3rem;">📨</div>
+        <h2>Exam submitted!</h2>
+        <p class="muted">Part A (multiple choice): <strong>${sub.auto_score} / 20</strong></p>
+        <p class="small muted">Your teacher will mark Parts B, C and D. Come back here to see your final result once it's graded.</p>
+        <button class="btn btn-primary mt-20" onclick="App.enterHome()">🏠 Back to Dashboard</button>
+      </div>`;
+  },
+
+  renderGraded(root, sub){
+    root.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-size:3rem;">🏆</div>
+        <h2>Exam graded!</h2>
+        <p style="font-size:1.4rem; font-weight:800;">${sub.total_score} / ${this.totalPossible()}</p>
+        <p class="small muted">Part A (auto-marked): ${sub.auto_score} / 20 · Parts B–D marked by your teacher.</p>
+        <button class="btn btn-primary mt-20" onclick="App.enterHome()">🏠 Back to Dashboard</button>
+      </div>`;
+  },
+
+  friendlyError(e){
+    const m = (e && e.message) || "Something went wrong.";
+    if(/row-level security|not authorized|permission/i.test(m))
+      return "You need to be logged in to take the exam.";
+    if(/relation .*l2_exam_(questions|submissions).* does not exist|schema cache/i.test(m))
+      return "The exam database isn't set up yet — ask your teacher to run supabase_mock_exam.sql in Supabase.";
+    if(/duplicate key|already exists/i.test(m))
+      return "You've already started this exam — refresh the page.";
+    return m;
+  }
+};
+
+/* ---------------- MOCK EXAM — admin grading ---------------- */
+const ExamAdmin = {
+  submissions: [],
+  profilesById: {},
+  viewing: null,   // submission currently open for grading
+
+  esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
+
+  async render(){
+    const root = document.getElementById("exam-review-root");
+    if(!root) return;
+    root.innerHTML = `<p class="muted small">Loading…</p>`;
+    if(!ManageExamL2.questions.length) await ManageExamL2.loadQuestions();
+    const [{ data: subs }, { data: profiles }] = await Promise.all([
+      sb.from("l2_exam_submissions").select("*").order("submitted_at", {ascending:false, nullsFirst:false}),
+      sb.from("profiles").select("id,name,username").eq("class","l2")
+    ]);
+    this.submissions = subs || [];
+    this.profilesById = Object.fromEntries((profiles||[]).map(p=>[p.id, p]));
+    this.viewing = null;
+    this.renderList(root);
+  },
+
+  studentName(userId){
+    const p = this.profilesById[userId];
+    return p ? p.name : "Unknown student";
+  },
+
+  renderList(root){
+    const awaiting = this.submissions.filter(s=>s.status==="submitted");
+    const inProgress = this.submissions.filter(s=>s.status==="in_progress");
+    const graded = this.submissions.filter(s=>s.status==="graded");
+
+    const row = (s, label)=>`
+      <div class="card card-hover flex justify-between items-center" style="flex-wrap:wrap; gap:10px; margin-bottom:10px; cursor:pointer;" onclick="ExamAdmin.openSubmission('${s.id}')">
+        <div>
+          <strong>${this.esc(this.studentName(s.user_id))}</strong>
+          <div class="small muted">${label} · Part A: ${s.auto_score}/20${s.status==="graded" ? ` · Total: ${s.total_score}/${ManageExamL2.totalMarks()}` : ""}</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); ExamAdmin.openSubmission('${s.id}')">${s.status==="graded"?"View":"Grade"} →</button>
+      </div>`;
+
+    root.innerHTML = `
+      <div class="section-title"><h3>⏳ Awaiting grading (${awaiting.length})</h3></div>
+      ${awaiting.length ? awaiting.map(s=>row(s, s.submitted_at ? new Date(s.submitted_at).toLocaleString() : "Submitted")).join("") : `<p class="small muted">Nothing to grade right now.</p>`}
+
+      <div class="section-title mt-20"><h3>✅ Graded (${graded.length})</h3></div>
+      ${graded.length ? graded.map(s=>row(s, s.graded_at ? "Graded "+new Date(s.graded_at).toLocaleDateString() : "Graded")).join("") : `<p class="small muted">No exams graded yet.</p>`}
+
+      <div class="section-title mt-20"><h3>📝 Still writing (${inProgress.length})</h3></div>
+      ${inProgress.length ? inProgress.map(s=>`<div class="small muted mt-10">${this.esc(this.studentName(s.user_id))} — started ${new Date(s.started_at).toLocaleString()}</div>`).join("") : `<p class="small muted">No one is currently taking the exam.</p>`}
+    `;
+  },
+
+  async openSubmission(id){
+    const sub = this.submissions.find(s=>String(s.id)===String(id));
+    if(!sub) return;
+    this.viewing = sub;
+    const root = document.getElementById("exam-review-root");
+    const answers = sub.answers || {};
+    const marks = sub.marks || {};
+    const gradable = ManageExamL2.questions.filter(q=>q.type!=="mcq").sort((a,b)=>(a.part+a.order_num).localeCompare(b.part+b.order_num));
+    const mcqs = ManageExamL2.questions.filter(q=>q.type==="mcq");
+
+    root.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="ExamAdmin.render()">← Back to list</button>
+      <div class="card mt-10">
+        <h2 style="margin-top:0;">${this.esc(this.studentName(sub.user_id))}</h2>
+        <p class="small muted">Submitted: ${sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : "—"} · Part A (auto): <strong>${sub.auto_score}/20</strong></p>
+      </div>
+
+      <div class="section-title mt-20"><h3>Part A — Multiple Choice (reference)</h3></div>
+      <div class="card">
+        ${mcqs.map(q=>{
+          const chosen = answers[q.id];
+          const correct = chosen === q.answer;
+          return `<div class="small mt-10"><strong>${q.order_num}.</strong> ${this.esc(q.prompt)} — <span style="color:${correct?'#3ddc84':'#ff5252'}">${chosen ? this.esc(chosen) : "(no answer)"} ${correct?"✅":"❌"}</span></div>`;
+        }).join("")}
+      </div>
+
+      <div class="section-title mt-20"><h3>Parts B–D — Grade each answer</h3></div>
+      <div class="card">
+        ${gradable.map(q=>`
+          <div class="ml1-field" style="border-bottom:1px solid var(--card-border); padding-bottom:14px; margin-bottom:14px;">
+            <label><strong>${q.part}${q.order_num}.</strong> ${this.esc(q.prompt).replace(/\n/g,"<br>")} <span class="small muted">(${q.max_marks} marks)</span></label>
+            <div class="card" style="background:var(--bg-soft,rgba(255,255,255,.03)); white-space:pre-wrap; font-family:${q.type==='code'?"'JetBrains Mono',monospace":"inherit"}; margin:8px 0;">${this.esc(answers[q.id] || "(no answer)")}</div>
+            <div class="flex items-center gap-8">
+              <label class="small muted">Marks:</label>
+              <input type="number" id="grade-${q.id}" min="0" max="${q.max_marks}" value="${marks[q.id] != null ? marks[q.id] : ''}" style="width:70px;">
+              <span class="small muted">/ ${q.max_marks}</span>
+            </div>
+          </div>`).join("")}
+      </div>
+
+      <div id="exam-grade-error" class="small" style="color:#ff5252; min-height:18px;"></div>
+      <div class="flex gap-8 mt-10">
+        <button class="btn btn-primary" onclick="ExamAdmin.publishGrade()">💾 Save &amp; publish grade</button>
+        <button class="btn btn-danger btn-sm" onclick="ExamAdmin.resetAttempt()">🗑️ Reset attempt (allow retake)</button>
+      </div>`;
+  },
+
+  async publishGrade(){
+    const sub = this.viewing;
+    if(!sub) return;
+    const gradable = ManageExamL2.questions.filter(q=>q.type!=="mcq");
+    const marks = {};
+    let sum = 0;
+    for(const q of gradable){
+      const el = document.getElementById(`grade-${q.id}`);
+      let v = el ? parseInt(el.value, 10) : NaN;
+      if(isNaN(v)) v = 0;
+      v = Math.max(0, Math.min(q.max_marks, v));
+      marks[q.id] = v;
+      sum += v;
+    }
+    const total_score = (sub.auto_score||0) + sum;
+    const errEl = document.getElementById("exam-grade-error");
+    errEl.textContent = "Saving…";
+    try{
+      const { error } = await sb.from("l2_exam_submissions").update({
+        marks, total_score, status:"graded", graded_by:Auth.profile.id, graded_at:new Date().toISOString(), updated_at:new Date().toISOString()
+      }).eq("id", sub.id);
+      if(error) throw error;
+      await this.render();
+    }catch(e){
+      errEl.textContent = (e && e.message) || "Something went wrong.";
+    }
+  },
+
+  async resetAttempt(){
+    const sub = this.viewing;
+    if(!sub) return;
+    if(!confirm(`Delete ${this.studentName(sub.user_id)}'s exam attempt so they can retake it? This cannot be undone.`)) return;
+    try{
+      const { error } = await sb.from("l2_exam_submissions").delete().eq("id", sub.id);
+      if(error) throw error;
+      await this.render();
+    }catch(e){
+      alert((e && e.message) || "Something went wrong.");
+    }
+  }
+};
+
 /* ---------------- ADMIN HOME (professional master-admin panel) ---------------- */
 const AdminHome = {
   esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); },
@@ -3210,13 +3860,16 @@ const AdminHome = {
     const activeToday = ((progRes && progRes.data)||[]).filter(p=>p.updated_at && new Date(p.updated_at).toDateString()===today).length;
     const l1q = (App.classData.l1.questions||[]).length;
     const l2q = (App.classData.l2.questions||[]).length;
+    const { data: examSubs } = await sb.from("l2_exam_submissions").select("status");
+    const awaitingGrading = ((examSubs)||[]).filter(s=>s.status==="submitted").length;
 
     document.getElementById("admin-stat-grid").innerHTML = [
       {ico:"👥", num:students.length, lbl:"Total Students", c:"purple"},
       {ico:"🤖", num:inClass("l1").length, lbl:"Level 1", c:"green"},
       {ico:"🔌", num:inClass("l2").length, lbl:"Level 2", c:"teal"},
       {ico:"⚡", num:activeToday, lbl:"Active Today", c:"orange"},
-      {ico:"❓", num:l1q+l2q, lbl:"Questions", c:"blue"}
+      {ico:"❓", num:l1q+l2q, lbl:"Questions", c:"blue"},
+      {ico:"📝", num:awaitingGrading, lbl:"Ungraded Exams", c:"orange"}
     ].map(s=>`<div class="admin-stat c-${s.c}">
         <div class="admin-stat-ico">${s.ico}</div>
         <div class="admin-stat-num">${s.num}</div>
@@ -3227,7 +3880,9 @@ const AdminHome = {
       {ico:"👑", t:"Accounts", d:"Usernames, passwords, class. Reset or delete accounts.", nav:"accounts", c:"purple"},
       {ico:"📊", t:"Student Progress", d:"XP, accuracy and weekly-quiz status per student.", nav:"students", c:"green"},
       {ico:"🗃️", t:"Question Bank", d:"Browse every Level 1 & Level 2 question.", nav:"admin", c:"teal"},
-      {ico:"🛠️", t:"Manage L1 Questions", d:"Add, edit or delete Level 1 questions live.", nav:"manage-l1", c:"orange"}
+      {ico:"🛠️", t:"Manage L1 Questions", d:"Add, edit or delete Level 1 questions live.", nav:"manage-l1", c:"orange"},
+      {ico:"🎓", t:"Exam Submissions", d:"Grade the mock exam — Parts B, C & D.", nav:"exam-review", c:"purple"},
+      {ico:"📝", t:"Manage Exam Questions", d:"Edit the mock exam paper live.", nav:"manage-exam", c:"green"}
     ].map(x=>`<div class="admin-tool" onclick="Router.go('${x.nav}')">
         <div class="admin-tool-ico c-${x.c}">${x.ico}</div>
         <div style="flex:1;"><h3>${x.t}</h3><p>${x.d}</p></div>
@@ -3331,6 +3986,9 @@ const Router = {
     if(name==="accounts") Accounts.render();
     if(name==="students") App.renderStudents();
     if(name==="manage-l1") ManageL1.render();
+    if(name==="exam-l2") ExamL2.render();
+    if(name==="exam-review") ExamAdmin.render();
+    if(name==="manage-exam") ManageExamL2.render();
   }
 };
 
